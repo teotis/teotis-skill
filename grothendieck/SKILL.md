@@ -148,9 +148,53 @@ Yoneda lemma (roughly): **an object is completely determined by "all morphisms p
   - **Grothendieck principle traceability badge** (which of the 11 principles it's based on)
   - **"Current vs Improved" dual-column comparison card** (red left, green right)
   - Long code sketches wrapped in `<details>` collapsible sections
-  - Topological Evolution Diagrams (Inside the comparison card): You MUST generate two Mermaid.js graphs (using `graph TD` or `LR` inside `<div class="mermaid">` tags) to visually demonstrate the architecture's shape.
-    - 'Current Topology' (Left/Red): Visually depict the "bad shape" (e.g., spaghetti coupling, M×N cross-connections, missing abstraction). Use red stroke/color for problematic links.
-    - 'Elevated Topology' (Right/Green): Visually depict the Grothendieck "elegant shape" (e.g., funneling through a Functor, strict layer Sheaves, clear Base Change parameterization). Use thicker/green lines for the new clean pathways. Long code sketches wrapped in <details> collapsible sections
+  - **Topological Evolution Diagrams** (CRITICAL — render full-width BELOW the comparison card, NOT inside the cramped 2-column grid):
+    - You MUST generate two Mermaid.js graphs to visually demonstrate the architecture's shape.
+    - Place them in a dedicated `<div class="topology-compare">` that spans the full card width.
+    - Each diagram gets its own `<div class="topology-diagram">` with a label (`Current Topology` / `Elevated Topology`).
+    - **Sizing (IMPORTANT)**: Each `.topology-diagram .mermaid` container MUST have `min-height: 380px` and `width: 100%`. Use `%%{init: {'themeVariables': { 'fontSize': '16px' }}}%%` in Mermaid to ensure readable text. Never let Mermaid diagrams render at the tiny default size — they must be large enough that node labels and edge annotations are clearly legible.
+    - 'Current Topology' (Red): Visually depict the "bad shape" (e.g., spaghetti coupling, M×N cross-connections, missing abstraction). Use red-tinted borders and red stroke colors for problematic links.
+    - 'Elevated Topology' (Green): Visually depict the Grothendieck "elegant shape" (e.g., funneling through a Functor, strict layer Sheaves, clear Base Change parameterization). Use green-tinted borders and thicker/green lines for the new clean pathways.
+    - **Lightbox Zoom**: Clicking any topology diagram opens it in a full-screen lightbox overlay (dark backdrop, centered image, close on click/ESC). This is mandatory — the inline diagram provides the overview, the lightbox provides the detailed inspection.
+    - Required CSS for diagrams:
+      ```css
+      .topology-compare { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 24px; }
+      .topology-diagram { flex: 1; min-width: 340px; }
+      .topology-diagram .mermaid { min-height: 380px; width: 100%; }
+      .topology-diagram .label { font-size: 14px; font-weight: 600; margin-bottom: 8px; padding: 4px 12px; border-radius: 4px; display: inline-block; }
+      .topology-diagram.current .label { background: rgba(248,81,73,0.15); color: #f85149; }
+      .topology-diagram.current .mermaid { border: 2px solid rgba(248,81,73,0.2); border-radius: 8px; padding: 16px; }
+      .topology-diagram.elevated .label { background: rgba(63,185,80,0.15); color: #3fb950; }
+      .topology-diagram.elevated .mermaid { border: 2px solid rgba(63,185,80,0.2); border-radius: 8px; padding: 16px; }
+      /* Lightbox */
+      .lightbox { display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.85); cursor: pointer; }
+      .lightbox.active { display: flex; align-items: center; justify-content: center; }
+      .lightbox .mermaid { min-width: 700px; min-height: 500px; }
+      ```
+
+    - Required JS for lightbox:
+      ```javascript
+      // Lightbox: click any topology diagram to zoom full-screen
+      document.querySelectorAll('.topology-diagram').forEach(diagram => {
+        diagram.style.cursor = 'pointer';
+        diagram.addEventListener('click', () => {
+          const svg = diagram.querySelector('.mermaid svg').cloneNode(true);
+          const lb = document.createElement('div');
+          lb.className = 'lightbox active';
+          const wrapper = document.createElement('div');
+          wrapper.className = 'mermaid';
+          wrapper.style.cssText = 'min-width:700px;min-height:500px;background:#1a1a1a;border-radius:8px;padding:24px;';
+          wrapper.appendChild(svg);
+          lb.appendChild(wrapper);
+          document.body.appendChild(lb);
+          const close = () => { lb.remove(); };
+          lb.addEventListener('click', close);
+          document.addEventListener('keydown', function onEsc(e) {
+            if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onEsc); }
+          });
+        });
+      });
+      ```
 
 ### Interactive Review System (Must implement in vanilla JS)
 
@@ -159,7 +203,12 @@ Yoneda lemma (roughly): **an object is completely determined by "all morphisms p
    - A **5-star rating widget** for acceptance scoring (1-5 stars)
    - **Status tag selector**: `[Agree] [Doubtful] [Already Exists / False Positive] [Not Applicable to Business]`
    - All persisted with `localStorage`, survives page refresh
-   - Topology Zoom/Lightbox Feature: Add simple JS so clicking any rendered Mermaid diagram expands it to full screen (or a large modal) for easy viewing.
+   - **Topology Zoom/Lightbox** (MANDATORY): Every Mermaid diagram MUST be clickable to open a full-screen lightbox for detailed inspection. Implementation:
+     - On page load, wrap each `.mermaid` element's parent `.topology-diagram` with a click handler.
+     - When clicked: clone the inner SVG into a `.lightbox` div, add `.active` class, append to `<body>`.
+     - The lightbox centers the diagram at large size (min 700x500px) on an opaque dark backdrop.
+     - Click the backdrop or press ESC to close and remove the lightbox element.
+     - This is essential — the inline diagram shows the big picture, the lightbox lets you read every label.
 2. **Export Feedback FAB**: Fixed floating button in bottom-right corner "Export Feedback"
    - On click, JS must execute the following:
      1. Iterate over all cards with feedback and concatenate their title/rating/tag/text into a formatted Markdown string.

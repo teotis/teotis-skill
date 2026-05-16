@@ -8,45 +8,12 @@ A curated set of Claude Code skills for enhanced engineering workflows.
 
 ### `html` — Visual Output Delivery
 
-Transforms terminal-unfriendly task outputs (PDF, DOCX, PPT, images, markdown, long-form analysis) into self-contained, dark-themed HTML reports that open automatically in the browser. Supports two modes:
-
-- **File Review Mode** — box/point annotation on rendered pages with coordinate-mapped feedback copy, powered by pointer events and localStorage persistence
-- **Text Report Mode** — card-based layout with TOC navigation, decision panel (Accept/Consider/Reject), and structured feedback export
-
-The highlight: turns the terminal's "read a wall of text or download a file" experience into an interactive visual review — annotations, star ratings, one-click feedback back to Claude.
+Turns any task output into a polished, interactive HTML page that opens in your browser. Instead of squinting at raw text in the terminal or downloading files one by one, you get a proper visual review experience: annotate directly on rendered pages, rate results with stars, and copy structured feedback back to Claude in one click. Works with PDF, DOCX, PPT, images, markdown, and long-form analysis text.
 
 ### `grothendieck` — Architecture Deep Analysis
 
-Applies Grothendieck's 11-principle mathematical thinking framework (Rising Sea, Absolute Motives, Functoriality, Sheaf Theory, Yoneda Perspective, etc.) to codebase architecture. Produces an interactive HTML report with:
-
-- Benefit × Cost scatter matrix for all optimization suggestions
-- Detailed suggestion cards with principle traceability badges and before/after topology diagrams (Mermaid.js)
-- Full interactive review system with ratings, status tags, and structured feedback export
-
-The highlight: finds **non-incremental** optimization opportunities — not "extract this method," but "the abstraction level is fundamentally wrong, and 40 special cases dissolve when you raise it."
+Analyzes your codebase through 11 mathematical thinking principles and produces an interactive review report. You get a global overview matrix of all optimization opportunities (plotted by benefit vs. cost), detailed suggestion cards with before/after architecture diagrams, and a full review system to evaluate each finding. The report finds **non-incremental** improvements — not "extract this method," but "the abstraction level is wrong, and raising it dissolves dozens of special cases."
 
 ### `skill-creator` — Build & Iterate on Skills (by Anthropic)
 
-Created by Anthropic (Claude Code's parent company). An end-to-end toolkit for creating, testing, benchmarking, and optimizing Claude Code skills. Covers the full lifecycle:
-
-- Draft SKILL.md with progressive disclosure (metadata → body → bundled resources)
-- Parallel test runs (with-skill vs baseline) with quantitative assertion grading
-- Browser-based eval viewer for side-by-side output comparison with feedback collection
-- Blind A/B comparison for rigorous quality assessment
-- Trigger description optimization via iterative eval loop
-
-The highlight: a disciplined "draft → test → review → improve → repeat" loop with quantitative benchmarks, ensuring skills generalize beyond a few hand-picked examples.
-
----
-
-## Structure
-
-Each skill follows the standard layout:
-
-```
-skill-name/
-├── SKILL.md          # YAML frontmatter + markdown instructions
-├── scripts/          # Executable helpers (Python)
-├── references/       # Design specs loaded on demand
-└── assets/           # Templates and static resources
-```
+Created by Anthropic, the company behind Claude. A complete toolkit for building, testing, and refining Claude Code skills. Takes you through the full loop: draft a skill → run it against test cases → compare with-skill vs. without-skill results → review outputs side-by-side in a browser → improve based on feedback → repeat. Includes quantitative benchmarking and trigger description optimization so your skill fires reliably in real-world use.
