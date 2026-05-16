@@ -1,40 +1,40 @@
-# 文本报告 HTML 规范
+# Text Report HTML Specification
 
-本规范定义文本报告模式的 HTML 结构、样式和交互行为。
+This spec defines the HTML structure, styles, and interaction behavior for text report mode.
 
-## 页面结构
+## Page Structure
 
 ```html
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{报告标题}</title>
-  <style>/* 内联 CSS */</style>
+  <title>{Report Title}</title>
+  <style>/* Inline CSS */</style>
 </head>
 <body>
   <nav class="toc">...</nav>
   <main class="container">
     <header class="report-header">
-      <h1>{标题}</h1>
-      <p class="subtitle">{摘要}</p>
+      <h1>{Title}</h1>
+      <p class="subtitle">{Summary}</p>
     </header>
-    <!-- 按 Phase 组织的内容区 -->
+    <!-- Content organized by Phase -->
     <section id="p1">...</section>
     <section id="p2">...</section>
     ...
   </main>
   <div class="decision-panel">...</div>
   <div class="toast" id="toast"></div>
-  <script>/* 内联 JS */</script>
+  <script>/* Inline JS */</script>
 </body>
 </html>
 ```
 
-## CSS 规范
+## CSS Specification
 
-### 主题变量
+### Theme Variables
 
 ```css
 :root {
@@ -52,7 +52,7 @@
 }
 ```
 
-### 字体
+### Typography
 
 ```css
 body {
@@ -65,7 +65,7 @@ code, pre {
 }
 ```
 
-### 容器与排版
+### Container & Layout
 
 ```css
 .container { max-width: 1020px; margin: 0 auto; padding: 40px 24px 120px; }
@@ -75,7 +75,7 @@ h3 { font-size: 18px; font-weight: 600; color: var(--text); margin-top: 32px; ma
 p { margin: 0 0 16px; color: var(--text-dim); }
 ```
 
-### 卡片系统
+### Card System
 
 ```css
 .card {
@@ -90,7 +90,7 @@ p { margin: 0 0 16px; color: var(--text-dim); }
 .card.warning { border-left-color: var(--yellow); }
 ```
 
-### 标签
+### Tags
 
 ```css
 .tag {
@@ -104,7 +104,7 @@ p { margin: 0 0 16px; color: var(--text-dim); }
 .tag-y { background: rgba(210,153,29,0.15); color: var(--yellow); }
 ```
 
-### 对比卡
+### Comparison Cards
 
 ```css
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
@@ -118,7 +118,7 @@ p { margin: 0 0 16px; color: var(--text-dim); }
 }
 ```
 
-### 指标面板
+### Metric Panel
 
 ```css
 .metric-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
@@ -130,7 +130,7 @@ p { margin: 0 0 16px; color: var(--text-dim); }
 .metric .label { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
 ```
 
-### 引言
+### Blockquote
 
 ```css
 .motif-quote {
@@ -140,7 +140,7 @@ p { margin: 0 0 16px; color: var(--text-dim); }
 }
 ```
 
-### 代码块
+### Code Blocks
 
 ```css
 pre {
@@ -159,7 +159,7 @@ code:not(pre code) {
 .cm { color: var(--text-dim); font-style: italic; }
 ```
 
-### 流程图
+### Flow Diagram
 
 ```css
 .flow { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
@@ -170,7 +170,7 @@ code:not(pre code) {
 .flow .arrow { color: var(--text-dim); font-size: 18px; }
 ```
 
-### 表格
+### Tables
 
 ```css
 table {
@@ -185,7 +185,7 @@ tr.high td { background: rgba(248,81,73,0.06); }
 tr.del td { background: rgba(63,185,80,0.06); }
 ```
 
-### TOC 导航
+### TOC Navigation
 
 ```css
 .toc {
@@ -202,7 +202,7 @@ tr.del td { background: rgba(63,185,80,0.06); }
 @media (max-width: 700px) { .toc { display: none; } }
 ```
 
-### 决策面板
+### Decision Panel
 
 ```css
 .decision-panel {
@@ -219,7 +219,7 @@ tr.del td { background: rgba(63,185,80,0.06); }
 .decision-panel .stop { background: var(--red); color: #fff; }
 ```
 
-### Toast 通知
+### Toast Notification
 
 ```css
 .toast {
@@ -231,9 +231,9 @@ tr.del td { background: rgba(63,185,80,0.06); }
 .toast.show { opacity: 1; }
 ```
 
-### 反馈评论区（可选）
+### Feedback Comment Area (Optional)
 
-每个卡片底部可添加评论区：
+An optional comment area can be added at the bottom of each card:
 
 ```css
 .card-feedback { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
@@ -247,58 +247,58 @@ tr.del td { background: rgba(63,185,80,0.06); }
 .card-feedback .star.active { color: var(--yellow); }
 ```
 
-## 交互行为
+## Interaction Behavior
 
-### 决策面板
+### Decision Panel
 
-三个按钮，点击后将预设反馈文本复制到剪贴板并显示 toast：
+Three buttons that copy preset feedback text to the clipboard and show a toast:
 
-- **采纳** (go)："整体方案认可，建议执行。"
-- **思考** (think)："需要进一步分析以下方面：..."
-- **驳回** (stop)："方案存在以下问题，需要重新评估：..."
+- **Accept** (go): "Overall plan accepted, recommend proceeding."
+- **Consider** (think): "Needs further analysis on the following aspects: ..."
+- **Reject** (stop): "Plan has the following issues, needs re-evaluation: ..."
 
-### TOC 滚动联动
+### TOC Scroll Linkage
 
-使用 `IntersectionObserver` 监听各 section 的可见性，自动高亮当前阅读位置对应的 TOC 条目。
+Use `IntersectionObserver` to monitor section visibility, automatically highlighting the TOC entry corresponding to the current reading position.
 
-### 反馈导出
+### Feedback Export
 
-页面底部的"导出反馈"按钮，遍历所有 `.card-feedback` 中的评论和评分，拼接为 Markdown：
+The "Export Feedback" button at the bottom of the page iterates all `.card-feedback` comments and ratings, concatenating them as Markdown:
 
 ```markdown
-## 反馈汇总
+## Feedback Summary
 
-### {卡片标题}
-- 评分：★★★★☆
-- 评论：{用户输入的评论}
+### {Card Title}
+- Rating: ★★★★☆
+- Comment: {user's comment}
 
-### {下一个卡片标题}
+### {Next Card Title}
 ...
 ```
 
-复制到剪贴板并显示 toast。
+Copy to clipboard and show toast.
 
-## 内容组织原则
+## Content Organization Principles
 
-### 章节结构
+### Section Structure
 
-标准三段式（可扩展）：
-1. **概览/扫描** — 核心发现、关键指标、整体洞察
-2. **问题诊断** — 具体问题、风险、痛点
-3. **方案建议** — 解决方案、执行路径、优先级
+Standard three-part structure (extensible):
+1. **Overview/Scan** — Key findings, critical metrics, overall insights
+2. **Problem Diagnosis** — Specific issues, risks, pain points
+3. **Solution Proposals** — Solutions, execution paths, priorities
 
-### 卡片分类指南
+### Card Classification Guide
 
-| 内容性质 | 卡片类型 | 左边框颜色 | 典型场景 |
+| Content Nature | Card Type | Left Border Color | Typical Scenario |
 |---------|---------|-----------|---------|
-| 信息/事实 | `.card.info` | 蓝色 | 背景说明、现状描述 |
-| 问题/风险 | `.card.fracture` | 红色 | Bug、性能问题、安全隐患 |
-| 方案/建议 | `.card.rfc` | 绿色 | 重构方案、优化建议 |
-| 概念/理论 | `.card.motif` | 紫色 | 架构原则、设计模式 |
-| 警告/注意 | `.card.warning` | 黄色 | 兼容性风险、迁移注意事项 |
+| Info/Facts | `.card.info` | Blue | Background explanation, current state |
+| Issues/Risks | `.card.fracture` | Red | Bugs, performance issues, security concerns |
+| Solutions/Suggestions | `.card.rfc` | Green | Refactoring plans, optimization suggestions |
+| Concepts/Theory | `.card.motif` | Purple | Architecture principles, design patterns |
+| Warnings/Cautions | `.card.warning` | Yellow | Compatibility risks, migration notes |
 
-### 标签使用
+### Tag Usage
 
-- 优先级：`P0`→红、`P1`→黄、`P2`→蓝
-- 类型：`问题`→红、`优化`→绿、`概念`→紫、`信息`→蓝
-- 可组合：`<span class="tag tag-r">P0</span> <span class="tag tag-r">问题</span>`
+- Priority: `P0`→Red, `P1`→Yellow, `P2`→Blue
+- Type: `Issue`→Red, `Optimization`→Green, `Concept`→Purple, `Info`→Blue
+- Can be combined: `<span class="tag tag-r">P0</span> <span class="tag tag-r">Issue</span>`

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""DOCX/DOC/PPT/PPTX → PDF (via LibreOffice soffice)。
+"""DOCX/DOC/PPT/PPTX -> PDF (via LibreOffice soffice).
 
-用法:
+Usage:
     python3 doc_to_pdf.py <input_path> [--output <output.pdf>]
 
-依赖 LibreOffice soffice。如果不可用，报错退出。
+Requires LibreOffice soffice. Errors out if not available.
 """
 import argparse
 import os
@@ -16,13 +16,13 @@ from pathlib import Path
 
 
 def find_soffice() -> str:
-    """查找 soffice 可执行文件。"""
-    # 直接在 PATH 中查找
+    """Find the soffice executable."""
+    # Check PATH first
     soffice = shutil.which("soffice")
     if soffice:
         return soffice
 
-    # macOS 默认安装路径
+    # macOS default install paths
     mac_paths = [
         "/Applications/LibreOffice.app/Contents/MacOS/soffice",
         os.path.expanduser("~/Applications/LibreOffice.app/Contents/MacOS/soffice"),
@@ -35,13 +35,13 @@ def find_soffice() -> str:
 
 
 def convert_to_pdf(input_path: str, output_dir: str) -> str:
-    """使用 soffice 将文件转为 PDF，返回生成的 PDF 路径。"""
+    """Convert file to PDF using soffice, return the resulting PDF path."""
     soffice = find_soffice()
     if not soffice:
-        print("错误: 未找到 LibreOffice soffice，请安装 LibreOffice", file=sys.stderr)
+        print("Error: LibreOffice soffice not found. Please install LibreOffice.", file=sys.stderr)
         sys.exit(1)
 
-    # 使用独立 profile 避免锁冲突
+    # Use isolated profile to avoid lock conflicts
     with tempfile.TemporaryDirectory() as profile_dir:
         cmd = [
             soffice,
@@ -53,33 +53,33 @@ def convert_to_pdf(input_path: str, output_dir: str) -> str:
         ]
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
         if result.returncode != 0:
-            print(f"soffice 转换失败: {result.stderr}", file=sys.stderr)
+            print(f"soffice conversion failed: {result.stderr}", file=sys.stderr)
             sys.exit(1)
 
-    # 找到输出的 PDF
+    # Locate the output PDF
     input_stem = Path(input_path).stem
     pdf_path = Path(output_dir) / f"{input_stem}.pdf"
     if not pdf_path.exists():
-        # 尝试查找任何生成的 PDF
+        # Try to find any generated PDF
         pdfs = list(Path(output_dir).glob("*.pdf"))
         if pdfs:
             pdf_path = pdfs[0]
         else:
-            print(f"错误: soffice 未生成 PDF 文件", file=sys.stderr)
+            print("Error: soffice did not produce a PDF file", file=sys.stderr)
             sys.exit(1)
 
     return str(pdf_path)
 
 
 def main():
-    parser = argparse.ArgumentParser(description="DOCX/DOC/PPT/PPTX → PDF")
-    parser.add_argument("input_path", help="输入文件路径")
-    parser.add_argument("--output", "-o", help="输出 PDF 路径 (默认与输入同目录)")
+    parser = argparse.ArgumentParser(description="DOCX/DOC/PPT/PPTX -> PDF")
+    parser.add_argument("input_path", help="Path to input file")
+    parser.add_argument("--output", "-o", help="Output PDF path (default: same directory as input)")
     args = parser.parse_args()
 
     input_path = args.input_path
     if not Path(input_path).exists():
-        print(f"错误: 文件不存在: {input_path}", file=sys.stderr)
+        print(f"Error: file not found: {input_path}", file=sys.stderr)
         sys.exit(1)
 
     output_dir = str(Path(args.output).parent) if args.output else str(Path(input_path).parent)

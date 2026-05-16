@@ -1,36 +1,36 @@
-# 文件审阅 HTML 规范
+# File Review HTML Specification
 
-本规范定义文件审阅模式的 HTML 结构、样式和交互行为。
+This spec defines the HTML structure, styles, and interaction behavior for file review mode.
 
-## 页面结构
+## Page Structure
 
 ```html
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>审阅: {filename}</title>
-  <style>/* 内联 CSS */</style>
+  <title>Review: {filename}</title>
+  <style>/* Inline CSS */</style>
 </head>
 <body>
   <div class="toolbar">...</div>
   <div class="stage">
     <div class="page-shell" data-page="1">
       <img class="page-image" src="{data_url}" />
-      <!-- 批注标记动态插入此处 -->
+      <!-- Annotation markers dynamically inserted here -->
     </div>
   </div>
   <div class="drawer">...</div>
   <template id="popover-template">...</template>
-  <script>/* 内联 JS */</script>
+  <script>/* Inline JS */</script>
 </body>
 </html>
 ```
 
-## CSS 规范
+## CSS Specification
 
-### 主题变量
+### Theme Variables
 
 ```css
 :root {
@@ -50,7 +50,7 @@
 }
 ```
 
-### 顶栏 (.toolbar)
+### Top Bar (.toolbar)
 
 ```css
 .toolbar {
@@ -71,7 +71,7 @@
 }
 ```
 
-### 主区域 (.stage)
+### Main Area (.stage)
 
 ```css
 .stage {
@@ -88,7 +88,7 @@
 .page-image { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
 ```
 
-### 批注标记
+### Annotation Markers
 
 ```css
 .pin {
@@ -114,7 +114,7 @@
 }
 ```
 
-### 侧边抽屉 (.drawer)
+### Side Drawer (.drawer)
 
 ```css
 .drawer {
@@ -133,7 +133,7 @@
 .annotation-item .text { color: var(--text); }
 ```
 
-### 编辑弹框 (popover)
+### Edit Popover (popover)
 
 ```css
 .popover {
@@ -149,66 +149,66 @@
 .popover .actions { display: flex; gap: 8px; margin-top: 8px; justify-content: flex-end; }
 ```
 
-## 交互行为
+## Interaction Behavior
 
-### 框选/点选批注
+### Box/Point Annotation
 
-使用 Pointer Events 实现统一的触摸/鼠标交互：
+Use Pointer Events for unified touch/mouse interaction:
 
-1. **pointerdown**：记录起始坐标（相对于 `.page-shell` 的百分比），捕获指针
-2. **pointermove**：位移超过 1.2% 阈值后开始框选，创建/更新 `.selection-box`
-3. **pointerup**：
-   - 未移动 → 点批注（在该位置创建 `.pin`）
-   - 框选面积 >= 2% x 1.2% → 区域批注（创建 `.region`）
-   - 框选太小 → 退化为点批注
+1. **pointerdown**: record start coordinates (as percentage relative to `.page-shell`), capture pointer
+2. **pointermove**: begin box selection once displacement exceeds 1.2% threshold, create/update `.selection-box`
+3. **pointerup**:
+   - No movement → point annotation (create `.pin` at that position)
+   - Box area >= 2% x 1.2% → region annotation (create `.region`)
+   - Box too small → fall back to point annotation
 
-### 批注数据结构
+### Annotation Data Structure
 
 ```javascript
 {
   id: timestamp + random,
   kind: "point" | "region",
   page: 1,
-  x: percent,         // 区域: 左上角 X
-  y: percent,         // 区域: 左上角 Y
-  width: percent,     // 仅 region
-  height: percent,    // 仅 region
-  text: "用户批注文案",
-  elements: []        // 可选，元素映射匹配结果
+  x: percent,         // region: top-left X
+  y: percent,         // region: top-left Y
+  width: percent,     // region only
+  height: percent,    // region only
+  text: "user annotation text",
+  elements: []        // optional, element map match results
 }
 ```
 
-### 持久化
+### Persistence
 
-- 使用 `localStorage` 存储，key 为 `review-annotations:{pathname}`
-- 每次增删改后自动保存
-- 页面加载时自动恢复
+- Store via `localStorage`, key is `review-annotations:{pathname}`
+- Auto-save after each add/update/delete
+- Auto-restore on page load
 
-### 反馈复制
+### Feedback Copy
 
-"复制反馈"按钮生成双格式文本：
+The "Copy Feedback" button generates dual-format text:
 
-**人读格式：**
+**Human-readable format:**
 ```
-#1 [第1页 点 52%,17%] 这里字体太小了
-#2 [第1页 区域 4%,50% - 99%,60%] 排版太挤
+#1 [Page 1 point 52%,17%] The font is too small here
+#2 [Page 1 region 4%,50% - 99%,60%] Layout is too cramped
 ```
 
-**机器解析格式：**
+**Machine-parseable format:**
 ```
 ---META---
 {"annotations": [...]}
 ---END---
 ```
 
-当存在 `element_map` 时，人读格式中自动包含元素角色：`#1 [第1页 点 52%,17%] {工作经历正文} 字体太小`
+When `element_map` exists, human-readable format automatically includes element role: `#1 [Page 1 point 52%,17%] {work experience body} Font too small`
 
-### 元素悬停提示
+### Element Hover Tooltip
 
-当 `window.__ELEMENT_MAP__` 存在时，`pointermove` 事件实时查找光标下的元素，显示浮层提示 `role (section_id)`。
+When `window.__ELEMENT_MAP__` exists, `pointermove` events look up the element under the cursor in real time, showing a floating tooltip `role (section_id)`.
 
-## 降级策略
+## Fallback Strategy
 
-1. **无页面图片**：使用 iframe 嵌入 PDF data URL，禁用框选批注，提示用户"当前环境不支持精确定位"
-2. **纯文本/Markdown**：渲染为 HTML 内容到 `.page-shell` 中，支持区域批注
-3. **图片文件**：直接嵌入 `<img>`，支持框选/点选批注
+1. **No page images**: use iframe to embed PDF data URL, disable box annotation, prompt user "precise positioning not supported in current environment"
+2. **Plain text/Markdown**: render as HTML content inside `.page-shell`, support region annotation
+3. **Image files**: embed directly as `<img>`, support box/point annotation

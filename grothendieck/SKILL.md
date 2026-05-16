@@ -39,7 +39,7 @@ For every finding, ask: **What would Grothendieck see here?**
 
 Facing a hard problem, ordinary engineers reach for hammers (patches, if/else, try/catch). Grothendieck's approach is to **raise the water level**: keep elevating the abstraction layer until the problem is naturally dissolved.
 
-**Core insight**: When you find yourself "wrestling with code" — excessive special cases, unending bugs, everything coupled — this is a signal: **the abstraction level is too low**. The correct response is not to hack harder, but to **step back, elevate the abstraction dimension, and let the sea淹没 them**.
+**Core insight**: When you find yourself "wrestling with code" — excessive special cases, unending bugs, everything coupled — this is a signal: **the abstraction level is too low**. The correct response is not to hack harder, but to **step back, elevate the abstraction dimension, and let the sea drown them**.
 
 **2. Finding Absolute Motives — Converge Polymorphic Appearances**
 
@@ -93,7 +93,7 @@ Don't solve 3 special cases — find the parent problem that contains them, maki
 
 The behavioral variation of the same structure across different "bases" should be unified by a **base change functor**, not N copies of divergent code.
 
-**Core insight**: Environment, platform, or dependency variations should be abstracted as base change functors. Identify places where environmental differences cause code branching to膨胀, and propose explicitly parameterizing the "base."
+**Core insight**: Environment, platform, or dependency variations should be abstracted as base change functors. Identify places where environmental differences cause code branching to proliferate, and propose explicitly parameterizing the "base."
 
 **11. Yoneda Perspective**
 
@@ -110,7 +110,7 @@ Yoneda lemma (roughly): **an object is completely determined by "all morphisms p
 - **Survey before deconstructing**: Roughly map module/call graphs, then annotate problem points on the graph.
 - **Evidence before assertion**: Each optimization suggestion should reference specific file/class/method paths.
 - **Counterexamples before generalization**: Before proposing a general solution, ask "under what conditions would this fail?"
-- **Combine large and small slices**: Provide both long-term vision (foundation rebuild) and immediately verifiable最小 slices.
+- **Combine large and small slices**: Provide both long-term vision (foundation rebuild) and immediately verifiable minimal slices.
 - **Self-assessment at the end**: Honestly list blind spots and uncertainties in the analysis.
 
 ---
@@ -119,8 +119,8 @@ Yoneda lemma (roughly): **an object is completely determined by "all morphisms p
 
 - Unsupported vague assertions
 - Pure academic abstraction disconnected from business scenarios
-- "Silver bullet" suggestions未经 counterexample检验
-- Criticism that only指出 problems without any落地 path
+- "Silver bullet" suggestions not tested against counterexamples
+- Criticism that only identifies problems without any actionable path
 - Disguising "moved special cases" as "generalization"
 
 ---

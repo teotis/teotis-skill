@@ -1,83 +1,85 @@
 ---
 name: html
 description: >
-  将当前任务的产出物自动转化为 HTML 并在浏览器中打开，解决终端环境交互困难、阅读视觉不佳的问题。
-  当任务完成后的产出物是文件类（PDF、DOCX、DOC、PPT、PPTX、MD、图片）或大段文本/分析/推理/图表类内容时，
-  触发此技能将结果以可视化 HTML 形式交付。
-  触发场景：用户说"用 html 打开"、"生成 html"、"浏览器查看"、"html 审阅"；
-  或任务产出了文件（生成了 PDF/DOCX/PPT 等）需要审阅；
-  或任务产出了大段分析文本、架构评审、代码分析、数据报告等需要可视化展示。
-  即使用户没有明确要求 HTML，当产出物复杂度较高（多页文件、长篇分析、多维度数据）时也应主动建议使用。
+  Automatically convert task output into HTML and open in the browser, solving the problem of poor readability
+  and difficult interaction in terminal environments.
+  Trigger this skill when task output is file-based (PDF, DOCX, DOC, PPT, PPTX, MD, images) or
+  long-form text/analysis/reasoning/chart content, delivering results as visualized HTML.
+  Trigger scenarios: user says "open with html", "generate html", "browser view", "html review";
+  or the task produced a file (generated PDF/DOCX/PPT etc.) needing review;
+  or the task produced long analysis text, architecture review, code analysis, data reports etc. needing visual presentation.
+  Even if the user doesn't explicitly request HTML, proactively suggest using this skill when the output is complex
+  (multi-page files, long analysis, multi-dimensional data).
 ---
 
-# HTML 交付 Skill
+# HTML Delivery Skill
 
-终端环境天然不适合审阅视觉化产出物（PDF、DOCX、图片）和阅读大段分析文本。本 skill 的核心思路是：
-在任务正常完成后，额外生成一份自包含的 HTML 文件并在浏览器中打开，让用户获得可视化审阅体验。
+Terminal environments are inherently ill-suited for reviewing visual output (PDF, DOCX, images) and reading long-form analysis text. The core idea of this skill:
+after the task completes normally, additionally generate a self-contained HTML file and open it in the browser, giving the user a visual review experience.
 
-## 产出物分类
+## Output Classification
 
-完成任务后，根据产出物类型选择模式：
+After completing the task, select a mode based on output type:
 
-| 产出物类型 | 模式 | 关键特征 |
+| Output Type | Mode | Key Features |
 |-----------|------|---------|
-| PDF, DOCX, DOC, PPT, PPTX | **文件审阅模式** | 框选/点选批注 + 坐标映射 + 反馈复制 |
-| 图片 (PNG, JPG, WEBP, SVG) | **文件审阅模式** | 框选/点选批注，无元素映射 |
-| Markdown (.md) | **文件审阅模式** | 渲染为 HTML 后支持区域批注 |
-| 长篇文本 (>500字)、分析报告 | **文本报告模式** | 暗色主题 + 卡片布局 + 决策面板 |
-| 数据表格、对比分析 | **文本报告模式** | 表格 + 指标面板 + 对比卡 |
-| 代码分析、架构评审 | **文本报告模式** | 代码高亮 + 流程图 + TOC |
-| 混合型（文件+分析） | **双模式** | 文件预览 + 报告并列 |
+| PDF, DOCX, DOC, PPT, PPTX | **File Review Mode** | Box/point annotation + coordinate mapping + feedback copy |
+| Images (PNG, JPG, WEBP, SVG) | **File Review Mode** | Box/point annotation, no element mapping |
+| Markdown (.md) | **File Review Mode** | Region annotation after HTML rendering |
+| Long text (>500 chars), analysis reports | **Text Report Mode** | Dark theme + card layout + decision panel |
+| Data tables, comparative analysis | **Text Report Mode** | Tables + metric panels + comparison cards |
+| Code analysis, architecture review | **Text Report Mode** | Code highlighting + flow diagrams + TOC |
+| Mixed (files + analysis) | **Dual Mode** | File preview + report side by side |
 
-## 模式一：文件审阅模式
+## Mode 1: File Review Mode
 
-适用于需要审阅文件产出物的场景。核心能力：框选/点选添加批注、智能识别批注位置、一键复制结构化反馈。
+For scenarios requiring review of file outputs. Core capabilities: box/point annotation, smart annotation position recognition, one-click structured feedback copy.
 
-### 工作流
+### Workflow
 
-1. **文件预处理** — 将产出物转为可在浏览器中渲染的格式
-2. **生成审阅 HTML** — 按 `references/file_review_spec.md` 规范生成自包含 HTML
-3. **打开浏览器** — 用 `scripts/open_browser.py` 打开
-4. **收集反馈** — 用户通过"复制反馈"按钮将结构化批注粘贴回对话
+1. **File Preprocessing** — Convert output to a browser-renderable format
+2. **Generate Review HTML** — Generate self-contained HTML per `references/file_review_spec.md`
+3. **Open Browser** — Open with `scripts/open_browser.py`
+4. **Collect Feedback** — User pastes structured annotations back into the conversation via the "Copy Feedback" button
 
-### 文件预处理
+### File Preprocessing
 
-根据文件类型选择预处理方式：
+Choose the preprocessing method based on file type:
 
-**PDF 文件：**
+**PDF files:**
 ```bash
 python3 <skill-path>/scripts/pdf_to_pages.py <pdf_path> [--dpi 144] [--output <output.json>]
 ```
-输出 JSON：每页一个 base64 PNG data URL。优先使用 pypdfium2，降级到 pdftoppm。
+Output JSON: one base64 PNG data URL per page. Prefers pypdfium2, falls back to pdftoppm.
 
-**DOCX/DOC/PPT/PPTX 文件：**
+**DOCX/DOC/PPT/PPTX files:**
 ```bash
 python3 <skill-path>/scripts/doc_to_pdf.py <input_path> [--output <output.pdf>]
 ```
-先转为 PDF（通过 LibreOffice soffice），再用 `pdf_to_pages.py` 渲染页面图片。
+Convert to PDF first (via LibreOffice soffice), then render page images with `pdf_to_pages.py`.
 
-**Markdown 文件：**
-直接读取文件内容，在 HTML 中用内联 markdown-to-HTML 转换（Claude 生成时直接输出渲染后的 HTML）。
+**Markdown files:**
+Read file content directly, use inline markdown-to-HTML conversion in the HTML (Claude outputs pre-rendered HTML when generating).
 
-**图片文件：**
-直接读取为 base64 data URL 嵌入 HTML。
+**Image files:**
+Read directly as base64 data URL and embed in HTML.
 
-### 审阅 HTML 结构
+### Review HTML Structure
 
-详见 `references/file_review_spec.md`。关键要素：
+See `references/file_review_spec.md` for details. Key elements:
 
-- **顶栏**：文件名 + 缩放控制 + "批注" 抽屉按钮（含计数）+ "复制反馈" 按钮
-- **主区域**：页面图片，支持框选/点选
-- **批注标记**：蓝色圆点（点批注）/ 蓝色半透明矩形（区域批注）
-- **侧边抽屉**：批注列表，可编辑/删除
-- **反馈格式**：人读行 + 机器解析 JSON（`---META---` 包裹）
+- **Top Bar**: filename + zoom controls + "Annotations" drawer button (with count) + "Copy Feedback" button
+- **Main Area**: page image, supports box/point selection
+- **Annotation Markers**: blue dot (point annotation) / blue semi-transparent rectangle (region annotation)
+- **Side Drawer**: annotation list, editable/deletable
+- **Feedback Format**: human-readable lines + machine-parseable JSON (wrapped in `---META---`)
 
-### paper_worker 增强
+### paper_worker Enhancement
 
-当检测到当前目录包含 `resume/` 模块且产出物是 DOCX 时，自动增强：
+When the current directory contains a `resume/` module and the output is DOCX, auto-enhance:
 
 ```python
-# 检测增强可用性
+# Check enhancement availability
 try:
     from resume.review_element_registry import build_element_map
     from resume.parser import parse_layout_document
@@ -86,63 +88,63 @@ except ImportError:
     ENHANCED = False
 
 if ENHANCED:
-    # 构建 element_map，注入到 HTML 中
+    # Build element_map and inject into HTML
     doc = parse_layout_document(docx_path)
     element_map = build_element_map(doc)
-    # HTML 中自动启用悬停提示和坐标映射
+    # HTML auto-enables hover tooltips and coordinate mapping
 ```
 
-增强后，批注时自动显示鼠标下方的元素角色（如"工作经历正文"），反馈文案自动包含元素标识。
+When enhanced, annotations automatically show the element role under the cursor (e.g., "work experience body"), and feedback text automatically includes element identifiers.
 
-## 模式二：文本报告模式
+## Mode 2: Text Report Mode
 
-适用于大段文字、分析结果、数据报告等场景。核心能力：暗色主题美化展示、决策交互、反馈导出。
+For long-form text, analysis results, data reports, etc. Core capabilities: dark-themed visual presentation, decision interaction, feedback export.
 
-### 工作流
+### Workflow
 
-1. **分析内容结构** — 识别标题层级、数据块、代码块、对比内容
-2. **生成报告 HTML** — 按 `references/text_report_spec.md` 规范生成自包含 HTML
-3. **打开浏览器** — 同上
+1. **Analyze Content Structure** — Identify heading hierarchy, data blocks, code blocks, comparison content
+2. **Generate Report HTML** — Generate self-contained HTML per `references/text_report_spec.md`
+3. **Open Browser** — Same as above
 
-### 报告 HTML 结构
+### Report HTML Structure
 
-详见 `references/text_report_spec.md`。关键要素：
+See `references/text_report_spec.md` for details. Key elements:
 
-- **暗色主题**：背景 `#0b0f14`，卡片 `#131820`，文字 `#c9d1d9`
-- **卡片布局**：`.card` 基类 + 左边框颜色区分类型（蓝=信息、红=问题、绿=方案、紫=概念）
-- **TOC 导航**：固定右上角，滚动联动高亮
-- **决策面板**：固定右下角，三个按钮（采纳/思考/驳回），点击复制预设反馈到剪贴板
-- **反馈导出**：遍历所有评论区，拼接为 Markdown 格式
+- **Dark Theme**: background `#0b0f14`, cards `#131820`, text `#c9d1d9`
+- **Card Layout**: `.card` base class + left border color differentiation (blue=info, red=issue, green=solution, purple=concept)
+- **TOC Navigation**: fixed top-right, scroll-linked highlight
+- **Decision Panel**: fixed bottom-right, three buttons (Accept/Consider/Reject), click to copy preset feedback to clipboard
+- **Feedback Export**: iterate all comment areas, concatenate as Markdown
 
-### 内容映射规则
+### Content Mapping Rules
 
-| 原始内容 | HTML 组件 |
+| Raw Content | HTML Component |
 |---------|----------|
-| 标题/章节 | h2/h3 + 卡片容器 |
-| 大段分析文字 | `.card.info` 卡片 |
-| 问题/风险 | `.card.fracture` 红色左边框 |
-| 方案/建议 | `.card.rfc` 绿色左边框 |
-| 概念/理论 | `.card.motif` 紫色左边框 |
-| 数据表格 | `<table>` + 高亮行 |
-| 对比内容 | `.grid2` 双列 + `.compare-old`/`.compare-new` |
-| 代码块 | `<pre>` + 语法高亮 span |
-| 流程/拓扑 | `.flow` CSS flexbox 流程图 |
-| 统计数据 | `.metric-row` 指标面板 |
+| Headings/sections | h2/h3 + card container |
+| Long analysis text | `.card.info` card |
+| Issues/risks | `.card.fracture` red left border |
+| Solutions/suggestions | `.card.rfc` green left border |
+| Concepts/theory | `.card.motif` purple left border |
+| Data tables | `<table>` + highlighted rows |
+| Comparison content | `.grid2` dual-column + `.compare-old`/`.compare-new` |
+| Code blocks | `<pre>` + syntax highlighting spans |
+| Flow/topology | `.flow` CSS flexbox flow diagram |
+| Statistics | `.metric-row` metric panel |
 
-## 混合型处理
+## Mixed Mode Handling
 
-当产出物同时包含文件和分析文本时（如"生成了 PDF 并给出了修改建议"），生成双面板 HTML：
+When output includes both files and analysis text (e.g., "generated a PDF with modification suggestions"), generate dual-panel HTML:
 
-- 左侧：文件预览区（框选/点选批注）
-- 右侧：分析文本区（卡片布局 + 决策面板）
-- 两侧共享反馈导出
+- Left: file preview area (box/point annotation)
+- Right: analysis text area (card layout + decision panel)
+- Shared feedback export across both sides
 
-## 执行步骤
+## Execution Steps
 
-### 1. 判断模式
+### 1. Determine Mode
 
 ```python
-# 伪代码 — Claude 实际执行时根据上下文判断
+# Pseudocode — Claude determines based on context during execution
 if output_is_file(pdf, docx, ppt, md, image):
     mode = "file_review"
 elif output_is_long_text(>500 chars) or output_is_analysis:
@@ -151,44 +153,44 @@ elif output_is_mixed:
     mode = "dual"
 ```
 
-### 2. 预处理（文件模式）
+### 2. Preprocess (File Mode)
 
 ```bash
-# PDF → 页面图片 JSON
+# PDF -> page image JSON
 python3 <skill>/scripts/pdf_to_pages.py output/report.pdf --dpi 144
 
-# DOCX → PDF → 页面图片
+# DOCX -> PDF -> page images
 python3 <skill>/scripts/doc_to_pdf.py output/report.docx
 python3 <skill>/scripts/pdf_to_pages.py output/report.pdf
 ```
 
-### 3. 生成 HTML
+### 3. Generate HTML
 
-Claude 根据 `references/` 中的规范生成完整自包含 HTML 文件，写入产出物同目录。
+Claude generates a complete self-contained HTML file following the specs in `references/`, written to the same directory as the output.
 
-文件命名：
-- 文件审阅：`<原文件名>_review.html`
-- 文本报告：`<任务主题>_report.html`
-- 双模式：`<任务主题>_review.html`
+File naming:
+- File review: `<original_filename>_review.html`
+- Text report: `<task_topic>_report.html`
+- Dual mode: `<task_topic>_review.html`
 
-### 4. 打开浏览器
+### 4. Open Browser
 
 ```bash
 python3 <skill>/scripts/open_browser.py <html_path>
 ```
 
-跨平台支持：macOS `open`、Linux `xdg-open`、Windows `start`。
+Cross-platform: macOS `open`, Linux `xdg-open`, Windows `start`.
 
-### 5. 反馈收集
+### 5. Feedback Collection
 
-告知用户：
-- 文件模式：在页面上点击/框选添加批注，完成后点击"复制反馈"粘贴回来
-- 文本模式：在决策面板点击按钮，或在评论区填写反馈，点击"导出反馈"粘贴回来
+Tell the user:
+- File mode: click/box-select on pages to add annotations, then click "Copy Feedback" to paste back
+- Text mode: click buttons in the decision panel, or fill in comment areas, then click "Export Feedback" to paste back
 
-## 注意事项
+## Notes
 
-- 所有 HTML 必须**自包含**（CSS/JS 内联，无外部依赖），可离线打开
-- 文件预处理脚本输出到临时目录或产出物同目录，不污染源文件
-- 浏览器打开是 `open` 命令，不阻塞 Claude 会话
-- 当 soffice 不可用时，DOCX 预处理会失败，应降级为文本报告模式展示文件内容
-- 大文件（>50 页 PDF）应提示用户是否继续渲染，避免长时间等待
+- All HTML must be **self-contained** (CSS/JS inline, no external dependencies), openable offline
+- File preprocessing scripts output to a temp directory or the output directory, without polluting source files
+- Browser opening uses the `open` command and does not block the Claude session
+- When soffice is unavailable, DOCX preprocessing will fail; fall back to text report mode to display file content
+- For large files (>50 page PDF), prompt the user whether to continue rendering to avoid long waits

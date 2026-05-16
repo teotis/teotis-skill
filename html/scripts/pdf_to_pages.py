@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""PDF → 页面 PNG base64 data URL JSON。
+"""PDF -> page PNG base64 data URL JSON.
 
-用法:
+Usage:
     python3 pdf_to_pages.py <pdf_path> [--dpi 144] [--output <output.json>]
 
-输出 JSON 格式:
+Output JSON format:
     [{"page": 1, "data_url": "data:image/png;base64,..."}, ...]
 
-优先使用 pypdfium2，降级到 pdftoppm CLI。
+Prefers pypdfium2, falls back to pdftoppm CLI.
 """
 import argparse
 import base64
@@ -60,31 +60,31 @@ def render_with_pdftoppm(pdf_path: str, dpi: int) -> list[dict]:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="PDF → 页面 PNG data URL JSON")
-    parser.add_argument("pdf_path", help="PDF 文件路径")
-    parser.add_argument("--dpi", type=int, default=144, help="渲染 DPI (默认 144)")
-    parser.add_argument("--output", "-o", help="输出 JSON 文件路径 (默认 stdout)")
+    parser = argparse.ArgumentParser(description="PDF -> page PNG data URL JSON")
+    parser.add_argument("pdf_path", help="Path to PDF file")
+    parser.add_argument("--dpi", type=int, default=144, help="Render DPI (default 144)")
+    parser.add_argument("--output", "-o", help="Output JSON file path (default stdout)")
     args = parser.parse_args()
 
     pdf_path = args.pdf_path
     if not Path(pdf_path).exists():
-        print(f"错误: 文件不存在: {pdf_path}", file=sys.stderr)
+        print(f"Error: file not found: {pdf_path}", file=sys.stderr)
         sys.exit(1)
 
     try:
         pages = render_with_pypdfium2(pdf_path, args.dpi)
     except ImportError:
-        print("pypdfium2 不可用，降级到 pdftoppm...", file=sys.stderr)
+        print("pypdfium2 not available, falling back to pdftoppm...", file=sys.stderr)
         try:
             pages = render_with_pdftoppm(pdf_path, args.dpi)
         except (RuntimeError, FileNotFoundError) as e:
-            print(f"错误: {e}", file=sys.stderr)
+            print(f"Error: {e}", file=sys.stderr)
             sys.exit(1)
 
     output_json = json.dumps(pages, ensure_ascii=False)
     if args.output:
         Path(args.output).write_text(output_json, encoding="utf-8")
-        print(f"已输出 {len(pages)} 页到 {args.output}", file=sys.stderr)
+        print(f"Output {len(pages)} pages to {args.output}", file=sys.stderr)
     else:
         print(output_json)
 
