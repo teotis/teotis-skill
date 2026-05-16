@@ -2,6 +2,8 @@
 
 A curated set of Claude Code skills for enhanced engineering workflows.
 
+[中文版本](README.zh-CN.md)
+
 ## Skills
 
 ### `html` — Visual Output Delivery
