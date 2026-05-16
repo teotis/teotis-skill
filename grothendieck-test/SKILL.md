@@ -352,6 +352,7 @@ The analysis is NOT a linear scan through principles. It is a **5-Pass structure
   - "Next Investigation": what to look at next, what evidence is still missing
   - This section explicitly positions the analysis as the START of a research program, not its conclusion
 - **Self-Assessment**: Honestly list blind spots, uncertainties, and limitations of the analysis
+- **Interactive Review on EVERY card**: Each card in ALL 6 sections + Self-Assessment MUST include at the bottom: a 5-star rating widget, a context-aware status tag selector, and a comment textarea — all persisted via `localStorage`. See Interactive Review System spec below for per-section tag configurations.
 
 ### Topological Evolution Diagrams (CRITICAL)
 
@@ -360,6 +361,12 @@ Each Major Finding card (Section 3) and the Reconstruction Blueprint (Section 5)
 - You MUST generate two Mermaid.js graphs to visually demonstrate the architecture's shape.
 - Place them in a dedicated `<div class="topology-compare">` that spans the full card width.
 - Each diagram gets its own `<div class="topology-diagram">` with a label (`Current Topology` / `Elevated Topology`).
+- **Mermaid Syntax Compatibility (CRITICAL)** — Mermaid 10.9.6 has strict parsing. To prevent "Syntax error in text" failures, all Mermaid code MUST follow these rules:
+  1. **No Emoji in Mermaid code**: Replace all multi-byte Unicode characters with plain ASCII text markers inside Mermaid blocks. ⚠️→`[!]`, 🔶→`[*]`, ⭐→`[star]`, 🎯→`[target]`, 📈→`[up]`, ⚙️→`[cfg]`, ❌→`[X]`, ✅→`[OK]`. Never use any emoji in node labels, edge labels, or subgraph titles.
+  2. **Use `flowchart` instead of `graph`**: Always use `flowchart TB`, `flowchart LR`, `flowchart TD` etc. — never `graph TB`, `graph LR`, `graph TD`. The `flowchart` keyword is the modern syntax with better Mermaid 10 compatibility.
+  3. **No `linkStyle` directives**: Do NOT use `linkStyle` statements anywhere. These are known to cause parsing errors in Mermaid 10. They do not affect diagram semantics and can be safely omitted.
+  4. **`subgraph id["label"]` format**: Always use the named-ID bracket format for subgraphs: `subgraph g1["Display Label"]` instead of `subgraph "Display Label"`. This avoids special-character parsing failures in quoted labels.
+  5. **Sanitize node text**: Remove all special characters from node text, especially inside `<br/>` tags. Replace path-like characters (`*`, `**`, `/v1/`) with plain `/` separators. Example: instead of `Module<br/>**/v1/api**`, write `Module<br/>/v1/api`.
 - **Sizing (IMPORTANT)**: Each `.topology-diagram .mermaid` container MUST have `min-height: 380px` and `width: 100%`. Do NOT add `%%{init:...}%%` blocks to individual Mermaid diagrams — the global `<script>` initialization in `<head>` already sets `theme: 'dark'` and all `themeVariables` (fontSize, colors). Adding a local init overrides the global dark theme without declaring `theme`, causing Mermaid to fall back to light theme defaults while text remains light-colored, making labels invisible. Never let Mermaid diagrams render at the tiny default size — they must be large enough that node labels and edge annotations are clearly legible.
 - 'Current Topology' (Red): Visually depict the "bad shape" (e.g., spaghetti coupling, M×N cross-connections, missing abstraction). Use red-tinted borders and red stroke colors for problematic links.
 - 'Elevated Topology' (Green): Visually depict the Grothendieck "elegant shape" (e.g., funneling through a Functor, strict layer Sheaves, clear Base Change parameterization). Use green-tinted borders and thicker/green lines for the new clean pathways.
@@ -431,26 +438,41 @@ Each Major Finding card (Section 3) and the Reconstruction Blueprint (Section 5)
 
 ### Interactive Review System (Must implement in vanilla JS)
 
-1. **At the bottom of each suggestion card (Section 3), render:**
-   - A `<textarea>` for review comments
-   - A **5-star rating widget** for acceptance scoring (1-5 stars)
-   - **Status tag selector**: `[Agree] [Doubtful] [Already Exists / False Positive] [Not Applicable to Business]`
-   - All persisted with `localStorage`, survives page refresh
+**CRITICAL**: Every chapter card across ALL sections MUST support interactive review. The review system is not limited to Section 3 — it spans the entire report. Each card in every section gets its own rating widget, comment area, and status tag selector. All persisted with `localStorage`.
+
+1. **For EVERY card in EVERY section, render at the bottom:**
+   - A `<textarea>` for review comments (placeholder: "Write your review comments here...")
+   - A **5-star rating widget** for scoring (1-5 stars), labeled for the card's content type
+   - **Context-aware status tags** that adapt to each section's content:
+     - **Section 1 (Territory Map)**: `[Accurate] [Partially Accurate] [Inaccurate] [Missing Coverage]`
+     - **Section 2 (Motive Catalog)**: `[Valid Motive] [Needs Refinement] [False Motive] [Missing Members]`
+     - **Section 3 (Cross-Illuminated Findings)**: `[Agree] [Doubtful] [Already Exists / False Positive] [Not Applicable to Business]`
+     - **Section 4 (Root Cause Map)**: `[Agree with Root Cause] [Partial Root] [Symptom, Not Cause] [Incorrect Causal Link]`
+     - **Section 5 (Reconstruction Blueprint)**: `[Viable Design] [Needs Refinement] [Too Abstract] [Missing Pieces]`
+     - **Section 6 (Research Directions)**: `[Worth Exploring] [Low Priority] [Already Known] [Wrong Direction]`
+   - All sections: Use shared CSS class `.card-feedback` with the same `localStorage` persistence pattern
    - **Topology Zoom/Lightbox** (MANDATORY): Every Mermaid diagram MUST be clickable to open a full-screen lightbox for detailed inspection. Implementation:
      - On page load, wrap each `.mermaid` element's parent `.topology-diagram` with a click handler.
      - When clicked: clone the inner SVG into a `.lightbox` div, add `.active` class, append to `<body>`.
      - The lightbox centers the diagram at large size (min 700x500px) on an opaque dark backdrop.
      - Click the backdrop or press ESC to close and remove the lightbox element.
      - This is essential — the inline diagram shows the big picture, the lightbox lets you read every label.
-2. **Export Feedback FAB**: Fixed floating button in bottom-right corner "Export Feedback"
+
+2. **Section-Level Summary Panel**: At the end of each section, render a collapsible summary row showing:
+   - Average rating across all cards in that section
+   - Count of cards reviewed / total cards in section
+   - Quick-jump links to unreviewed cards in that section
+
+3. **Export Feedback FAB**: Fixed floating button in bottom-right corner "Export Feedback"
    - On click, JS must execute the following:
-     1. Iterate over all cards with feedback and concatenate their title/rating/tag/text into a formatted Markdown string.
+     1. Iterate over ALL cards across ALL sections and concatenate their section name, card title, rating, tag, and comment text into a formatted Markdown string grouped by section.
      2. IMPORTANT: Append the following exact text at the very end of the generated Markdown string:
    
         "[Next Action Directive] Temporarily set aside Grothendieck's purely abstract perspective and return to the pragmatic engineering perspective of a frontline senior architect. Based on my review feedback above, please comprehensively evaluate these refactoring directions considering their 'short, medium, and long-term ROI', 'implementation risks and costs', and 'architectural impact on existing business'. Help me identify the most practical and cost-effective entry points for implementation. Once a smooth transitional refactoring plan is formulated, please proceed directly to executing the concrete code modifications."
      3. Write the final concatenated string to the clipboard using navigator.clipboard.writeText.
-   - Show native `alert` or friendly Toast: "Copied successfully, can paste directly to AI for next deep-dive round"
-3. **TOC scroll linkage**: Current section highlighted in TOC
+   - Show native `alert` or friendly Toast: "All section feedback exported. Paste directly into AI for next deep-dive round."
+
+4. **TOC scroll linkage**: Current section highlighted in TOC
 
 ### Delivery
 
@@ -475,6 +497,7 @@ Each Major Finding card (Section 3) and the Reconstruction Blueprint (Section 5)
 
 ## Critical Rules
 
+- **Mermaid Syntax Compatibility** — Follow all 5 rules listed in the Topological Evolution Diagrams section above: no emoji, use `flowchart` not `graph`, no `linkStyle`, use `subgraph id["label"]` format, sanitize node text. Violating any of these causes "Syntax error in text" on Mermaid 10.9.6.
 - **No `%%{init}%%` in individual Mermaid diagrams** — the global `<script>` initialization already sets `theme: 'dark'` and all `themeVariables`. Adding a local init overrides the global dark theme, causing Mermaid to fall back to light defaults with light text, making labels invisible.
 - **Each Major Finding MUST reference specific file/class/method paths** — no vague assertions
 - **Motive Discovery MUST be exhaustive** — scan the entire codebase, not just a few files

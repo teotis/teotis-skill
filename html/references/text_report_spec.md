@@ -267,6 +267,16 @@ mermaid.initialize({
 
 The themeVariables are tuned to match the report's dark theme (`--bg: #0b0f14`, `--surface: #131820`).
 
+### Mermaid Syntax Compatibility (CRITICAL)
+
+Mermaid 10.9.6 has strict parsing. To prevent "Syntax error in text" failures, all Mermaid code in generated HTML MUST follow these rules:
+
+1. **No Emoji in Mermaid code**: Replace all multi-byte Unicode characters with plain ASCII text markers inside Mermaid blocks. ⚠️→`[!]`, 🔶→`[*]`, ⭐→`[star]`, 🎯→`[target]`, 📈→`[up]`, ⚙️→`[cfg]`, ❌→`[X]`, ✅→`[OK]`. Never use any emoji in node labels, edge labels, or subgraph titles.
+2. **Use `flowchart` instead of `graph`**: Always use `flowchart TB`, `flowchart LR`, `flowchart TD` etc. — never `graph TB`, `graph LR`, `graph TD`. The `flowchart` keyword is the modern syntax with better Mermaid 10 compatibility.
+3. **No `linkStyle` directives**: Do NOT use `linkStyle` statements anywhere. These are known to cause parsing errors in Mermaid 10. They do not affect diagram semantics and can be safely omitted.
+4. **`subgraph id["label"]` format**: Always use the named-ID bracket format for subgraphs: `subgraph g1["Display Label"]` instead of `subgraph "Display Label"`. This avoids special-character parsing failures in quoted labels.
+5. **Sanitize node text**: Remove all special characters from node text, especially inside `<br/>` tags. Replace path-like characters (`*`, `**`, `/v1/`) with plain `/` separators. Example: instead of `Module<br/>**/v1/api**`, write `Module<br/>/v1/api`.
+
 ### Lightbox JavaScript
 
 When any Mermaid diagram is present, include this `<script>` at the bottom of `<body>`:
@@ -419,8 +429,8 @@ Choose the appropriate diagram approach based on content complexity:
 | Content | Diagram Type | HTML Pattern | Requires Mermaid CDN? |
 |---------|-------------|-------------|----------------------|
 | Simple linear flow (3-5 steps) | `.flow` CSS flexbox | `<div class="flow"><span class="box">A</span><span class="arrow">&rarr;</span><span class="box">B</span></div>` | No |
-| Architecture overview | `.topology-diagram.single` Mermaid | `<div class="topology-diagram single"><div class="label">System Topology</div><div class="mermaid">graph TB\n  A --> B</div></div>` | Yes |
-| Data flow / pipeline | `.topology-diagram.single` Mermaid | Same as above, use `graph LR` for horizontal | Yes |
+| Architecture overview | `.topology-diagram.single` Mermaid | `<div class="topology-diagram single"><div class="label">System Topology</div><div class="mermaid">flowchart TB\n  A --> B</div></div>` | Yes |
+| Data flow / pipeline | `.topology-diagram.single` Mermaid | Same as above, use `flowchart LR` for horizontal | Yes |
 | Before/after refactoring | `.topology-compare` dual Mermaid | `<div class="topology-compare"><div class="topology-diagram current"><div class="label">Current</div><div class="mermaid">...</div></div><div class="topology-diagram elevated"><div class="label">Proposed</div><div class="mermaid">...</div></div></div>` | Yes |
 | Entity relationship | `.topology-diagram.single` Mermaid | Use `erDiagram` in Mermaid block | Yes |
 | Sequence / interaction | `.topology-diagram.single` Mermaid | Use `sequenceDiagram` in Mermaid block | Yes |
