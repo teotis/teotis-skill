@@ -137,7 +137,27 @@ Yoneda lemma (roughly): **an object is completely determined by "all morphisms p
 - Mermaid.js Integration (CRITICAL):
   The HTML <head> MUST include the following script to render topology diagrams:
 
-  <script type="module">import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs'; mermaid.initialize({ startOnLoad: true, theme: 'dark' });</script>
+  <script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    themeVariables: {
+      fontSize: '16px',
+      primaryColor: '#2d3748',
+      primaryTextColor: '#e2e8f0',
+      primaryBorderColor: '#4a5568',
+      lineColor: '#718096',
+      secondaryColor: '#1a202c',
+      tertiaryColor: '#2d3748',
+      nodeBorder: '#4a5568',
+      clusterBkg: '#1a202c',
+      clusterBorder: '#4a5568',
+      titleColor: '#e2e8f0',
+      edgeLabelBackground: '#1a202c'
+    }
+  });
+  </script>
 
 ### Report Structure
 
@@ -152,24 +172,49 @@ Yoneda lemma (roughly): **an object is completely determined by "all morphisms p
     - You MUST generate two Mermaid.js graphs to visually demonstrate the architecture's shape.
     - Place them in a dedicated `<div class="topology-compare">` that spans the full card width.
     - Each diagram gets its own `<div class="topology-diagram">` with a label (`Current Topology` / `Elevated Topology`).
-    - **Sizing (IMPORTANT)**: Each `.topology-diagram .mermaid` container MUST have `min-height: 380px` and `width: 100%`. Use `%%{init: {'themeVariables': { 'fontSize': '16px' }}}%%` in Mermaid to ensure readable text. Never let Mermaid diagrams render at the tiny default size — they must be large enough that node labels and edge annotations are clearly legible.
+    - **Sizing (IMPORTANT)**: Each `.topology-diagram .mermaid` container MUST have `min-height: 380px` and `width: 100%`. Use `%%{init: {'themeVariables': { 'fontSize': '16px', 'primaryColor': '#2d3748', 'primaryTextColor': '#e2e8f0', 'primaryBorderColor': '#4a5568', 'lineColor': '#718096', 'nodeBorder': '#4a5568' }}}%%` in Mermaid to ensure readable text and dark-background-compatible node colors. Never let Mermaid diagrams render at the tiny default size — they must be large enough that node labels and edge annotations are clearly legible.
     - 'Current Topology' (Red): Visually depict the "bad shape" (e.g., spaghetti coupling, M×N cross-connections, missing abstraction). Use red-tinted borders and red stroke colors for problematic links.
     - 'Elevated Topology' (Green): Visually depict the Grothendieck "elegant shape" (e.g., funneling through a Functor, strict layer Sheaves, clear Base Change parameterization). Use green-tinted borders and thicker/green lines for the new clean pathways.
     - **Lightbox Zoom**: Clicking any topology diagram opens it in a full-screen lightbox overlay (dark backdrop, centered image, close on click/ESC). This is mandatory — the inline diagram provides the overview, the lightbox provides the detailed inspection.
     - Required CSS for diagrams:
       ```css
+      /* Topology diagram theme variables (dark by default, light mode override) */
+      :root {
+        --topo-bg: #1a1a1a;
+        --topo-current-label-bg: rgba(248,81,73,0.15);
+        --topo-current-label-color: #f85149;
+        --topo-current-border: rgba(248,81,73,0.2);
+        --topo-elevated-label-bg: rgba(63,185,80,0.15);
+        --topo-elevated-label-color: #3fb950;
+        --topo-elevated-border: rgba(63,185,80,0.2);
+        --lb-backdrop: rgba(0,0,0,0.85);
+        --lb-content-bg: #1a1a1a;
+      }
+      @media (prefers-color-scheme: light) {
+        :root {
+          --topo-bg: #f0f0f0;
+          --topo-current-label-bg: rgba(220,53,69,0.1);
+          --topo-current-label-color: #dc3545;
+          --topo-current-border: rgba(220,53,69,0.15);
+          --topo-elevated-label-bg: rgba(25,135,84,0.1);
+          --topo-elevated-label-color: #198754;
+          --topo-elevated-border: rgba(25,135,84,0.15);
+          --lb-backdrop: rgba(255,255,255,0.92);
+          --lb-content-bg: #ffffff;
+        }
+      }
       .topology-compare { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 24px; }
       .topology-diagram { flex: 1; min-width: 340px; }
-      .topology-diagram .mermaid { min-height: 380px; width: 100%; }
+      .topology-diagram .mermaid { min-height: 380px; width: 100%; background: var(--topo-bg); }
       .topology-diagram .label { font-size: 14px; font-weight: 600; margin-bottom: 8px; padding: 4px 12px; border-radius: 4px; display: inline-block; }
-      .topology-diagram.current .label { background: rgba(248,81,73,0.15); color: #f85149; }
-      .topology-diagram.current .mermaid { border: 2px solid rgba(248,81,73,0.2); border-radius: 8px; padding: 16px; }
-      .topology-diagram.elevated .label { background: rgba(63,185,80,0.15); color: #3fb950; }
-      .topology-diagram.elevated .mermaid { border: 2px solid rgba(63,185,80,0.2); border-radius: 8px; padding: 16px; }
+      .topology-diagram.current .label { background: var(--topo-current-label-bg); color: var(--topo-current-label-color); }
+      .topology-diagram.current .mermaid { border: 2px solid var(--topo-current-border); border-radius: 8px; padding: 16px; }
+      .topology-diagram.elevated .label { background: var(--topo-elevated-label-bg); color: var(--topo-elevated-label-color); }
+      .topology-diagram.elevated .mermaid { border: 2px solid var(--topo-elevated-border); border-radius: 8px; padding: 16px; }
       /* Lightbox */
-      .lightbox { display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.85); cursor: pointer; }
+      .lightbox { display: none; position: fixed; inset: 0; z-index: 9999; background: var(--lb-backdrop); cursor: pointer; }
       .lightbox.active { display: flex; align-items: center; justify-content: center; }
-      .lightbox .mermaid { min-width: 700px; min-height: 500px; }
+      .lightbox .mermaid { min-width: 700px; min-height: 500px; background: var(--lb-content-bg); border-radius: 8px; padding: 24px; }
       ```
 
     - Required JS for lightbox:
@@ -183,7 +228,7 @@ Yoneda lemma (roughly): **an object is completely determined by "all morphisms p
           lb.className = 'lightbox active';
           const wrapper = document.createElement('div');
           wrapper.className = 'mermaid';
-          wrapper.style.cssText = 'min-width:700px;min-height:500px;background:#1a1a1a;border-radius:8px;padding:24px;';
+          wrapper.style.cssText = 'min-width:700px;min-height:500px;';
           wrapper.appendChild(svg);
           lb.appendChild(wrapper);
           document.body.appendChild(lb);

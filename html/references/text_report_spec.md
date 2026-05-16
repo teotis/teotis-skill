@@ -170,6 +170,41 @@ code:not(pre code) {
 .flow .arrow { color: var(--text-dim); font-size: 18px; }
 ```
 
+### Mermaid Topology Diagrams
+
+Use Mermaid.js for architecture overviews, data flows, entity relationships, and before/after refactoring comparisons. Every `.topology-diagram` automatically gets click-to-zoom lightbox behavior when Mermaid is loaded.
+
+```css
+/* Layout */
+.topology-compare { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 24px; margin-bottom: 16px; }
+.topology-diagram { flex: 1; min-width: 340px; }
+.topology-diagram .mermaid {
+  min-height: 380px; width: 100%;
+  background: var(--surface); border-radius: 8px; padding: 16px;
+}
+.topology-diagram .label {
+  font-size: 14px; font-weight: 600; margin-bottom: 8px;
+  padding: 4px 12px; border-radius: 4px; display: inline-block;
+}
+
+/* Current/before state (red tint) */
+.topology-diagram.current .label { background: rgba(248,81,73,0.15); color: var(--red); }
+.topology-diagram.current .mermaid { border: 2px solid rgba(248,81,73,0.18); }
+
+/* Elevated/after state (green tint) */
+.topology-diagram.elevated .label { background: rgba(63,185,80,0.15); color: var(--green); }
+.topology-diagram.elevated .mermaid { border: 2px solid rgba(63,185,80,0.18); }
+
+/* Single diagram (blue tint, for standalone topology overviews) */
+.topology-diagram.single .label { background: rgba(88,166,255,0.1); color: var(--blue); }
+.topology-diagram.single .mermaid { border: 2px solid rgba(88,166,255,0.12); }
+
+/* Lightbox overlay */
+.lightbox { display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.85); cursor: pointer; }
+.lightbox.active { display: flex; align-items: center; justify-content: center; }
+.lightbox .mermaid { min-width: 700px; min-height: 500px; background: var(--surface); border-radius: 8px; padding: 24px; }
+```
+
 ### Tables
 
 ```css
@@ -200,6 +235,64 @@ tr.del td { background: rgba(63,185,80,0.06); }
 }
 .toc a:hover, .toc a.active { color: var(--accent); border-left-color: var(--accent); }
 @media (max-width: 700px) { .toc { display: none; } }
+```
+
+### Mermaid.js Integration
+
+When any Mermaid diagram is used in the report, the HTML `<head>` MUST include:
+
+```html
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+mermaid.initialize({
+  startOnLoad: true,
+  theme: 'dark',
+  themeVariables: {
+    fontSize: '16px',
+    primaryColor: '#1c2333',
+    primaryTextColor: '#c9d1d9',
+    primaryBorderColor: '#30363d',
+    lineColor: '#484f58',
+    secondaryColor: '#161b22',
+    tertiaryColor: '#1c2333',
+    nodeBorder: '#30363d',
+    clusterBkg: '#0b0f14',
+    clusterBorder: '#30363d',
+    titleColor: '#c9d1d9',
+    edgeLabelBackground: '#0b0f14'
+  }
+});
+</script>
+```
+
+The themeVariables are tuned to match the report's dark theme (`--bg: #0b0f14`, `--surface: #131820`).
+
+### Lightbox JavaScript
+
+When any Mermaid diagram is present, include this `<script>` at the bottom of `<body>`:
+
+```javascript
+// Lightbox: click any topology diagram to inspect full-screen
+document.querySelectorAll('.topology-diagram').forEach(diagram => {
+  diagram.style.cursor = 'pointer';
+  diagram.addEventListener('click', () => {
+    const svgEl = diagram.querySelector('.mermaid svg');
+    if (!svgEl) return;
+    const svg = svgEl.cloneNode(true);
+    const lb = document.createElement('div');
+    lb.className = 'lightbox active';
+    const wrapper = document.createElement('div');
+    wrapper.className = 'mermaid';
+    wrapper.appendChild(svg);
+    lb.appendChild(wrapper);
+    document.body.appendChild(lb);
+    const close = () => { lb.remove(); };
+    lb.addEventListener('click', close);
+    document.addEventListener('keydown', function onEsc(e) {
+      if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onEsc); }
+    });
+  });
+});
 ```
 
 ### Decision Panel
@@ -302,3 +395,42 @@ Standard three-part structure (extensible):
 - Priority: `P0`→Red, `P1`→Yellow, `P2`→Blue
 - Type: `Issue`→Red, `Optimization`→Green, `Concept`→Purple, `Info`→Blue
 - Can be combined: `<span class="tag tag-r">P0</span> <span class="tag tag-r">Issue</span>`
+
+## Diagram Selection Guide
+
+Choose the appropriate diagram approach based on content complexity:
+
+### Decision Flow
+
+1. **Is the structure a simple linear sequence (3-5 steps)?**
+   - YES → Use `.flow` CSS flexbox (lightweight, pure CSS, no JS dependency)
+   - NO → Continue to step 2
+
+2. **Is this a before/after architecture comparison?**
+   - YES → Use `.topology-compare` with two `.topology-diagram` children (`.current` + `.elevated`), each containing a Mermaid graph
+   - NO → Continue to step 3
+
+3. **Is this a standalone architecture/topology/data-flow overview?**
+   - YES → Use a single `.topology-diagram.single` with one Mermaid graph
+   - NO → Use `.grid2` comparison cards or tables instead
+
+### Diagram Type Matrix
+
+| Content | Diagram Type | HTML Pattern | Requires Mermaid CDN? |
+|---------|-------------|-------------|----------------------|
+| Simple linear flow (3-5 steps) | `.flow` CSS flexbox | `<div class="flow"><span class="box">A</span><span class="arrow">&rarr;</span><span class="box">B</span></div>` | No |
+| Architecture overview | `.topology-diagram.single` Mermaid | `<div class="topology-diagram single"><div class="label">System Topology</div><div class="mermaid">graph TB\n  A --> B</div></div>` | Yes |
+| Data flow / pipeline | `.topology-diagram.single` Mermaid | Same as above, use `graph LR` for horizontal | Yes |
+| Before/after refactoring | `.topology-compare` dual Mermaid | `<div class="topology-compare"><div class="topology-diagram current"><div class="label">Current</div><div class="mermaid">...</div></div><div class="topology-diagram elevated"><div class="label">Proposed</div><div class="mermaid">...</div></div></div>` | Yes |
+| Entity relationship | `.topology-diagram.single` Mermaid | Use `erDiagram` in Mermaid block | Yes |
+| Sequence / interaction | `.topology-diagram.single` Mermaid | Use `sequenceDiagram` in Mermaid block | Yes |
+| Side-by-side code or text comparison | `.grid2` + `.compare-old`/`.compare-new` | Existing comparison cards | No |
+| Tabular data comparison | `<table>` with `.high`/`.del` rows | Existing table spec | No |
+
+### Mermaid Dependency Rule
+
+If ANY Mermaid diagram is present in the report:
+- Add the `<script type="module">` Mermaid CDN tag to `<head>`
+- Add the lightbox `<script>` before `</body>`
+- Every `.topology-diagram` automatically gets click-to-zoom behavior
+

@@ -128,7 +128,9 @@ See `references/text_report_spec.md` for details. Key elements:
 | Data tables | `<table>` + highlighted rows |
 | Comparison content | `.grid2` dual-column + `.compare-old`/`.compare-new` |
 | Code blocks | `<pre>` + syntax highlighting spans |
-| Flow/topology | `.flow` CSS flexbox flow diagram |
+| Simple linear flow (3-5 steps) | `.flow` CSS flexbox flow diagram |
+| Architecture/topology/data-flow overview | Mermaid `.topology-diagram.single` + lightbox zoom |
+| Before/after architecture comparison | `.topology-compare` with `.topology-diagram.current` + `.topology-diagram.elevated` (Mermaid) |
 | Statistics | `.metric-row` metric panel |
 
 ## Mixed Mode Handling
@@ -172,6 +174,23 @@ File naming:
 - File review: `<original_filename>_review.html`
 - Text report: `<task_topic>_report.html`
 - Dual mode: `<task_topic>_review.html`
+
+### Diagram Decision (before generating HTML)
+
+Before writing the HTML, classify every diagram or structural visualization in the content:
+
+| Content pattern | Use |
+|---------|------|
+| 3-5 step linear pipeline or sequence | `.flow` CSS flexbox — lightweight, no CDN needed |
+| Any architecture diagram, topology map, or data flow with more than 5 nodes | Mermaid `.topology-diagram.single` in a blue card — requires Mermaid CDN + lightbox JS |
+| "Current vs Proposed" architecture comparison | `.topology-compare` with two Mermaid diagrams (`.current` red + `.elevated` green) — requires Mermaid CDN + lightbox JS |
+| Entity-relationship or sequence diagrams | Mermaid `.topology-diagram.single` with `erDiagram` or `sequenceDiagram` syntax |
+
+**Rule of thumb**: If it has more than 5 nodes, branches, or bidirectional edges, use Mermaid. Only use `.flow` for simple, linear, one-direction sequences.
+
+If Mermaid is used at all, the HTML MUST include:
+1. The Mermaid CDN `<script type="module">` in `<head>` (with themeVariables matching the report's dark theme)
+2. The lightbox `<script>` before `</body>`
 
 ### 4. Open Browser
 
