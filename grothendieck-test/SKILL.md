@@ -355,11 +355,102 @@ The analysis is NOT a linear scan through principles. It is a **5-Pass structure
 
 ### Topological Evolution Diagrams (CRITICAL)
 
-Same specification as before for topology diagrams, sizing, red/green color scheme, lightbox zoom, and CSS. Preserve the existing diagram CSS and JS specifications exactly.
+Each Major Finding card (Section 3) and the Reconstruction Blueprint (Section 5) MUST include topology diagrams rendered as Mermaid.js graphs. Follow these specifications exactly:
 
-### Interactive Review System
+- You MUST generate two Mermaid.js graphs to visually demonstrate the architecture's shape.
+- Place them in a dedicated `<div class="topology-compare">` that spans the full card width.
+- Each diagram gets its own `<div class="topology-diagram">` with a label (`Current Topology` / `Elevated Topology`).
+- **Sizing (IMPORTANT)**: Each `.topology-diagram .mermaid` container MUST have `min-height: 380px` and `width: 100%`. Do NOT add `%%{init:...}%%` blocks to individual Mermaid diagrams — the global `<script>` initialization in `<head>` already sets `theme: 'dark'` and all `themeVariables` (fontSize, colors). Adding a local init overrides the global dark theme without declaring `theme`, causing Mermaid to fall back to light theme defaults while text remains light-colored, making labels invisible. Never let Mermaid diagrams render at the tiny default size — they must be large enough that node labels and edge annotations are clearly legible.
+- 'Current Topology' (Red): Visually depict the "bad shape" (e.g., spaghetti coupling, M×N cross-connections, missing abstraction). Use red-tinted borders and red stroke colors for problematic links.
+- 'Elevated Topology' (Green): Visually depict the Grothendieck "elegant shape" (e.g., funneling through a Functor, strict layer Sheaves, clear Base Change parameterization). Use green-tinted borders and thicker/green lines for the new clean pathways.
+- **Lightbox Zoom**: Clicking any topology diagram opens it in a full-screen lightbox overlay (dark backdrop, centered image, close on click/ESC). This is mandatory — the inline diagram provides the overview, the lightbox provides the detailed inspection.
+- Required CSS for diagrams:
+  ```css
+  /* Topology diagram theme variables (dark by default, light mode override) */
+  :root {
+    --topo-bg: #1a1a1a;
+    --topo-current-label-bg: rgba(248,81,73,0.15);
+    --topo-current-label-color: #f85149;
+    --topo-current-border: rgba(248,81,73,0.2);
+    --topo-elevated-label-bg: rgba(63,185,80,0.15);
+    --topo-elevated-label-color: #3fb950;
+    --topo-elevated-border: rgba(63,185,80,0.2);
+    --lb-backdrop: rgba(0,0,0,0.85);
+    --lb-content-bg: #1a1a1a;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --topo-bg: #f0f0f0;
+      --topo-current-label-bg: rgba(220,53,69,0.1);
+      --topo-current-label-color: #dc3545;
+      --topo-current-border: rgba(220,53,69,0.15);
+      --topo-elevated-label-bg: rgba(25,135,84,0.1);
+      --topo-elevated-label-color: #198754;
+      --topo-elevated-border: rgba(25,135,84,0.15);
+      --lb-backdrop: rgba(255,255,255,0.92);
+      --lb-content-bg: #ffffff;
+    }
+  }
+  .topology-compare { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 24px; }
+  .topology-diagram { flex: 1; min-width: 340px; }
+  .topology-diagram .mermaid { min-height: 380px; width: 100%; background: var(--topo-bg); }
+  .topology-diagram .label { font-size: 14px; font-weight: 600; margin-bottom: 8px; padding: 4px 12px; border-radius: 4px; display: inline-block; }
+  .topology-diagram.current .label { background: var(--topo-current-label-bg); color: var(--topo-current-label-color); }
+  .topology-diagram.current .mermaid { border: 2px solid var(--topo-current-border); border-radius: 8px; padding: 16px; }
+  .topology-diagram.elevated .label { background: var(--topo-elevated-label-bg); color: var(--topo-elevated-label-color); }
+  .topology-diagram.elevated .mermaid { border: 2px solid var(--topo-elevated-border); border-radius: 8px; padding: 16px; }
+  /* Lightbox */
+  .lightbox { display: none; position: fixed; inset: 0; z-index: 9999; background: var(--lb-backdrop); cursor: pointer; }
+  .lightbox.active { display: flex; align-items: center; justify-content: center; }
+  .lightbox .mermaid { min-width: 700px; min-height: 500px; background: var(--lb-content-bg); border-radius: 8px; padding: 24px; }
+  ```
 
-Same specification as before: textarea, 5-star rating, status tags, localStorage persistence, Export Feedback FAB with the same [Next Action Directive] text, TOC scroll linkage.
+- Required JS for lightbox:
+  ```javascript
+  // Lightbox: click any topology diagram to zoom full-screen
+  document.querySelectorAll('.topology-diagram').forEach(diagram => {
+    diagram.style.cursor = 'pointer';
+    diagram.addEventListener('click', () => {
+      const svg = diagram.querySelector('.mermaid svg').cloneNode(true);
+      const lb = document.createElement('div');
+      lb.className = 'lightbox active';
+      const wrapper = document.createElement('div');
+      wrapper.className = 'mermaid';
+      wrapper.style.cssText = 'min-width:700px;min-height:500px;';
+      wrapper.appendChild(svg);
+      lb.appendChild(wrapper);
+      document.body.appendChild(lb);
+      const close = () => { lb.remove(); };
+      lb.addEventListener('click', close);
+      document.addEventListener('keydown', function onEsc(e) {
+        if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onEsc); }
+      });
+    });
+  });
+  ```
+
+### Interactive Review System (Must implement in vanilla JS)
+
+1. **At the bottom of each suggestion card (Section 3), render:**
+   - A `<textarea>` for review comments
+   - A **5-star rating widget** for acceptance scoring (1-5 stars)
+   - **Status tag selector**: `[Agree] [Doubtful] [Already Exists / False Positive] [Not Applicable to Business]`
+   - All persisted with `localStorage`, survives page refresh
+   - **Topology Zoom/Lightbox** (MANDATORY): Every Mermaid diagram MUST be clickable to open a full-screen lightbox for detailed inspection. Implementation:
+     - On page load, wrap each `.mermaid` element's parent `.topology-diagram` with a click handler.
+     - When clicked: clone the inner SVG into a `.lightbox` div, add `.active` class, append to `<body>`.
+     - The lightbox centers the diagram at large size (min 700x500px) on an opaque dark backdrop.
+     - Click the backdrop or press ESC to close and remove the lightbox element.
+     - This is essential — the inline diagram shows the big picture, the lightbox lets you read every label.
+2. **Export Feedback FAB**: Fixed floating button in bottom-right corner "Export Feedback"
+   - On click, JS must execute the following:
+     1. Iterate over all cards with feedback and concatenate their title/rating/tag/text into a formatted Markdown string.
+     2. IMPORTANT: Append the following exact text at the very end of the generated Markdown string:
+   
+        "[Next Action Directive] Temporarily set aside Grothendieck's purely abstract perspective and return to the pragmatic engineering perspective of a frontline senior architect. Based on my review feedback above, please comprehensively evaluate these refactoring directions considering their 'short, medium, and long-term ROI', 'implementation risks and costs', and 'architectural impact on existing business'. Help me identify the most practical and cost-effective entry points for implementation. Once a smooth transitional refactoring plan is formulated, please proceed directly to executing the concrete code modifications."
+     3. Write the final concatenated string to the clipboard using navigator.clipboard.writeText.
+   - Show native `alert` or friendly Toast: "Copied successfully, can paste directly to AI for next deep-dive round"
+3. **TOC scroll linkage**: Current section highlighted in TOC
 
 ### Delivery
 
