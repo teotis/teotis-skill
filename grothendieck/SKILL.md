@@ -144,17 +144,17 @@ Yoneda lemma (roughly): **an object is completely determined by "all morphisms p
     theme: 'dark',
     themeVariables: {
       fontSize: '16px',
-      primaryColor: '#2d3748',
+      primaryColor: '#334155',
       primaryTextColor: '#e2e8f0',
-      primaryBorderColor: '#4a5568',
-      lineColor: '#718096',
-      secondaryColor: '#1a202c',
-      tertiaryColor: '#2d3748',
-      nodeBorder: '#4a5568',
-      clusterBkg: '#1a202c',
-      clusterBorder: '#4a5568',
+      primaryBorderColor: '#64748b',
+      lineColor: '#94a3b8',
+      secondaryColor: '#1e293b',
+      tertiaryColor: '#334155',
+      nodeBorder: '#64748b',
+      clusterBkg: '#1e293b',
+      clusterBorder: '#475569',
       titleColor: '#e2e8f0',
-      edgeLabelBackground: '#1a202c'
+      edgeLabelBackground: '#1e293b'
     }
   });
   </script>
@@ -172,7 +172,7 @@ Yoneda lemma (roughly): **an object is completely determined by "all morphisms p
     - You MUST generate two Mermaid.js graphs to visually demonstrate the architecture's shape.
     - Place them in a dedicated `<div class="topology-compare">` that spans the full card width.
     - Each diagram gets its own `<div class="topology-diagram">` with a label (`Current Topology` / `Elevated Topology`).
-    - **Sizing (IMPORTANT)**: Each `.topology-diagram .mermaid` container MUST have `min-height: 380px` and `width: 100%`. Use `%%{init: {'themeVariables': { 'fontSize': '16px', 'primaryColor': '#2d3748', 'primaryTextColor': '#e2e8f0', 'primaryBorderColor': '#4a5568', 'lineColor': '#718096', 'nodeBorder': '#4a5568' }}}%%` in Mermaid to ensure readable text and dark-background-compatible node colors. Never let Mermaid diagrams render at the tiny default size — they must be large enough that node labels and edge annotations are clearly legible.
+    - **Sizing (IMPORTANT)**: Each `.topology-diagram .mermaid` container MUST have `min-height: 380px` and `width: 100%`. Use `%%{init: {'themeVariables': { 'fontSize': '16px', 'primaryColor': '#334155', 'primaryTextColor': '#e2e8f0', 'primaryBorderColor': '#64748b', 'lineColor': '#94a3b8', 'nodeBorder': '#64748b' }}}%%` in Mermaid to ensure readable text and dark-background-compatible node colors. Never let Mermaid diagrams render at the tiny default size — they must be large enough that node labels and edge annotations are clearly legible.
     - 'Current Topology' (Red): Visually depict the "bad shape" (e.g., spaghetti coupling, M×N cross-connections, missing abstraction). Use red-tinted borders and red stroke colors for problematic links.
     - 'Elevated Topology' (Green): Visually depict the Grothendieck "elegant shape" (e.g., funneling through a Functor, strict layer Sheaves, clear Base Change parameterization). Use green-tinted borders and thicker/green lines for the new clean pathways.
     - **Lightbox Zoom**: Clicking any topology diagram opens it in a full-screen lightbox overlay (dark backdrop, centered image, close on click/ESC). This is mandatory — the inline diagram provides the overview, the lightbox provides the detailed inspection.

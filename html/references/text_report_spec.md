@@ -249,17 +249,17 @@ mermaid.initialize({
   theme: 'dark',
   themeVariables: {
     fontSize: '16px',
-    primaryColor: '#1c2333',
+    primaryColor: '#1e293b',
     primaryTextColor: '#c9d1d9',
-    primaryBorderColor: '#30363d',
-    lineColor: '#484f58',
-    secondaryColor: '#161b22',
-    tertiaryColor: '#1c2333',
-    nodeBorder: '#30363d',
-    clusterBkg: '#0b0f14',
+    primaryBorderColor: '#475569',
+    lineColor: '#64748b',
+    secondaryColor: '#1a2332',
+    tertiaryColor: '#1e293b',
+    nodeBorder: '#475569',
+    clusterBkg: '#0d1117',
     clusterBorder: '#30363d',
     titleColor: '#c9d1d9',
-    edgeLabelBackground: '#0b0f14'
+    edgeLabelBackground: '#0d1117'
   }
 });
 </script>
