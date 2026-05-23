@@ -1,5 +1,5 @@
 ---
-name: structural-abstraction-architect
+name: abstraction-architect
 description: >
   Structural architecture analysis for codebases whose complexity may be caused by missing invariants,
   duplicated representations, unstable boundaries, conversion glue, platform/configuration branching,
