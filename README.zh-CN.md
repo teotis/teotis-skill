@@ -4,6 +4,15 @@
 
 [English](README.md)
 
+## 仓库模型
+
+本仓库是私有工作区，用于自用技能、实验内容和公开发布前的孵化。限制性对外发布内容放在独立的嵌套 Git 仓库 `public/teotis-skills/` 中。
+
+- 私有技能可以包含个人工作流、中文说明、未发布行为和本地上下文。
+- 公开技能只手动选择一部分发布，且行为可以与私有版不同。
+- skill 正文继续使用英语；可见介绍和 frontmatter `description` 可以使用中文，方便调用时识别。
+- 公共仓库提供 `README.md` 与 `README.zh-CN.md` 两个版本。
+
 ## 技能列表
 
 ### `model-capability-cost-research` — 模型能力与成本研究

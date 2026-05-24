@@ -4,6 +4,20 @@ A compact collection of Codex and Claude Code skills for engineering, research, 
 
 [中文版本](README.zh-CN.md)
 
+## Repository Model
+
+This repository is the private workspace for personal skills, experiments, and
+release preparation. Public release content lives in a separate nested Git
+repository at `public/teotis-skills/`.
+
+- Private skills can include personal workflows, Chinese-facing notes, and
+  unpublished behavior.
+- Public skills are selected manually and may intentionally differ from their
+  private counterparts.
+- Skill bodies stay in English. The visible introduction and frontmatter
+  description may use Chinese so invocation context is easier to recognize.
+- The public repository provides both `README.md` and `README.zh-CN.md`.
+
 ## Skills
 
 ### `model-capability-cost-research` — Model Capability And Cost Research
