@@ -14,7 +14,7 @@ from pathlib import Path
 
 
 TYPE_RULES = [
-    ("skill_creation", ["skill", "SKILL.md", "触发", "eval", "评估"]),
+    ("skill_creation", ["构建新的skill", "SKILL.md", "skill 候选", "skill-creator", "触发条件", "eval"]),
     ("architecture_analysis", ["架构", "重构", "技术债", "方案文档", "设计方案", "review"]),
     ("camera_product_design", ["相机", "拍照", "录像", "水印", "夜景", "画质", "闪光", "焦段", "codex_camera"]),
     ("image_workflow", ["图片", "图像", "AIGC", "image", "midjourney", "水印", "EXIF", "xmp"]),
@@ -22,7 +22,7 @@ TYPE_RULES = [
     ("writing_editing", ["章节", "小说", "改写", "润色", "剧情", "世界观"]),
     ("lark_workflow", ["飞书", "lark", "Base", "多维表格", "日历", "审批"]),
     ("verification_review", ["验证", "测试", "查验", "审查", "review", "跑一遍"]),
-    ("external_agent", ["外部", "agent", "Gemini", "DeepSeek", "Kimi", "友商"]),
+    ("external_agent", ["外部模型", "外接模型", "外部 agent", "Gemini", "DeepSeek", "Kimi", "友商"]),
 ]
 
 SKILL_RULES = [
@@ -86,6 +86,20 @@ def compact(text: str, limit: int = 240) -> str:
     if len(text) <= limit:
         return text
     return text[: limit - 1] + "…"
+
+
+def clean_user_text(text: str) -> str:
+    text = re.sub(r"^# AGENTS\.md instructions.*?</environment_context>\s*", "", text, flags=re.S)
+    if "</environment_context>" in text:
+        text = text.split("</environment_context>")[-1]
+    text = re.sub(r"<skill>.*?</skill>", " ", text, flags=re.S)
+    text = re.sub(r"<turn_aborted>.*?</turn_aborted>", " ", text, flags=re.S)
+    text = re.sub(r"<command-name>.*?</command-args>", " ", text, flags=re.S)
+    text = re.sub(r"(?m)^\[\$[^]]+\]\([^)]+\)\s*", "", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    if text.startswith("The following is the Codex agent history whose request action you are assessing"):
+        return ""
+    return text
 
 
 def classify(text: str) -> list[str]:
@@ -162,9 +176,11 @@ def load_threads(db_path: Path, cutoff: int) -> list[sqlite3.Row]:
     conn.row_factory = sqlite3.Row
     rows = conn.execute(
         """
-        select id, created_at, updated_at, cwd, title, first_user_message, rollout_path
+        select id, created_at, updated_at, cwd, title, first_user_message, rollout_path, source, thread_source
         from threads
         where updated_at >= ?
+          and coalesce(thread_source, '') != 'subagent'
+          and source not like '{"subagent"%'
         order by updated_at desc
         """,
         (cutoff,),
@@ -231,7 +247,15 @@ def main() -> int:
     records = []
     for row in rows:
         parsed = parse_rollout(row["rollout_path"])
-        all_user = "\n".join(parsed["user_messages"]) or row["first_user_message"]
+        user_messages = []
+        first_user = clean_user_text(row["first_user_message"])
+        if first_user:
+            user_messages.append(first_user)
+        for message in parsed["user_messages"]:
+            cleaned = clean_user_text(message)
+            if cleaned and compact(cleaned, 180) not in {compact(item, 180) for item in user_messages}:
+                user_messages.append(cleaned)
+        all_user = "\n".join(user_messages) or first_user
         basis = "\n".join([row["cwd"], row["title"], all_user])
         task_types = classify(basis)
         record = {
@@ -241,9 +265,9 @@ def main() -> int:
             "updated_at": row["updated_at"],
             "cwd": row["cwd"],
             "title": compact(row["title"], 120),
-            "first_user_message": compact(row["first_user_message"], 180),
-            "user_message_count": len(parsed["user_messages"]),
-            "user_messages": [compact(msg, 300) for msg in parsed["user_messages"]],
+            "first_user_message": compact(first_user, 180),
+            "user_message_count": len(user_messages),
+            "user_messages": [compact(msg, 300) for msg in user_messages],
             "user_preview": compact(all_user, 300),
             "assistant_final_summary": compact(parsed["assistant_final"], 220),
             "signals": parsed["signals"],
