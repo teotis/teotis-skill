@@ -1,0 +1,56 @@
+{
+  "skill_name": "agent-handoff-planner",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "该项目中，外部agent审查，认为存在如下问题。你核验一下，如果认可，则分析设计执行方案，输出一份或多份md格式的方案文档，以便直接转给其他一个或多个非多模态的agent处理，实现落地。",
+      "expected_output": "Verifies the external claim before accepting it, separates confirmed and unconfirmed work, and creates handoff-ready Markdown with scope, steps, acceptance criteria, and verification commands.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Does not accept external-agent claims without an explicit verification step."
+        },
+        {
+          "text": "Produces or proposes Markdown handoff documents with concrete implementation scope and verification commands."
+        },
+        {
+          "text": "Separates work suitable for non-multimodal agents from work Codex should retain."
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "根据过往会话纪录，总结用户需求和项目定位，然后针对任务全面审查完整度，分析设计执行方案。你负责最有难度的10%和多模态限定工作，剩余部分按领域输出多份md方案文档给其他agent并行处理。",
+      "expected_output": "Summarizes the goal, identifies Codex-retained work, creates a small set of independent work packages, and includes an index/order so parallel agents do not collide.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Identifies high-context or multimodal work that should remain with Codex."
+        },
+        {
+          "text": "Groups delegated work into independent packages rather than many tiny overlapping tasks."
+        },
+        {
+          "text": "Includes acceptance criteria for each package."
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "需求单：当前还没有实现横竖模式的恰当切换。可以参考Apple、Oppo、Vivo的成熟处理。分析设计执行方案，输出md文档，交付其他agent实现落地，之后你验收。",
+      "expected_output": "Uses research only for decision-relevant guidance, writes an executable implementation handoff, and defines a later validation flow against the original acceptance criteria.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Includes decision-relevant competitor research or marks research as needed."
+        },
+        {
+          "text": "Defines exact verification commands or manual validation steps."
+        },
+        {
+          "text": "Describes how final acceptance should compare delivered work against the original handoff."
+        }
+      ]
+    }
+  ]
+}

@@ -6,6 +6,10 @@ A curated set of Claude Code skills for enhanced engineering workflows.
 
 ## Skills
 
+### `agent-handoff-planner` — Agent Handoff Planning
+
+Verifies external-agent findings, separates Codex-retained work from delegable work, and turns broad requests into Markdown implementation packages that other agents can execute. Useful when a task needs non-multimodal agents, parallel implementation, handoff docs, or later acceptance against the original plan.
+
 ### `html` — Visual Output Delivery
 
 Turns any task output into a polished, interactive HTML page that opens in your browser. Instead of squinting at raw text in the terminal or downloading files one by one, you get a proper visual review experience: annotate directly on rendered pages, rate results with stars, and copy structured feedback back to Claude in one click. Works with PDF, DOCX, PPT, images, markdown, and long-form analysis text.
