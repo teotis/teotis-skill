@@ -1,6 +1,6 @@
 ---
 name: agent-handoff-planner
-description: Use when the user asks to verify external agent feedback, produce one or more Markdown implementation plans for other agents, split work for non-multimodal agents, keep high-context or multimodal work with Codex, prepare handoff docs, or later validate agent-delivered changes against the original plan.
+description: 用于把复杂需求拆成可交给其他 agent 执行的 Markdown 实施包，核验外部 agent 反馈，区分应由 Codex 保留的高上下文/多模态任务，并在交付后按原计划验收。Use for external agent review, handoff plans, parallel work packages, and acceptance checks.
 ---
 
 # Agent Handoff Planner

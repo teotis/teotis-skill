@@ -1,12 +1,9 @@
 ---
 name: math-tutor
 description: >
-  Use when the user is learning mathematics and asks to understand a formula,
-  proof, theorem, high-school or university math concept, calculus, linear
-  algebra, probability, operators, symmetry, functions, equations, or a math
-  image/screenshot. Also use when the user says "看不懂", "不理解",
-  "如何理解", "本质", "严谨证明", "推导", "教材答案级别", or asks how a
-  Grothendieck-style structural viewpoint would understand a mathematical idea.
+  用于学习数学、理解公式/证明/定理/习题/截图，或需要微积分、线性代数、概率、算子、对称性、函数等内容的直觉解释、逐步推导、严谨证明和中文讲解。
+  当用户说“看不懂”“不理解”“如何理解”“本质”“严谨证明”“推导”“教材答案级别”或询问格罗滕迪克式结构视角时使用。
+  Use for math tutoring, derivations, proofs, exercises, screenshots, intuition, and Grothendieck-style structural insight.
   Do not use for LeetCode/programming algorithms, engineering architecture,
   medical/scientific advice, product analysis, career advice, or generic
   philosophy unless the current task is explicitly mathematical.

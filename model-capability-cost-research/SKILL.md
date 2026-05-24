@@ -1,6 +1,6 @@
 ---
 name: model-capability-cost-research
-description: Use when the user compares AI models, vendors, API routes, coding-agent backends, multimodal capability, token pricing, cached-token discounts, benchmark rankings, model names, or cost-performance choices for Codex, Claude Code, Gemini CLI, OpenCode, Qwen, DeepSeek, Kimi, Mimo, GPT, Anthropic, Baidu Qianfan, or similar platforms.
+description: 用于比较 AI 模型、厂商、API 路线、coding-agent 后端、多模态能力、token 价格、缓存折扣、榜单排名、模型命名和性价比；覆盖 Codex、Claude Code、Gemini CLI、OpenCode、Qwen、DeepSeek、Kimi、Mimo、GPT、Anthropic、百度千帆等。Use for current model capability, pricing, and cost-performance research.
 ---
 
 # Model Capability Cost Research

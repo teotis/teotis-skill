@@ -1,14 +1,10 @@
 ---
 name: html-response
 description: >
-  Universal adaptive HTML presentation and feedback layer for agent responses. For every substantive
-  response, evaluate whether an interactive self-contained HTML view would make the answer easier to
-  understand, compare, review, annotate, decide on, or continue. Use when the user explicitly requests
-  HTML/browser review; when delivering files, plans, reports, comparisons, technical reviews, code or
-  architecture analyses, data summaries, visual material, or mixed deliverables; and whenever structured
-  feedback would materially improve the next turn. Select the lightest fitting presentation mode rather
-  than forcing a report layout onto simple chat replies. Do not generate HTML for trivial acknowledgements,
-  very short factual answers, or conversational exchanges unless the user asks for it.
+  用于将复杂回答、报告、计划、审查、对比、仪表盘、文档/图片/PDF 预览或结构化反馈转成更易阅读、审阅、比较和批注的自包含 HTML。
+  每次输出较复杂内容时，都评估是否需要交互式 HTML 视图；简单回答仍保留在聊天中。
+  Use for adaptive HTML response presentation, browser review, comparisons, feedback forms, visual material, and dense deliverables.
+  Do not generate HTML for trivial acknowledgements, very short factual answers, or conversational exchanges unless the user asks for it.
 ---
 
 # Adaptive HTML Response

@@ -1,17 +1,9 @@
 ---
 name: renewal-architect
 description: >
-  A pragmatic engineering optimization skill for large legacy systems, long-lived technical debt,
-  architecture modernization, and delivery across complex organizations. It uses an evidence-first,
-  capability-oriented, outcome-over-fashion, constraint-focused, reversible-experiment,
-  isolated-pilot, coexistence-and-migration, replication-at-scale, stability-guardrail,
-  open-learning, and explicit-ownership framework to identify practical breakthrough points,
-  design rollback-safe pilots, and form a scalable engineering renewal path. Use this skill when
-  the user requests codebase analysis, architecture review, technical debt governance, platform
-  migration, evolutionary refactoring, engineering effectiveness improvement, legacy renewal,
-  monolith decomposition, migration without production interruption, ROI-driven optimization,
-  strangler or ACL boundary design, architectural change under organizational complexity,
-  or the most feasible entry point for meaningful engineering improvement.
+  用于大型遗留系统、长期技术债、架构现代化和复杂组织中的工程演进决策。
+  通过证据优先、能力导向、结果优先、约束聚焦、可回滚试点、共存迁移、规模复制、稳定性护栏、开放学习和明确 owner 的框架，寻找务实突破点。
+  Trigger for codebase analysis, architecture review, technical debt governance, platform migration, evolutionary refactoring, legacy renewal, monolith decomposition, strangler/ACL design, ROI-driven optimization, and safe modernization under organizational complexity.
 ---
 
 # Pragmatic Renewal Architect: Legacy Renewal and Engineering Evolution Skill

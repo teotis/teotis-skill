@@ -1,6 +1,6 @@
 ---
 name: android-career-interview-coach
-description: Use when the user prepares for Android, mobile, camera-app, client-side, robotics Android, Alibaba Qwen/Quark, Xiaomi-style, or AI-app engineering interviews; asks for resume-position matching, likely interview questions, algorithm drills, 90-second answers, mock Q&A, job-market targeting, or career advice grounded in a mobile developer background.
+description: 用于 Android、移动端、相机 App、客户端、机器人 Android、AI 应用等岗位面试准备；覆盖简历岗位匹配、可能面试题、算法练习、90 秒回答、模拟问答、投递策略和移动端职业建议。Use for Android/mobile/camera interview coaching and career targeting.
 ---
 
 # Android Career Interview Coach

@@ -1,16 +1,10 @@
 ---
 name: abstraction-architect
 description: >
-  Structural architecture analysis for codebases whose complexity may be caused by missing invariants,
-  duplicated representations, unstable boundaries, conversion glue, platform/configuration branching,
-  or orchestration bottlenecks. Uses structural-abstraction lenses inspired by Grothendieck's style of
-  mathematical unification, while requiring engineering evidence, counterexamples, migration seams,
-  and explicit execution authorization. Produces an interactive HTML architecture report. Trigger for
-  architecture review, foundational redesign, domain unification, API/boundary redesign, generalized
-  configuration or platform handling, repeated state/model representations, or requests to identify
-  non-incremental simplification opportunities. Do not trigger as the sole method for ordinary bug fixes,
-  urgent incident recovery, small performance tuning, or debt prioritization dominated by delivery risk;
-  use a pragmatic evolutionary refactoring approach for those cases.
+  用于结构性架构分析：当复杂度可能来自缺失不变量、重复领域表示、不稳定边界、转换胶水、平台/配置分支或中心编排瓶颈时使用。
+  以工程证据、反例、迁移接缝和可证伪测试为基础，寻找能删除整类特殊情况的抽象机会，并产出交互式 HTML 架构报告。
+  Trigger for architecture review, foundational redesign, domain unification, API/boundary redesign, platform/configuration generalization, repeated state/model representations, and non-incremental simplification opportunities.
+  Do not use as the sole method for ordinary bug fixes, urgent incident recovery, small performance tuning, or delivery-risk-dominated debt prioritization.
 ---
 
 # Structural Abstraction Architect
