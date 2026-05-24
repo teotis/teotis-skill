@@ -8,6 +8,6 @@ Shared skill workspace rules are in:
 
 ## Gemini CLI Notes
 
-- After modifying shared rules, run `python3 tools/project.py sync-agents` and reload context in Gemini CLI.
-- Run `python3 tools/project.py check` before finishing guidance changes.
+- After modifying shared rules, run `python3 control/project.py sync-agents` and reload context in Gemini CLI.
+- Run `python3 control/project.py check` before finishing guidance changes.
 - Do not copy shared rules into this file.

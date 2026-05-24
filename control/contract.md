@@ -41,8 +41,8 @@ a `SKILL.md` as entry point:
 
 - Edit shared guidance in `control/contract.md`, not in `AGENTS.md`,
   `CLAUDE.md`, or `GEMINI.md`.
-- After modifying shared rules, run `python3 tools/project.py sync-agents`.
-- Run `python3 tools/project.py check` before finishing documentation or layout
+- After modifying shared rules, run `python3 control/project.py sync-agents`.
+- Run `python3 control/project.py check` before finishing documentation or layout
   changes that affect shared guidance.
 
 ## Git

@@ -11,6 +11,6 @@ shared repository conventions.
 
 ## Codex Notes
 
-- After modifying shared rules, run `python3 tools/project.py sync-agents`.
-- Run `python3 tools/project.py check` before finishing guidance changes.
+- After modifying shared rules, run `python3 control/project.py sync-agents`.
+- Run `python3 control/project.py check` before finishing guidance changes.
 - `AGENTS.md` is the Codex entry point; do not copy shared rules into this file.

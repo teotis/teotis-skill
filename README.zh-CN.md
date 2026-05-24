@@ -113,8 +113,8 @@
 共享仓库规则变化时，只编辑 `control/contract.md`，然后运行：
 
 ```bash
-python3 tools/project.py sync-agents
-python3 tools/project.py check
+python3 control/project.py sync-agents
+python3 control/project.py check
 ```
 
 也可以使用 `make sync-agents` 和 `make check`。

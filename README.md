@@ -119,8 +119,8 @@ Each private skill lives in `skills/<skill>/` with a `SKILL.md` entry point.
 When shared repository rules change, edit `control/contract.md` and run:
 
 ```bash
-python3 tools/project.py sync-agents
-python3 tools/project.py check
+python3 control/project.py sync-agents
+python3 control/project.py check
 ```
 
 `make sync-agents` and `make check` provide the same shortcuts.
