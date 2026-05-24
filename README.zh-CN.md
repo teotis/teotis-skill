@@ -1,6 +1,6 @@
 # Codex Skill 合集
 
-一组面向 Codex 和 Claude Code 的工程技能，聚焦结构化判断、可审阅交付物，以及可复用的 agent 交接流程。
+一组面向 Codex 和 Claude Code 的技能，覆盖工程、研究、学习、求职准备、可审阅交付物，以及可复用的 agent 交接流程。
 
 [English](README.md)
 
@@ -27,6 +27,17 @@
 - 相机 App、机型适配、客户端架构和稳定性问题；
 - 阿里千问/夸克、小米相机、机器人 Android、AI 应用客户端岗位；
 - 简历与岗位匹配、可能面试题、公司投递目标分析。
+
+### `math-tutor` — 数学学习助手
+
+用于学习数学、理解公式、证明、定理、微积分、线性代数、概率、函数、算子、对称性或数学截图。它会把低门槛讲解、严谨推导和可选的格罗滕迪克式结构洞察结合起来。
+
+适合：
+
+- “看不懂”“不理解”后的换路讲解；
+- 严谨证明和逐步推导；
+- 文本或截图中的公式、习题讲解；
+- 对数学概念进行本质化、结构化理解。
 
 ### `agent-handoff-planner` — Agent 交接方案规划
 
@@ -78,6 +89,7 @@
 |---|---|
 | 比较最新 AI 模型、价格和 agent 后端适配 | `model-capability-cost-research` |
 | 准备 Android/移动端/相机面试回答和求职策略 | `android-career-interview-coach` |
+| 学习数学概念、证明、公式或数学本质 | `math-tutor` |
 | 把需求变成可交给 agent 执行的方案 | `agent-handoff-planner` |
 | 让复杂交付物更易审阅和反馈 | `html-response` |
 | 寻找更深层的结构性简化 | `abstraction-architect` |

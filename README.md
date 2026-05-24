@@ -1,6 +1,6 @@
 # Codex Skill Collection
 
-A compact collection of Codex and Claude Code skills for engineering workflows that need structured judgment, reviewable deliverables, and repeatable handoff patterns.
+A compact collection of Codex and Claude Code skills for engineering, research, learning, career preparation, reviewable deliverables, and repeatable handoff workflows.
 
 [中文版本](README.zh-CN.md)
 
@@ -27,6 +27,17 @@ Best for:
 - camera app, device adaptation, client architecture, and stability questions;
 - Alibaba Qwen/Quark, Xiaomi-style camera, robotics Android, and AI-app client roles;
 - resume-to-role matching, likely interview questions, and company targeting.
+
+### `math-tutor` — Math Tutor
+
+Use when learning mathematics, understanding formulas, proofs, theorems, calculus, linear algebra, probability, functions, operators, symmetry, or math screenshots. It combines low-barrier explanation, rigorous derivation, and optional Grothendieck-style structural insight.
+
+Best for:
+
+- "I don't understand" repair explanations;
+- rigorous proofs and step-by-step derivations;
+- formula or exercise explanations from text or screenshots;
+- structural or essence-focused interpretations of mathematical ideas.
 
 ### `agent-handoff-planner` — Agent Handoff Planning
 
@@ -78,6 +89,7 @@ Best for:
 |---|---|
 | Compare current AI models, prices, and agent backend fit | `model-capability-cost-research` |
 | Prepare Android/mobile/camera interview answers and job strategy | `android-career-interview-coach` |
+| Learn math concepts, proofs, formulas, or mathematical essence | `math-tutor` |
 | Turn a request into agent-executable plans | `agent-handoff-planner` |
 | Make a dense deliverable easier to review | `html-response` |
 | Find a deeper structural simplification | `abstraction-architect` |
