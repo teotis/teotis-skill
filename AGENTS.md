@@ -5,12 +5,12 @@ public release.
 
 ## Project Structure
 
-Private skills live in this repository root. Each skill lives in its own
-directory with a `SKILL.md` as entry point:
+Private skills live under `skills/`. Each skill lives in its own directory with
+a `SKILL.md` as entry point:
 
-- `<skill>/SKILL.md` — private or incubation skill entry point
-- `<skill>/scripts/` — shared scripts for that skill
-- `<skill>/references/` — supporting references for that skill
+- `skills/<skill>/SKILL.md` — private or incubation skill entry point
+- `skills/<skill>/scripts/` — shared scripts for that skill
+- `skills/<skill>/references/` — supporting references for that skill
 - `public/teotis-skills/` — nested public repository for selected release-ready
   skills; ignored by this private repository
 
@@ -21,7 +21,8 @@ directory with a `SKILL.md` as entry point:
   easy to recognize during invocation.
 - Skill frontmatter: `name`, `description` (used for trigger matching). Prefer
   Chinese-first descriptions with concise English keywords when helpful.
-- Shared utilities go under `<skill>/scripts/` or `<skill>/references/`
+- Shared utilities go under `skills/<skill>/scripts/` or
+  `skills/<skill>/references/`
 
 ## Public Release Model
 

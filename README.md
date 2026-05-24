@@ -10,6 +10,7 @@ This repository is the private workspace for personal skills, experiments, and
 release preparation. Public release content lives in a separate nested Git
 repository at `public/teotis-skills/`.
 
+- Private skills live under `skills/<skill>/`.
 - Private skills can include personal workflows, Chinese-facing notes, and
   unpublished behavior.
 - Public skills are selected manually and may intentionally differ from their
@@ -109,4 +110,4 @@ Best for:
 | Find a deeper structural simplification | `abstraction-architect` |
 | Plan safe modernization in a legacy system | `renewal-architect` |
 
-Each skill lives in its own directory with a `SKILL.md` entry point.
+Each private skill lives in `skills/<skill>/` with a `SKILL.md` entry point.
