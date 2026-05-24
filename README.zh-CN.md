@@ -9,6 +9,7 @@
 本仓库是私有工作区，用于自用技能、实验内容和公开发布前的孵化。限制性对外发布内容放在独立的嵌套 Git 仓库 `public/teotis-skills/` 中。
 
 - 私有技能统一放在 `skills/<skill>/` 下。
+- 共享 agent 指导规则统一放在 `control/contract.md`；`AGENTS.md`、`CLAUDE.md`、`GEMINI.md` 是生成出来的薄入口。
 - 私有技能可以包含个人工作流、中文说明、未发布行为和本地上下文。
 - 公开技能只手动选择一部分发布，且行为可以与私有版不同。
 - skill 正文继续使用英语；可见介绍和 frontmatter `description` 可以使用中文，方便调用时识别。
@@ -106,3 +107,14 @@
 | 为遗留系统设计安全演进路径 | `renewal-architect` |
 
 每个私有技能都位于 `skills/<skill>/` 独立目录中，并以 `SKILL.md` 作为入口。
+
+## 指导文件同步
+
+共享仓库规则变化时，只编辑 `control/contract.md`，然后运行：
+
+```bash
+python3 tools/project.py sync-agents
+python3 tools/project.py check
+```
+
+也可以使用 `make sync-agents` 和 `make check`。

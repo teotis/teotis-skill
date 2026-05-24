@@ -11,6 +11,8 @@ release preparation. Public release content lives in a separate nested Git
 repository at `public/teotis-skills/`.
 
 - Private skills live under `skills/<skill>/`.
+- Shared agent guidance lives in `control/contract.md`; `AGENTS.md`,
+  `CLAUDE.md`, and `GEMINI.md` are generated thin entry points.
 - Private skills can include personal workflows, Chinese-facing notes, and
   unpublished behavior.
 - Public skills are selected manually and may intentionally differ from their
@@ -111,3 +113,14 @@ Best for:
 | Plan safe modernization in a legacy system | `renewal-architect` |
 
 Each private skill lives in `skills/<skill>/` with a `SKILL.md` entry point.
+
+## Guidance Sync
+
+When shared repository rules change, edit `control/contract.md` and run:
+
+```bash
+python3 tools/project.py sync-agents
+python3 tools/project.py check
+```
+
+`make sync-agents` and `make check` provide the same shortcuts.
