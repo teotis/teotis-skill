@@ -23,8 +23,6 @@ Teotis 的公开 Codex skill 集合，当前聚焦架构优化与复杂结果呈
 
 ## Self Assessment
 
-分数是作者对 skill 设计成熟度的自评，不是外部 benchmark。
-
 | Skill | 专项能力 | 自评 | 说明 |
 |---|---:|---:|---|
 | `abstraction-architect` | 结构洞察与复杂度删除 | 94 / 100 | 强在发现缺失不变量和错误边界；不负责直接落地迁移。 |

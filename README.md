@@ -36,8 +36,6 @@ surface.
 
 ## Self Assessment
 
-Scores are the author's design self-assessment, not external benchmark results.
-
 | Skill | Specialist strength | Score | Note |
 |---|---:|---:|---|
 | `abstraction-architect` | Structural insight and complexity deletion | 94 / 100 | Strong at missing invariants and wrong boundaries; intentionally does not own rollout planning. |
