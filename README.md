@@ -6,6 +6,28 @@ A compact collection of Codex and Claude Code skills for engineering workflows t
 
 ## Skills
 
+### `model-capability-cost-research` — Model Capability And Cost Research
+
+Use when selecting AI models, vendors, or access routes for real workflows. It compares current model capability, pricing, cached-token behavior, multimodal support, coding-agent fit, and cost-performance trade-offs using fresh evidence and normalized assumptions.
+
+Best for:
+
+- Codex, Claude Code, Gemini CLI, OpenCode, or API backend choices;
+- comparing GPT, Claude, Gemini, Qwen, DeepSeek, Kimi, Mimo, Qianfan, and similar models;
+- token pricing, cached input pricing, output pricing, and reseller-package normalization;
+- multimodal, Chinese UI/document, long-context, and large-repo coding-agent decisions.
+
+### `android-career-interview-coach` — Android Career Interview Coach
+
+Use when preparing for Android, mobile, camera-app, client-side, AI-app, or robotics Android interviews. It turns fundamentals and project experience into interview-ready explanations, 90-second answers, technical breakdowns, mock Q&A, and job-fit strategy.
+
+Best for:
+
+- Android/Kotlin/Java/C++/JNI/NDK/OS/performance interview prep;
+- camera app, device adaptation, client architecture, and stability questions;
+- Alibaba Qwen/Quark, Xiaomi-style camera, robotics Android, and AI-app client roles;
+- resume-to-role matching, likely interview questions, and company targeting.
+
 ### `agent-handoff-planner` — Agent Handoff Planning
 
 Use when a broad request needs to become executable work for one or more agents. It verifies external-agent findings before accepting them, separates high-context or multimodal work that Codex should retain from work that can be delegated, and produces Markdown implementation packages with scope, steps, acceptance criteria, and verification commands.
@@ -54,6 +76,8 @@ Best for:
 
 | Need | Start With |
 |---|---|
+| Compare current AI models, prices, and agent backend fit | `model-capability-cost-research` |
+| Prepare Android/mobile/camera interview answers and job strategy | `android-career-interview-coach` |
 | Turn a request into agent-executable plans | `agent-handoff-planner` |
 | Make a dense deliverable easier to review | `html-response` |
 | Find a deeper structural simplification | `abstraction-architect` |

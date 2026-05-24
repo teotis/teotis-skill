@@ -6,6 +6,28 @@
 
 ## 技能列表
 
+### `model-capability-cost-research` — 模型能力与成本研究
+
+用于为真实工作流选择 AI 模型、厂商或接入路径。它会基于最新证据比较模型能力、价格、缓存 token 计费、多模态支持、coding agent 适配度，以及性价比取舍。
+
+适合：
+
+- Codex、Claude Code、Gemini CLI、OpenCode 或 API 后端选择；
+- 比较 GPT、Claude、Gemini、Qwen、DeepSeek、Kimi、Mimo、千帆等模型；
+- 统一换算 token 价格、缓存输入价格、输出价格和二级市场套餐；
+- 多模态、中文 UI/文档、长上下文和大型代码工程 agent 场景决策。
+
+### `android-career-interview-coach` — Android 求职面试教练
+
+用于准备 Android、移动端、相机 App、客户端、AI 应用或机器人 Android 岗位面试。它会把基础概念和项目经历转成可面试表达的一句话介绍、90 秒回答、技术拆解、模拟问答和岗位匹配策略。
+
+适合：
+
+- Android/Kotlin/Java/C++/JNI/NDK/操作系统/性能面试准备；
+- 相机 App、机型适配、客户端架构和稳定性问题；
+- 阿里千问/夸克、小米相机、机器人 Android、AI 应用客户端岗位；
+- 简历与岗位匹配、可能面试题、公司投递目标分析。
+
 ### `agent-handoff-planner` — Agent 交接方案规划
 
 用于把宽泛需求拆成一个或多个 agent 可以执行的工作包。它会先核验外部 agent 的结论，再区分应由 Codex 保留的高上下文/多模态工作与可委托工作，并输出包含范围、步骤、验收标准和验证命令的 Markdown 实施方案。
@@ -54,6 +76,8 @@
 
 | 需求 | 优先使用 |
 |---|---|
+| 比较最新 AI 模型、价格和 agent 后端适配 | `model-capability-cost-research` |
+| 准备 Android/移动端/相机面试回答和求职策略 | `android-career-interview-coach` |
 | 把需求变成可交给 agent 执行的方案 | `agent-handoff-planner` |
 | 让复杂交付物更易审阅和反馈 | `html-response` |
 | 寻找更深层的结构性简化 | `abstraction-architect` |

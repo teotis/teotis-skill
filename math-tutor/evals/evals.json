@@ -1,0 +1,65 @@
+{
+  "skill_name": "math-tutor",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "我看不懂这个式子：$D \\circ T = -T \\circ D$，其中 $T$ 表示把 $x$ 换成 $-x$。不要直接重复教材说法，帮我低门槛讲清楚。",
+      "expected_output": "Explains the operator identity in simple Chinese, identifies likely confusion points, uses small steps and at least one concrete test function, and avoids opening a heavy Grothendieck section unless needed.",
+      "files": [],
+      "assertions": [
+        "Names the likely sticking point before or while re-explaining.",
+        "Uses a concrete example function to verify the sign flip.",
+        "Explains both composition orders $D \\circ T$ and $T \\circ D$.",
+        "Does not merely ask the user where they are stuck without giving a substantive explanation."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "严谨推导一下：$\\left[\\ln(x+\\sqrt{x^2+1})\\right]' = \\frac{1}{\\sqrt{x^2+1}}$。我要教材答案级别。",
+      "expected_output": "Provides a formal derivation with clear algebraic simplification, labels the chain rule and quotient/square-root derivative steps, and ends with a short check or summary.",
+      "files": [],
+      "assertions": [
+        "Starts directly with a rigorous derivation rather than a long intuitive essay.",
+        "Correctly differentiates $x+\\sqrt{x^2+1}$.",
+        "Shows the algebraic cancellation leading to $1/\\sqrt{x^2+1}$.",
+        "Uses LaTeX for formulas."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "先正常讲解一下黎曼球面为什么要给复平面加一个无穷远点，然后推演一下，换格罗滕迪克来看，会怎么想，怎么思考本质。",
+      "expected_output": "First gives an accessible standard explanation of the Riemann sphere, then separately offers a Grothendieck-style structural interpretation without pretending to quote Grothendieck personally.",
+      "files": [],
+      "assertions": [
+        "Separates the normal explanation from the Grothendieck-style extension.",
+        "Explains why adding infinity makes the space compact or closes the plane into a sphere.",
+        "Uses structural language such as compactification, morphism, or correct level of abstraction where relevant.",
+        "Frames the extension as a Grothendieck-style perspective rather than fabricated historical quotation."
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "那么现在，抛弃格罗滕迪克的口味风格，只用你的理解，亲切讲解这段高数知识的高阶理解，目的是帮助我学习得更透彻。",
+      "expected_output": "Honors the request to avoid Grothendieck framing, teaches warmly in plain Chinese, and focuses on core intuition, prerequisites, and transfer patterns.",
+      "files": [],
+      "assertions": [
+        "Does not include a Grothendieck section.",
+        "Uses an approachable tone without condescension.",
+        "Focuses on intuition and high-level understanding rather than only formal proof.",
+        "Mentions what prerequisite idea the user may need to repair."
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "这道题怎么做：已知 $f(x)=f(x-\\pi)+\\sin x$，想推 $f(x+\\pi)$ 和周期/反周期关系。请先给解题路线，再分步做，最后总结这个题可迁移的方法。",
+      "expected_output": "Uses a problem-solving mode with goal recognition, route, step-by-step substitution/operator reasoning, answer check, and a reusable method summary.",
+      "files": [],
+      "assertions": [
+        "Begins by identifying the target and solution route.",
+        "Correctly substitutes $x+\\pi$ or equivalent operator reasoning.",
+        "Explains the role of $\\sin(x+\\pi)=-\\sin x$.",
+        "Ends with a reusable method or pattern summary."
+      ]
+    }
+  ]
+}

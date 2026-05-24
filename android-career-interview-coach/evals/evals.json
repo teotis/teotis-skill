@@ -1,0 +1,56 @@
+{
+  "skill_name": "android-career-interview-coach",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "我是一名理解能力一般的 Android 相机软件工程师，现在准备面试普渡机器人软件工程师（Android）研发工作。为了帮助我加深理解通过面试，请你讲解“进程和线程区别，在硬件实现上的区别”，最后要有面试模拟问答，回答分为两个层面：原理理解，实战理解。",
+      "expected_output": "Produces a Chinese interview-prep explanation with a one-sentence version, 90-second answer, principle/practical split, Android examples, and mock Q&A.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Includes interview-ready wording such as a one-sentence or 90-second answer."
+        },
+        {
+          "text": "Separates principle understanding from practical Android/mobile engineering understanding."
+        },
+        {
+          "text": "Includes mock follow-up questions and answers."
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "我当前正在应聘阿里千问的应用相机开发岗位。为了准备即将到来的面试，关于 RAG 流程，输出面向面试的一句话介绍，90 秒标准回答，技术拆解和模拟问答。职位要求包括客户端业务开发、架构设计、性能稳定性和 AI 应用能力。",
+      "expected_output": "Frames RAG for an Android/client AI-app interview, connects AI concepts to product/client work, and provides concise spoken answers plus technical breakdown.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Connects the AI concept to Android/client-side product work rather than only describing backend retrieval."
+        },
+        {
+          "text": "Provides one-sentence, 90-second, technical breakdown, and mock Q&A sections."
+        },
+        {
+          "text": "Mentions performance, stability, or architecture implications relevant to the job description."
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "搜索并列出珠三角包括香港，能提供匹配岗位的单位，优先互联网、科技制造业、初创类、AI 软件类业务公司。我会 Java/Kotlin、Python、C++，做过小米相机 App 适配和新功能开发，希望薪资一万以上。",
+      "expected_output": "Researches current job-market facts, separates verified listings from inferred targets, ranks company fit, and gives an application strategy grounded in the user's mobile/camera background.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Treats company openings and salary as current facts that require research or clear uncertainty labels."
+        },
+        {
+          "text": "Ranks fit using the user's Android/mobile/camera background and stated salary/geography constraints."
+        },
+        {
+          "text": "Provides actionable application or preparation strategy, not only a company list."
+        }
+      ]
+    }
+  ]
+}
