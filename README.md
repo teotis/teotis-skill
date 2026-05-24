@@ -1,6 +1,6 @@
 # Codex Skill Collection
 
-A curated set of Claude Code skills for enhanced engineering workflows.
+A compact collection of Codex and Claude Code skills for engineering workflows that need structured judgment, reviewable deliverables, and repeatable handoff patterns.
 
 [中文版本](README.zh-CN.md)
 
@@ -8,16 +8,55 @@ A curated set of Claude Code skills for enhanced engineering workflows.
 
 ### `agent-handoff-planner` — Agent Handoff Planning
 
-Verifies external-agent findings, separates Codex-retained work from delegable work, and turns broad requests into Markdown implementation packages that other agents can execute. Useful when a task needs non-multimodal agents, parallel implementation, handoff docs, or later acceptance against the original plan.
+Use when a broad request needs to become executable work for one or more agents. It verifies external-agent findings before accepting them, separates high-context or multimodal work that Codex should retain from work that can be delegated, and produces Markdown implementation packages with scope, steps, acceptance criteria, and verification commands.
 
-### `html` — Visual Output Delivery
+Best for:
 
-Turns any task output into a polished, interactive HTML page that opens in your browser. Instead of squinting at raw text in the terminal or downloading files one by one, you get a proper visual review experience: annotate directly on rendered pages, rate results with stars, and copy structured feedback back to Claude in one click. Works with PDF, DOCX, PPT, images, markdown, and long-form analysis text.
+- external agent review verification;
+- Markdown handoff documents for non-multimodal agents;
+- parallel implementation planning;
+- final acceptance against the original plan.
 
-### `grothendieck` — Architecture Deep Analysis
+### `html-response` — Adaptive HTML Response
 
-Analyzes your codebase through 11 mathematical thinking principles and produces an interactive review report. You get a global overview matrix of all optimization opportunities (plotted by benefit vs. cost), detailed suggestion cards with before/after architecture diagrams, and a full review system to evaluate each finding. The report finds **non-incremental** improvements — not "extract this method," but "the abstraction level is wrong, and raising it dissolves dozens of special cases."
+Use when an answer, report, plan, artifact, or review would be easier to inspect in a browser than in plain chat. It selects the lightest useful HTML presentation mode, keeps simple answers in chat, and creates interactive review surfaces for dense analysis, comparisons, technical reviews, document/image previews, and structured feedback.
 
-### `skill-creator` — Build & Iterate on Skills (by Anthropic)
+Best for:
 
-Created by Anthropic, the company behind Claude. A complete toolkit for building, testing, and refining Claude Code skills. Takes you through the full loop: draft a skill → run it against test cases → compare with-skill vs. without-skill results → review outputs side-by-side in a browser → improve based on feedback → repeat. Includes quantitative benchmarking and trigger description optimization so your skill fires reliably in real-world use.
+- long-form reports and technical reviews;
+- decision boards and action plans;
+- artifact review for PDFs, documents, images, or rendered Markdown;
+- feedback collection with stable review item IDs.
+
+### `abstraction-architect` — Structural Abstraction Architect
+
+Use for architecture analysis when complexity appears to come from missing invariants, duplicated domain representations, unstable boundaries, repeated adapters, platform branching, or orchestration bottlenecks. It looks for structural simplifications that can delete whole families of special cases, while requiring concrete code evidence, counterexamples, transition seams, and disproof tests.
+
+Best for:
+
+- foundational architecture review;
+- domain model or API boundary redesign;
+- identifying non-incremental simplification opportunities;
+- deciding whether a proposed abstraction is valid or premature.
+
+### `renewal-architect` — Pragmatic Renewal Architect
+
+Use for legacy renewal and practical modernization under delivery, stability, organizational, and migration constraints. It focuses on measurable capability gains, dominant bottlenecks, rollback-safe pilots, coexistence strategies, and paths that can scale from a controlled experiment to broader engineering renewal.
+
+Best for:
+
+- technical debt governance;
+- migration planning without stopping delivery;
+- monolith decomposition or strangler/ACL boundary design;
+- finding the most feasible first improvement in a complex system.
+
+## Skill Map
+
+| Need | Start With |
+|---|---|
+| Turn a request into agent-executable plans | `agent-handoff-planner` |
+| Make a dense deliverable easier to review | `html-response` |
+| Find a deeper structural simplification | `abstraction-architect` |
+| Plan safe modernization in a legacy system | `renewal-architect` |
+
+Each skill lives in its own directory with a `SKILL.md` entry point.
