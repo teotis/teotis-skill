@@ -103,6 +103,46 @@ Use this structure for each handoff document:
 - [Known risk or dependency]
 ````
 
+### Orchestration-Ready Fields
+
+When a package may be handed off to multiple agents or consumed by an orchestration skill, add these fields below the basic template. They let the orchestration layer reason about file ownership, concurrency safety, and completion evidence without reading every line of the implementation steps.
+
+```markdown
+## Package ID
+<unique-id>
+
+## File Ownership
+- <package-id> owns: <file-or-glob>
+- Other packages must not edit these files without coordination.
+
+## Allowed Paths
+- <path-or-glob>
+
+## Forbidden Paths
+- <path-or-glob>
+
+## Dependencies
+- Depends on: <package-id> | none
+
+## Parallel Safety
+- safe | caution | unsafe
+- Reason: <brief explanation of conflict risk>
+
+## Expected Evidence Pack
+- [ ] worktree path recorded
+- [ ] branch name recorded
+- [ ] git status clean (or explanation)
+- [ ] git diff --stat captured
+- [ ] changed files listed
+- [ ] verification commands run
+- [ ] test results summarized
+- [ ] commit hash / PR link
+- [ ] unresolved risks noted
+- [ ] only allowed paths touched (verified)
+```
+
+These fields are machine-readable enough for an orchestration skill to build a concurrency plan and status ledger, but still hand-editable by a human.
+
 For multiple agents, create an INDEX document that ties packages together. Every INDEX must include the four authorization sections below so external agents know exactly what they can do without asking, when they must stop, how to finish, and what prompt the user should copy to start them.
 
 ````markdown
@@ -160,6 +200,8 @@ Copy this exact message to start an external Claude Code agent:
 
 The authorization sections eliminate unnecessary confirmation prompts (worktree creation, merge asking, cleanup) while keeping the human safety gates intact.
 
+**Boundary**: agent-handoff-planner produces a basic INDEX with the four authorization sections, but it does NOT generate batch launch scripts, Agent View prompt lists, `claude --bg` dispatch scripts, status ledgers, or automated concurrency plans. Those belong to `agent-orchestration-planner`. If the user wants full multi-agent orchestration, hand off the INDEX and package docs to that skill.
+
 ### 5. Keep The Handoff Executable
 
 Each document should name concrete files, modules, commands, or search terms. Avoid vague instructions like "improve architecture" unless paired with exact boundaries and acceptance criteria.
@@ -168,14 +210,19 @@ If the user wants non-multimodal agents to implement, explicitly remove multimod
 
 ### 6. Validate Later Deliveries
 
-When the user asks for acceptance or validation:
+When the user asks for acceptance or validation, treat the original handoff document as the contract. Do NOT start by summarizing success.
 
-1. Re-open the original handoff document and user request.
-2. Check git status and diff.
-3. Compare delivered changes against each acceptance criterion.
-4. Run the listed verification commands when feasible.
-5. Report findings first: missing work, regressions, unverified claims, or mismatches.
-6. Only then summarize what is complete.
+1. Re-open the original handoff document, INDEX, and every package doc.
+2. Check git status and diff against the expected scope.
+3. Compare delivered changes against EACH acceptance criterion, one by one.
+4. Run the listed verification commands when feasible; report raw output.
+5. Report gaps FIRST, before any summary:
+   - Missing work (acceptance criteria not met).
+   - Regressions (existing behavior broken).
+   - Unverified claims (criteria that could not be confirmed).
+   - Mismatches (delivered changes differ from scope without explanation).
+6. Only after all gaps are listed, summarize what IS complete.
+7. If any criterion is unmet, do NOT report overall PASS.
 
 ## Output Style
 
@@ -196,3 +243,5 @@ Then provide links to generated docs or cite exact files inspected. Keep chat co
 - Splitting work so finely that agents collide in the same files.
 - Reporting success before comparing delivery against the original acceptance criteria.
 - Producing an INDEX.md without execution authorization, stop gates, completion policy, or launch prompt — this causes external agents to interrupt the human with unnecessary confirmation prompts for worktree creation, merging, and cleanup.
+- Reporting validation success before listing every unmet acceptance criterion.
+- Adding batch-launch scripts, Agent View prompts, or status ledgers to INDEX — those belong to agent-orchestration-planner, not handoff-planner.
