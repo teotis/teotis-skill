@@ -1,13 +1,10 @@
-# Claude Code Entry
+@AGENTS.md
 
-<!-- Generated from control/contract.md. Do not edit directly. -->
+# Claude Code adapter
 
-Shared skill workspace rules are in:
-
-@./control/contract.md
+This repository uses AGENTS.md as the shared source of truth. See that file for all project rules, conventions, and validation commands.
 
 ## Claude Code Notes
 
-- After modifying shared rules, run `python3 control/project.py sync-agents`.
-- Run `python3 control/project.py check` before finishing guidance changes.
-- Do not copy shared rules into this file.
+- 修改共享规则后，运行 `python3 control/project.py sync-agents`。
+- 不要在本文件复制共享主规则；需要调整通用规则时只改 `AGENTS.md`。

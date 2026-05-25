@@ -8,8 +8,8 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CONTRACT = ROOT / "control" / "contract.md"
-NOTICE = "<!-- Generated from control/contract.md. Do not edit directly. -->"
+AGENTS_PATH = ROOT / "AGENTS.md"
+NOTICE = "<!-- Generated from AGENTS.md. Do not edit directly. -->"
 
 
 @dataclass
@@ -22,40 +22,17 @@ class Result:
         return not self.issues
 
 
-def render_agents() -> str:
-    return f"""# Repository Instructions
-
-{NOTICE}
-
-Shared skill workspace rules are in:
-
-`control/contract.md`
-
-Codex should read this file before changing skill layout, release guidance, or
-shared repository conventions.
-
-## Codex Notes
-
-- After modifying shared rules, run `python3 control/project.py sync-agents`.
-- Run `python3 control/project.py check` before finishing guidance changes.
-- `AGENTS.md` is the Codex entry point; do not copy shared rules into this file.
-"""
-
-
 def render_claude() -> str:
-    return f"""# Claude Code Entry
+    return f"""@AGENTS.md
 
-{NOTICE}
+# Claude Code adapter
 
-Shared skill workspace rules are in:
-
-@./control/contract.md
+This repository uses AGENTS.md as the shared source of truth. See that file for all project rules, conventions, and validation commands.
 
 ## Claude Code Notes
 
-- After modifying shared rules, run `python3 control/project.py sync-agents`.
-- Run `python3 control/project.py check` before finishing guidance changes.
-- Do not copy shared rules into this file.
+- 修改共享规则后，运行 `python3 control/project.py sync-agents`。
+- 不要在本文件复制共享主规则；需要调整通用规则时只改 `AGENTS.md`。
 """
 
 
@@ -66,43 +43,42 @@ def render_gemini() -> str:
 
 Shared skill workspace rules are in:
 
-@./control/contract.md
+@./AGENTS.md
 
 ## Gemini CLI Notes
 
-- After modifying shared rules, run `python3 control/project.py sync-agents` and reload context in Gemini CLI.
-- Run `python3 control/project.py check` before finishing guidance changes.
-- Do not copy shared rules into this file.
+- 修改 `AGENTS.md` 后，使用 `/memory reload` 重新加载上下文。
+- 运行 `python3 control/project.py check` 检查同步状态。
+- 不要在本文件复制共享主规则；需要调整通用规则时只改 `AGENTS.md`。
 """
 
 
 def expected_agent_files() -> dict[Path, str]:
     return {
-        ROOT / "AGENTS.md": render_agents(),
         ROOT / "CLAUDE.md": render_claude(),
         ROOT / "GEMINI.md": render_gemini(),
     }
 
 
 def sync_agents() -> int:
-    if not CONTRACT.exists():
-        print("missing control/contract.md", file=sys.stderr)
+    if not AGENTS_PATH.exists():
+        print("missing AGENTS.md", file=sys.stderr)
         return 1
     for path, content in expected_agent_files().items():
         path.write_text(content, encoding="utf-8")
-    print("Synced AGENTS.md, CLAUDE.md, and GEMINI.md.")
+    print("Synced CLAUDE.md and GEMINI.md.")
     return 0
 
 
 def check_agent_sync(result: Result) -> None:
-    if not CONTRACT.exists():
-        result.issues.append("missing control/contract.md")
+    if not AGENTS_PATH.exists():
+        result.issues.append("missing AGENTS.md")
         return
     for path, expected in expected_agent_files().items():
         if not path.exists():
             result.issues.append(f"missing {path.relative_to(ROOT)}")
         elif path.read_text(encoding="utf-8") != expected:
-            result.issues.append(f"{path.relative_to(ROOT)} is not in sync with control/contract.md")
+            result.issues.append(f"{path.relative_to(ROOT)} is not in sync with AGENTS.md")
     if not result.issues:
         result.notices.append("agent entry files are synced")
 
@@ -143,7 +119,7 @@ def check() -> int:
 def main() -> int:
     parser = argparse.ArgumentParser()
     sub = parser.add_subparsers(dest="command", required=True)
-    sub.add_parser("sync-agents", help="regenerate agent entry files")
+    sub.add_parser("sync-agents", help="regenerate agent entry files from AGENTS.md")
     sub.add_parser("check", help="check shared guidance sync and skill layout")
     args = parser.parse_args()
 
