@@ -47,6 +47,7 @@ If the mode is ambiguous, infer from the prompt and proceed. Ask only when the n
 Read the smallest useful slice of local context:
 
 - existing docs, AGENTS/CLAUDE instructions, README files;
+- known planning indexes or planning-location conventions;
 - target files or modules named by the user;
 - prior plan documents if the user references them;
 - current git status, so unrelated changes are not overwritten.
@@ -70,7 +71,26 @@ Use the index as the coordination surface for all generated handoff docs. At min
 - creation date or last update date;
 - one-line outcome or next action.
 
-### 4. Separate Work By Capability
+### 4. Review Recent Related Plans
+
+Before creating a new handoff plan, check the resolved planning location for related work from the last 7 days. Use this as a reference layer, not as unquestioned truth.
+
+Look in:
+
+- the planning index for recently created or updated entries;
+- Markdown files in the planning location whose filename, title, relevant files, modules, commands, or keywords overlap with the current request;
+- nearby status notes for plans marked `implemented`, `validated`, `blocked`, or `superseded`.
+
+When related recent plans exist:
+
+- reuse verified context, file lists, verification commands, constraints, and known risks when still applicable;
+- avoid duplicating a plan that is already active unless the new request materially changes scope;
+- record dependencies, supersession, or follow-up relationships in the index;
+- cite the referenced plan documents in the new handoff document's Context or Risks And Notes section.
+
+When no related recent plans exist, proceed normally and do not invent a reference.
+
+### 5. Separate Work By Capability
 
 Classify each part:
 
@@ -80,7 +100,7 @@ Classify each part:
 
 Prefer fewer, cleaner handoff docs over many tiny fragments. Split only when work can proceed independently without shared-state conflicts.
 
-### 5. Produce Handoff-Ready Markdown
+### 6. Produce Handoff-Ready Markdown
 
 When asked to create docs, write files under the resolved project planning location.
 
@@ -126,13 +146,13 @@ For multiple agents, add a brief index document listing ownership, dependencies,
 
 After writing or updating handoff documents, update the planning index in the same turn. Add new entries, adjust dependencies or ownership, and make sure the index points to the canonical planning location.
 
-### 6. Keep The Handoff Executable
+### 7. Keep The Handoff Executable
 
 Each document should name concrete files, modules, commands, or search terms. Avoid vague instructions like "improve architecture" unless paired with exact boundaries and acceptance criteria.
 
 If the user wants non-multimodal agents to implement, explicitly remove multimodal tasks from their package and reserve them for Codex.
 
-### 7. Validate Later Deliveries
+### 8. Validate Later Deliveries
 
 When the user asks for acceptance or validation:
 
