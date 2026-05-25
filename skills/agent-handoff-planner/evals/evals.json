@@ -51,6 +51,29 @@
           "text": "Describes how final acceptance should compare delivered work against the original handoff."
         }
       ]
+    },
+    {
+      "id": 4,
+      "prompt": "该项目要实现三个独立优化：日志性能优化、错误处理重构、测试覆盖率提升。分析现状，设计执行方案，拆分为多个md方案文档交付其他agent并行实现。",
+      "expected_output": "Creates an INDEX.md with execution authorization, stop gates, completion policy, and a copyable launch prompt so external agents can work autonomously without unnecessary confirmation prompts.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "INDEX.md includes Execution Authorization that explicitly lists actions the external agent can do without asking: read plans, create/reuse worktrees, scope-bounded edits, run verifications, local commits, merge/push/PR."
+        },
+        {
+          "text": "INDEX.md includes Stop Gates that explicitly forbid: force-push, hard reset, deleting branches/worktrees, expanding scope, network/external API calls — without user approval. Incremental merge/push/PR is NOT a stop gate."
+        },
+        {
+          "text": "INDEX.md includes Completion Policy stating the agent should merge/push/PR as the final step without asking, report results including merge/PR status, and NOT delete the worktree."
+        },
+        {
+          "text": "INDEX.md includes a copyable Launch Prompt the user can paste directly into Claude Code to start the external agent with full authorization context."
+        },
+        {
+          "text": "Sub-packages are independent and non-overlapping so parallel agents do not collide on the same files."
+        }
+      ]
     }
   ]
 }
