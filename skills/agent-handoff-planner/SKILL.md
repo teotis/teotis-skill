@@ -27,7 +27,7 @@ Do not use it for a tiny single-edit request unless the user explicitly asks for
 
 A useful handoff document is not a brainstorm. It is a contract: what to inspect, what to change, what not to change, how to verify, and what evidence proves completion.
 
-Every project should also have one stable planning home. Once you choose where handoff documents live for a project, record that location in the project's planning index and keep the index current as plans are created, validated, and completed.
+Every project should also have one stable planning home. Once you choose where handoff documents live for a project, record that location in the project's planning index so future agents can find it. For a specific multi-document handoff round, maintain a separate handoff package index as the round's top-level file.
 
 ## Workflow
 
@@ -63,7 +63,7 @@ Before writing handoff documents, find or create a stable planning location for 
 3. Record the chosen location near the top of the index so future agents reuse it instead of scattering plans across the repository.
 4. When the chosen location differs from the default, mention it in the final response and link to the index.
 
-Use the index as the coordination surface for all generated handoff docs. At minimum, keep entries with:
+Use the project planning index as the discovery surface for generated handoff docs and package indexes. At minimum, keep entries with:
 
 - plan title and link;
 - owner or target agent type, if known;
@@ -85,7 +85,7 @@ When related recent plans exist:
 
 - reuse verified context, file lists, verification commands, constraints, and known risks when still applicable;
 - avoid duplicating a plan that is already active unless the new request materially changes scope;
-- record dependencies, supersession, or follow-up relationships in the index;
+- record dependencies, supersession, or follow-up relationships in the new package index, and add a short cross-reference in the project planning index when useful;
 - cite the referenced plan documents in the new handoff document's Context or Risks And Notes section.
 
 When no related recent plans exist, proceed normally and do not invent a reference.
@@ -142,9 +142,16 @@ Use this structure for each handoff document:
 - [Known risk or dependency]
 ````
 
-For multiple agents, add a brief index document listing ownership, dependencies, and recommended execution order.
+For multiple agents or multi-document handoffs, add a handoff package index for this round. This is the top-level file for the current plan package, distinct from the project planning index. It should list:
 
-After writing or updating handoff documents, update the planning index in the same turn. Add new entries, adjust dependencies or ownership, and make sure the index points to the canonical planning location.
+- package goal and user request;
+- package documents and ownership;
+- dependencies and recommended execution order;
+- related recent plans used as references;
+- status for each work package;
+- final conclusions, completion notes, validation evidence, and follow-up items after work lands.
+
+After writing or updating handoff documents, update the handoff package index in the same turn. Also update the project planning index only as the directory-level registry: point it to the package index, record the top-level status, and keep the canonical planning location discoverable.
 
 ### 7. Keep The Handoff Executable
 
@@ -161,10 +168,10 @@ When the user asks for acceptance or validation:
 3. Compare delivered changes against each acceptance criterion.
 4. Run the listed verification commands when feasible.
 5. Report findings first: missing work, regressions, unverified claims, or mismatches.
-6. Update the planning index with the validation result, completion status, important conclusions, and any follow-up work.
+6. Update the handoff package index with the validation result, completion status, important conclusions, and any follow-up work. Update the project planning index only with the package-level status or link changes needed for discovery.
 7. Only then summarize what is complete.
 
-If you personally execute the plan instead of delegating it, still update the index after implementation lands. Include what changed, what verification passed or was not run, and whether the plan is now `implemented`, `validated`, `blocked`, or `superseded`.
+If you personally execute the plan instead of delegating it, still update the handoff package index after implementation lands. Include what changed, what verification passed or was not run, and whether the plan is now `implemented`, `validated`, `blocked`, or `superseded`.
 
 ## Output Style
 
