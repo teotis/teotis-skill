@@ -1,6 +1,6 @@
 ---
 name: agent-orchestration-planner
-description: 用于把多个 handoff packages 转换为可执行的多 agent 调度包，生成 Claude Code Agent View / claude agents / /batch 启动材料、并发计划、文件所有权、状态回填模板和最终集成验收入口。Use for multi-agent orchestration, Claude Code Agent View dispatch, Claude Code 2.x agent configuration, /batch decisions, status ledgers, and integration audit workflows.
+description: 用于把多个 handoff packages 转换为可执行的多 agent 调度包，生成 Claude Code Agent View / claude --bg / claude agents / /batch 启动材料、并发计划、文件所有权、状态回填模板和最终集成验收入口。Use for multi-agent orchestration, Claude Code Agent View dispatch, Claude Code background sessions, /batch decisions, status ledgers, and integration audit workflows.
 ---
 
 # Agent Orchestration Planner
@@ -8,7 +8,7 @@ description: 用于把多个 handoff packages 转换为可执行的多 agent 调
 ## Mission
 
 Turn handoff packages (typically from `agent-handoff-planner`) into an executable orchestration kit:
-- Decide whether to use single agent, Agent View with `claude agents`, `/batch`, or agent team.
+- Decide whether to use single agent, Agent View with `claude --bg` and `claude agents`, `/batch`, or agent team.
 - Generate launch prompts automatically.
 - Generate optional shell dispatch scripts.
 - Define package ownership and concurrency groups.
@@ -24,7 +24,7 @@ Use this skill when the request contains signals like:
 - "分包执行"
 - "Agent View"
 - "claude agents"
-- legacy "claude --bg" launch requests
+- "claude --bg"
 - "/batch"
 - "批量执行"
 - "自动派工"
@@ -62,7 +62,7 @@ Analyze the packages and automatically select the best mode. Document your choic
 |---|---|---|---|
 | `SINGLE_AGENT` | 1–2 packages, tightly coupled files, low concurrency benefit | 1–2 | Simplest; one agent does everything in sequence |
 | `AGENT_VIEW` | 2–8 relatively independent packages | 2–8 | User pastes prompts into Claude Code Agent View; agent manages its own worktree |
-| `AGENT_VIEW_LAUNCHER` | User wants a launcher/checklist that reduces setup friction for independently launchable packages | 2–8 | Generated `dispatch-claude-agents.sh` verifies Claude Code 2.x, prints Agent View defaults, and points to per-package prompts |
+| `BACKGROUND_AGENT_SCRIPT` | User wants automatic task creation for independently launchable packages | 2–8 | Generated `dispatch-claude-agents.sh` launches one `claude --bg --name` background session per package, then opens or points to `claude agents` |
 | `BATCH` | Repo-wide mechanical migration, lint/type rule rollout, test migration | Any (single command) | Output one `/batch` instruction, not N package prompts |
 | `AGENT_TEAM` | Research, review, multi-hypothesis debugging, cross-layer exploration only | 2–5 | Experimental; higher token cost; NOT for direct implementation of risky changes |
 | `CODEX_RETAINED_REVIEW` | Final acceptance, multimodal judgment, product taste, cross-package consistency audit | 1 (Codex) | Codex does NOT do grunt implementation; it validates deliverables |
@@ -70,11 +70,11 @@ Analyze the packages and automatically select the best mode. Document your choic
 **Decision rules**:
 - If all packages touch the same 1–3 files → `SINGLE_AGENT`.
 - If packages are file-disjoint and 2–8 → `AGENT_VIEW` (default).
-- If user says "自动" or "批量启动" → `AGENT_VIEW_LAUNCHER`; for Claude Code 2.x, do not assume `claude --bg` exists.
+- If user says "自动" or "批量启动" → `BACKGROUND_AGENT_SCRIPT`.
 - If the task is a mechanical transform across the whole repo → `BATCH`.
 - If the user explicitly asks for research/review by multiple agents → `AGENT_TEAM` (warn about token cost).
 - Always reserve `CODEX_RETAINED_REVIEW` for final integration audit.
-- Before writing any Claude launch command, verify the installed CLI with `claude --version`, `claude --help`, and when relevant `claude agents --help`.
+- Before writing any Claude launch command, check the official CLI reference and local version. Do not rely only on `claude --help`, because it may omit supported flags.
 
 ### 3. Generate Orchestration Kit
 
@@ -109,7 +109,7 @@ INDEX.md is the master control document. It MUST contain every section below.
 [One paragraph describing the combined outcome of all packages.]
 
 ## Execution Mode Recommendation
-- Recommended mode: <SINGLE_AGENT | AGENT_VIEW | AGENT_VIEW_LAUNCHER | BATCH | AGENT_TEAM | CODEX_RETAINED_REVIEW>
+- Recommended mode: <SINGLE_AGENT | AGENT_VIEW | BACKGROUND_AGENT_SCRIPT | BATCH | AGENT_TEAM | CODEX_RETAINED_REVIEW>
 - Why: <1–2 sentence justification>
 - Alternatives rejected: <mode — reason>
 - Max parallel agents: <N>
@@ -216,7 +216,7 @@ Evidence pack must include:
 
 ## Launch Options
 - **Option A**: Agent View manual dispatch — copy prompts from `launchers/agent-view-prompts.md`.
-- **Option B**: Agent View launcher — run `bash launchers/dispatch-claude-agents.sh` to verify the Claude CLI and print Agent View dispatch guidance.
+- **Option B**: background agent script — run `bash launchers/dispatch-claude-agents.sh` to create background sessions and view them in `claude agents`.
 - **Option C**: `/batch` — use the batch instruction in `launchers/batch-instruction.md`.
 - **Option D**: Final integration audit — give `validation/final-audit-prompt.md` to Codex.
 ```
@@ -255,7 +255,7 @@ Copy the block below into Claude Code Agent View.
 
 ### 6. launchers/dispatch-claude-agents.sh
 
-Generate an executable launcher/checklist script. Default to NOT running it automatically — the user decides. For Claude Code 2.x, this script should not call `claude --bg` unless `claude --help` confirms that flag exists on the installed CLI.
+Generate an executable dispatch script. Default to NOT running it automatically — the user decides. The script launches one Claude Code background session per package with `claude --bg --name`, then opens Agents View when running in an interactive terminal.
 
 ```bash
 #!/usr/bin/env bash
@@ -271,26 +271,54 @@ command -v claude >/dev/null 2>&1 || { echo "ERROR: claude CLI not found"; exit 
 git rev-parse --git-dir >/dev/null 2>&1 || { echo "ERROR: not a git repository"; exit 1; }
 [ -f "$PLAN_DIR/INDEX.md" ] || { echo "ERROR: INDEX.md not found at $PLAN_DIR/INDEX.md"; exit 1; }
 CLAUDE_VERSION="$(claude --version || true)"
-CLAUDE_HELP="$(claude --help || true)"
+CLAUDE_MODEL="${CLAUDE_MODEL:-sonnet}"
+CLAUDE_EFFORT="${CLAUDE_EFFORT:-xhigh}"
+CLAUDE_PERMISSION_MODE="${CLAUDE_PERMISSION_MODE:-auto}"
+CLAUDE_SETTING_SOURCES="${CLAUDE_SETTING_SOURCES:-user,project,local}"
+CLAUDE_OPEN_AGENT_VIEW="${CLAUDE_OPEN_AGENT_VIEW:-1}"
 
 echo "=== Claude Code ==="
 echo "$CLAUDE_VERSION"
 echo
-echo "=== Agent View dispatch ==="
-echo "Open Claude Code Agent View with defaults such as:"
-echo "  claude agents --model \"${CLAUDE_MODEL:-sonnet}\" --effort \"${CLAUDE_EFFORT:-xhigh}\" --permission-mode \"${CLAUDE_PERMISSION_MODE:-auto}\" --setting-sources \"${CLAUDE_SETTING_SOURCES:-user,project,local}\""
-echo
-echo "Then paste package prompts from:"
-echo "  $PLAN_DIR/launchers/agent-view-prompts.md"
-echo
-echo "Each package agent must write evidence to its own status file."
+echo "=== Launching background agents ==="
 
-if grep -q -- "--bg" <<<"$CLAUDE_HELP"; then
-  echo
-  echo "NOTE: This CLI advertises --bg. Only generate automatic background launch commands if the user explicitly asks for legacy --bg dispatch."
-fi
+launch_agent() {
+  local package_id="$1"
+  local package_doc="$2"
+  local status_file="$3"
+  local name="agent-${package_id}"
+  local prompt
+  prompt="Read $PLAN_DIR/INDEX.md and $package_doc. Implement package $package_id. Write evidence to $status_file when done. Do NOT edit INDEX.md or other status files."
+  echo "Launching $name"
+  claude \
+    --bg \
+    --name "$name" \
+    --model "$CLAUDE_MODEL" \
+    --effort "$CLAUDE_EFFORT" \
+    --permission-mode "$CLAUDE_PERMISSION_MODE" \
+    --setting-sources "$CLAUDE_SETTING_SOURCES" \
+    "$prompt"
+}
+
+# Group 1 — parallel safe
+launch_agent "01-xxx" "$PLAN_DIR/packages/01-xxx.md" "$PLAN_DIR/status/01-xxx.md"
+launch_agent "02-xxx" "$PLAN_DIR/packages/02-xxx.md" "$PLAN_DIR/status/02-xxx.md"
+
+echo
+echo "=== Background agents launched ==="
+echo "View them with:"
+echo "  claude agents --cwd \"$REPO_ROOT\" --model \"$CLAUDE_MODEL\" --effort \"$CLAUDE_EFFORT\" --permission-mode \"$CLAUDE_PERMISSION_MODE\" --setting-sources \"$CLAUDE_SETTING_SOURCES\""
 echo
 echo "After all agents complete, run the integration audit."
+
+if [ "$CLAUDE_OPEN_AGENT_VIEW" = "1" ] && [ -t 1 ]; then
+  claude agents \
+    --cwd "$REPO_ROOT" \
+    --model "$CLAUDE_MODEL" \
+    --effort "$CLAUDE_EFFORT" \
+    --permission-mode "$CLAUDE_PERMISSION_MODE" \
+    --setting-sources "$CLAUDE_SETTING_SOURCES"
+fi
 ```
 
 **Script rules**:
@@ -299,8 +327,8 @@ echo "After all agents complete, run the integration audit."
 - Check that `claude` CLI exists.
 - Check that it's a git repo.
 - Check that plan files exist before launching.
-- Print `claude agents` Agent View guidance.
-- Never assume `claude --bg` is available on Claude Code 2.x.
+- Launch one background session per package with `claude --bg --name`.
+- Open `claude agents --cwd "$REPO_ROOT"` when running interactively, unless `CLAUDE_OPEN_AGENT_VIEW=0`.
 - Never use `--dangerously-skip-permissions`.
 - Never delete worktrees.
 - Never force-push or hard reset.
@@ -417,7 +445,7 @@ After generating the orchestration kit, report concisely in chat:
 - **Generated files**: <count and key paths>
 - **How to run**:
   - Agent View: paste prompts from `launchers/agent-view-prompts.md`
-  - Launcher/checklist: `bash launchers/dispatch-claude-agents.sh`
+  - Background script: `bash launchers/dispatch-claude-agents.sh`
   - Batch: see `launchers/batch-instruction.md`
 - **What not to do**: force-push, hard reset, delete worktrees, edit INDEX.md from package agents
 - **Where final audit starts**: `validation/final-audit-prompt.md`

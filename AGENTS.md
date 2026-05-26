@@ -35,6 +35,12 @@ rtk python3 control/project.py sync-agents
 
 # 检查共享指导同步和技能布局
 rtk python3 control/project.py check
+
+# 同步私有技能到 Codex 和 Claude 用户级目录
+rtk python3 control/project.py sync-user-skills
+
+# 检查用户级技能同步
+rtk python3 control/project.py check-user-skills
 ```
 
 ## Coding conventions
@@ -65,6 +71,6 @@ control/                     — 工程管理工具
 
 ## Agent-specific adapters
 
-- Claude Code should read `CLAUDE.md`, which points back to this file. For Claude Code 2.x, verify current CLI flags with `claude --version` and `claude --help` before generating launch commands; prefer Agent View and `claude agents` defaults over obsolete `claude --bg` snippets unless the installed CLI still exposes that flag.
+- Claude Code should read `CLAUDE.md`, which points back to this file. For Claude Code 2.x, verify official CLI reference and local version before generating launch commands; `claude --help` may omit supported flags. Multi-agent orchestration may use `claude --bg` to create background sessions that are visible in `claude agents` / Agents View.
 - Gemini CLI should read `GEMINI.md`, which is generated from this file.
 - Codex app should use this `AGENTS.md` as the shared project instruction file.

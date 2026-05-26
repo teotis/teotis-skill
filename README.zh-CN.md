@@ -113,8 +113,15 @@
 共享仓库规则变化时，只编辑 `AGENTS.md`，然后运行：
 
 ```bash
-python3 control/project.py sync-agents
-python3 control/project.py check
+rtk python3 control/project.py sync-agents
+rtk python3 control/project.py check
 ```
 
-也可以使用 `make sync-agents` 和 `make check`。
+私有技能变化后，同步到 Codex 和 Claude 的用户级技能目录：
+
+```bash
+rtk python3 control/project.py sync-user-skills
+rtk python3 control/project.py check-user-skills
+```
+
+也可以使用 `make sync-agents`、`make check`、`make sync-user-skills` 和 `make check-user-skills`。

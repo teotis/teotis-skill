@@ -119,8 +119,15 @@ Each private skill lives in `skills/<skill>/` with a `SKILL.md` entry point.
 When shared repository rules change, edit `AGENTS.md` and run:
 
 ```bash
-python3 control/project.py sync-agents
-python3 control/project.py check
+rtk python3 control/project.py sync-agents
+rtk python3 control/project.py check
 ```
 
-`make sync-agents` and `make check` provide the same shortcuts.
+When private skills change, sync them to the user-level Codex and Claude skill directories:
+
+```bash
+rtk python3 control/project.py sync-user-skills
+rtk python3 control/project.py check-user-skills
+```
+
+`make sync-agents`, `make check`, `make sync-user-skills`, and `make check-user-skills` provide the same shortcuts.
