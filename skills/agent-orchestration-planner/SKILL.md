@@ -252,6 +252,7 @@ Required behavior:
 
 Implementation rules:
 - Compute `REPO_ROOT` dynamically with `git rev-parse --show-toplevel` from the script's directory. Never use hardcoded relative path traversal like `../../..` — the plan directory depth from repo root varies per project.
+- When awk processes the same TSV file twice (e.g. `awk '...' "$GRAPH" "$GRAPH"`), use `FNR == 1` to skip each file's header, not `NR == 1` which only skips the first file's header.
 - Use a lock such as `status/.orchestrate.lock` so concurrent `advance` calls cannot double-launch packages.
 - Never trust `--from`; it is only a hint for logging. Always compute readiness from coordinator status/state.
 - Every package can be launched at most once unless `retry` explicitly resets it.
