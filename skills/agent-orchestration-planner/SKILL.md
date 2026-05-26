@@ -72,7 +72,7 @@ docs/plans/<plan-name>/
 └── FINAL_REPORT.md (created by 99-finalize)
 ```
 
-`dispatch-claude-agents.sh` is no longer a primary generated entrypoint. If backward compatibility is useful, generate it only as a thin wrapper that calls `orchestrate.sh start`.
+`dispatch-claude-agents.sh` is no longer a primary generated entrypoint. If backward compatibility is useful, generate it only as a thin wrapper that calls `orchestrate.sh start`. Both scripts must compute `REPO_ROOT` with `git rev-parse --show-toplevel`, not hardcoded relative paths.
 
 ### 3. INDEX.md Required Sections
 
@@ -251,6 +251,7 @@ Required behavior:
 - `finalize`: run or re-run the `99-finalize` package idempotently.
 
 Implementation rules:
+- Compute `REPO_ROOT` dynamically with `git rev-parse --show-toplevel` from the script's directory. Never use hardcoded relative path traversal like `../../..` — the plan directory depth from repo root varies per project.
 - Use a lock such as `status/.orchestrate.lock` so concurrent `advance` calls cannot double-launch packages.
 - Never trust `--from`; it is only a hint for logging. Always compute readiness from coordinator status/state.
 - Every package can be launched at most once unless `retry` explicitly resets it.
