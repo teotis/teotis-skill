@@ -255,7 +255,7 @@ Copy the block below into Claude Code Agent View.
 
 ### 6. launchers/dispatch-claude-agents.sh
 
-Generate an executable dispatch script. Default to NOT running it automatically — the user decides. The script launches one Claude Code background session per package with `claude --bg --name`, then opens Agents View when running in an interactive terminal.
+Generate an executable dispatch script. Default to NOT running it automatically — the user decides. The script launches one Claude Code background session per package with `claude --bg --name`, then prints the `claude agents` command. Do not open Agents View by default, because users may run several dispatch scripts from one terminal.
 
 ```bash
 #!/usr/bin/env bash
@@ -275,7 +275,7 @@ CLAUDE_MODEL="${CLAUDE_MODEL:-sonnet}"
 CLAUDE_EFFORT="${CLAUDE_EFFORT:-xhigh}"
 CLAUDE_PERMISSION_MODE="${CLAUDE_PERMISSION_MODE:-default}"
 CLAUDE_SETTING_SOURCES="${CLAUDE_SETTING_SOURCES:-user,project,local}"
-CLAUDE_OPEN_AGENT_VIEW="${CLAUDE_OPEN_AGENT_VIEW:-1}"
+CLAUDE_OPEN_AGENT_VIEW="${CLAUDE_OPEN_AGENT_VIEW:-0}"
 
 echo "=== Claude Code ==="
 echo "$CLAUDE_VERSION"
@@ -344,7 +344,8 @@ fi
 - Launch one background session per package with `claude --bg --name`.
 - Default generated scripts to `CLAUDE_PERMISSION_MODE=default`; `auto` is allowed only when the user opts in interactively with `claude --permission-mode auto` first.
 - If `--permission-mode auto` fails with the opt-in error, print the exact interactive opt-in command and a `CLAUDE_PERMISSION_MODE=default` fallback.
-- Open `claude agents --cwd "$REPO_ROOT"` when running interactively, unless `CLAUDE_OPEN_AGENT_VIEW=0`.
+- Print `claude agents --cwd "$REPO_ROOT"` after dispatch.
+- Do not open Agents View by default; open it only when `CLAUDE_OPEN_AGENT_VIEW=1`.
 - Never use `--dangerously-skip-permissions`.
 - Never delete worktrees.
 - Never force-push or hard reset.
