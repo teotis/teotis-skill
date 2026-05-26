@@ -127,6 +127,7 @@ You (the external agent) are authorized to do the following WITHOUT asking for c
 - Commit locally within the worktree branch.
 - Merge, push, or create PRs for worktree branches (incremental, non-destructive operations).
 - Write to ONLY your assigned status/<package-id>.md file — never edit INDEX.md or another package's status file.
+- Mark your own status file `in_progress` when starting, then `completed` or `blocked` when finishing.
 
 ## Stop Gates — Must Ask
 
@@ -141,7 +142,7 @@ STOP and ask the user before:
 ## Completion Policy
 
 After completing your assigned package:
-- Write your evidence pack to status/<package-id>.md — do NOT edit INDEX.md.
+- Write your evidence pack to status/<package-id>.md and set `Status` to `completed`, or `blocked` if acceptance criteria cannot be met — do NOT edit INDEX.md.
 - Merge, push, or create a PR as the final step — no need to ask.
 - Report: what changed, test results, merge/PR status, and branch/worktree path.
 - Do NOT delete the worktree unless explicitly instructed.
@@ -254,6 +255,7 @@ Copy the block below into Claude Code Agent View.
 
 **File ownership**: you may edit <allowed-paths>. Do NOT touch <forbidden-paths>.
 **Dependencies**: <none | wait for package X to complete first>. If dependencies exist, start only after the dependency status files show `completed`.
+**Status updates**: immediately set your status file to `in_progress`; when finished, set it to `completed` or `blocked` and include the evidence pack.
 
 **Stop gates**: force-push, hard reset, delete worktree, expand scope, touch forbidden paths → stop and ask.
 
@@ -388,7 +390,7 @@ launch_agent() {
   local status_file="$3"
   local name="agent-${package_id}"
   local prompt
-  prompt="Read $PLAN_DIR/INDEX.md and $package_doc. Implement package $package_id. Write evidence to $status_file when done. Do NOT edit INDEX.md or other status files."
+  prompt="Read $PLAN_DIR/INDEX.md and $package_doc. Implement package $package_id. Immediately mark $status_file Status as in_progress. When done, set Status to completed or blocked and write the evidence pack to $status_file. Do NOT edit INDEX.md or other status files."
   echo "Launching $name"
   set +e
   if [ -n "$CLAUDE_PERMISSION_MODE" ]; then
@@ -554,8 +556,10 @@ Each package executor writes to its own status file. Do NOT edit INDEX.md.
 
 ## How to use
 1. Copy `package-status-template.md` to `<package-id>.md`.
-2. Fill in each section as you complete the package.
-3. Do not edit other packages' status files.
+2. Set `Status` to `in_progress` when starting.
+3. Set `Status` to `completed` when done, or `blocked` if acceptance criteria cannot be met.
+4. Fill in each evidence section as you complete the package.
+5. Do not edit other packages' status files.
 ```
 
 **status/package-status-template.md**:
