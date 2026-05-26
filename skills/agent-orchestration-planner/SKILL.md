@@ -10,7 +10,7 @@ description: 用于把多个 handoff packages 转换为可执行的多 agent 调
 Turn handoff packages (typically from `agent-handoff-planner`) into an executable orchestration kit:
 - Decide whether to use single agent, Agent View with `claude --bg` and `claude agents`, `/batch`, or agent team.
 - Generate launch prompts automatically.
-- Generate optional shell dispatch scripts.
+- Generate optional shell dispatch scripts that are idempotent and dependency-aware.
 - Define package ownership and concurrency groups.
 - Prevent file conflicts.
 - Require evidence packs.
@@ -71,6 +71,7 @@ Analyze the packages and automatically select the best mode. Document your choic
 - If all packages touch the same 1–3 files → `SINGLE_AGENT`.
 - If packages are file-disjoint and 2–8 → `AGENT_VIEW` (default).
 - If user says "自动" or "批量启动" → `BACKGROUND_AGENT_SCRIPT`.
+- If packages have ordered dependencies, still use `BACKGROUND_AGENT_SCRIPT` when automation is useful, but make the script dependency-aware instead of launching every package unconditionally.
 - If the task is a mechanical transform across the whole repo → `BATCH`.
 - If the user explicitly asks for research/review by multiple agents → `AGENT_TEAM` (warn about token cost).
 - Always reserve `CODEX_RETAINED_REVIEW` for final integration audit.
@@ -89,6 +90,7 @@ docs/plans/<plan-name>/
 │   └── 99-integration-audit.md
 ├── launchers/
 │   ├── agent-view-prompts.md
+│   ├── package-graph.tsv
 │   └── dispatch-claude-agents.sh
 ├── status/
 │   ├── README.md
@@ -151,6 +153,14 @@ After completing your assigned package:
 | G2 | 02-xxx | yes (with G1) | none | safe — disjoint files |
 | G3 | 03-xxx | no | G1, G2 | caution — reads files G1 writes |
 
+## Dependency Graph
+| Package | Depends On | Unlocks | Ready When | Notes |
+|---|---|---|---|---|
+| 01-xxx | none | 03-xxx | immediately | can launch in first wave |
+| 02-xxx | none | 03-xxx | immediately | can launch in first wave |
+| 03-xxx | 01-xxx, 02-xxx | 99-audit | both dependency status files show completed | integration package |
+| 99-audit | all implementation packages | none | all package status files show completed | Codex retained |
+
 ## File Ownership Map
 | Path / Glob | Owner Package | Other Packages Must Not Edit |
 |---|---|---|
@@ -165,11 +175,12 @@ After completing your assigned package:
 - When to pause: <condition that should stop all agents>
 
 ## Dispatch Plan
-| Package | Mode | Agent Name | Prompt File | Status File |
-|---|---|---|---|---|
-| 01-xxx | agent-view | agent-01-xxx | launchers/agent-view-prompts.md#pkg-01 | status/01-xxx.md |
-| 02-xxx | agent-view | agent-02-xxx | launchers/agent-view-prompts.md#pkg-02 | status/02-xxx.md |
-| 99-audit | codex | — | validation/final-audit-prompt.md | status/99-audit.md |
+| Package | Mode | Agent Name | Prompt File | Status File | Depends On | Auto-Dispatch Rule |
+|---|---|---|---|---|---|---|
+| 01-xxx | agent-view | agent-01-xxx | launchers/agent-view-prompts.md#pkg-01 | status/01-xxx.md | none | ready immediately |
+| 02-xxx | agent-view | agent-02-xxx | launchers/agent-view-prompts.md#pkg-02 | status/02-xxx.md | none | ready immediately |
+| 03-xxx | agent-view | agent-03-xxx | launchers/agent-view-prompts.md#pkg-03 | status/03-xxx.md | 01-xxx, 02-xxx | launch when dependencies are completed |
+| 99-audit | codex | — | validation/final-audit-prompt.md | status/99-audit.md | all implementation packages | manual Codex audit unless explicitly automated |
 
 ## Status Ledger
 | Package | Agent | Status | Worktree | Commit/PR | Verification | Evidence |
@@ -242,7 +253,7 @@ Copy the block below into Claude Code Agent View.
 **Status file**: <repo-root>/docs/plans/<name>/status/<package-id>.md
 
 **File ownership**: you may edit <allowed-paths>. Do NOT touch <forbidden-paths>.
-**Dependencies**: <none | wait for package X to complete first>
+**Dependencies**: <none | wait for package X to complete first>. If dependencies exist, start only after the dependency status files show `completed`.
 
 **Stop gates**: force-push, hard reset, delete worktree, expand scope, touch forbidden paths → stop and ask.
 
@@ -255,7 +266,29 @@ Copy the block below into Claude Code Agent View.
 
 ### 6. launchers/dispatch-claude-agents.sh
 
-Generate an executable dispatch script. Default to NOT running it automatically — the user decides. The script launches one Claude Code background session per package with `claude --bg --name`, then prints the `claude agents` command. Do not open Agents View by default, because users may run several dispatch scripts from one terminal.
+Generate an executable dispatch script. Default to NOT running it automatically — the user decides.
+
+The script MUST be idempotent and dependency-aware:
+- Read `launchers/package-graph.tsv` to discover packages, package docs, status files, and dependencies.
+- Launch only packages whose dependencies are completed.
+- Skip packages that are already `completed`, `in_progress`, or already listed as launched in `status/.dispatch-state.tsv`.
+- Print blocked packages with the specific dependency statuses that prevent launch.
+- Support repeated manual runs: after upstream agents finish and write `completed`, running the same script again launches newly-ready downstream packages.
+- Support optional watch mode (`ORCHESTRATION_WATCH=1`) that polls status files and launches newly-ready packages until all non-manual packages are complete.
+- Do NOT make package agents recursively invoke the dispatcher from inside their own task. Centralized watch mode is safer and easier to audit than agent self-triggering.
+- Treat `99-integration-audit` as manual by default unless the user explicitly asks to automate the final audit.
+
+Generate `launchers/package-graph.tsv` with a header and one row per package:
+
+```tsv
+package_id	package_doc	status_file	dependencies	manual
+01-xxx	packages/01-xxx.md	status/01-xxx.md		0
+02-xxx	packages/02-xxx.md	status/02-xxx.md		0
+03-xxx	packages/03-xxx.md	status/03-xxx.md	01-xxx,02-xxx	0
+99-integration-audit	packages/99-integration-audit.md	status/99-integration-audit.md	01-xxx,02-xxx,03-xxx	1
+```
+
+The script launches one Claude Code background session per ready package with `claude --bg --name`, then prints the `claude agents` command. Do not open Agents View by default, because users may run several dispatch scripts from one terminal.
 
 ```bash
 #!/usr/bin/env bash
@@ -263,6 +296,8 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 PLAN_DIR="$REPO_ROOT/docs/plans/<plan-name>"
+GRAPH_FILE="$PLAN_DIR/launchers/package-graph.tsv"
+DISPATCH_STATE="$PLAN_DIR/status/.dispatch-state.tsv"
 
 cd "$REPO_ROOT"
 
@@ -270,17 +305,82 @@ cd "$REPO_ROOT"
 command -v claude >/dev/null 2>&1 || { echo "ERROR: claude CLI not found"; exit 1; }
 git rev-parse --git-dir >/dev/null 2>&1 || { echo "ERROR: not a git repository"; exit 1; }
 [ -f "$PLAN_DIR/INDEX.md" ] || { echo "ERROR: INDEX.md not found at $PLAN_DIR/INDEX.md"; exit 1; }
+[ -f "$GRAPH_FILE" ] || { echo "ERROR: package graph not found at $GRAPH_FILE"; exit 1; }
 CLAUDE_VERSION="$(claude --version || true)"
 CLAUDE_MODEL="${CLAUDE_MODEL:-sonnet}"
 CLAUDE_EFFORT="${CLAUDE_EFFORT:-xhigh}"
 CLAUDE_PERMISSION_MODE="${CLAUDE_PERMISSION_MODE:-}"
 CLAUDE_SETTING_SOURCES="${CLAUDE_SETTING_SOURCES:-user,project,local}"
 CLAUDE_OPEN_AGENT_VIEW="${CLAUDE_OPEN_AGENT_VIEW:-0}"
+ORCHESTRATION_WATCH="${ORCHESTRATION_WATCH:-0}"
+ORCHESTRATION_INCLUDE_MANUAL="${ORCHESTRATION_INCLUDE_MANUAL:-0}"
+ORCHESTRATION_POLL_SECONDS="${ORCHESTRATION_POLL_SECONDS:-30}"
 
 echo "=== Claude Code ==="
 echo "$CLAUDE_VERSION"
 echo
-echo "=== Launching background agents ==="
+echo "=== Dependency-aware dispatch ==="
+
+mkdir -p "$PLAN_DIR/status"
+touch "$DISPATCH_STATE"
+
+status_of() {
+  local status_file="$1"
+  if [ ! -f "$status_file" ]; then
+    echo "pending"
+    return
+  fi
+  local status_line
+  status_line="$(grep -Eim1 '^- \*\*Status\*\*:' "$status_file" || true)"
+  if [ -z "$status_line" ]; then
+    echo "pending"
+    return
+  fi
+  local parsed_status
+  parsed_status="$(echo "$status_line" | sed -E 's/.*Status\*\*: *//; s/[ <>]//g' | tr '[:upper:]' '[:lower:]')"
+  case "$parsed_status" in
+    pending|in_progress|completed|blocked) echo "$parsed_status" ;;
+    *) echo "pending" ;;
+  esac
+}
+
+already_launched() {
+  local package_id="$1"
+  grep -Eq "^${package_id}[[:space:]]" "$DISPATCH_STATE"
+}
+
+dependencies_ready() {
+  local deps="$1"
+  local dep dep_status dep_status_file
+  [ -z "$deps" ] && return 0
+  IFS=',' read -ra dep_array <<<"$deps"
+  for dep in "${dep_array[@]}"; do
+    dep="${dep// /}"
+    dep_status_file="$(awk -F '\t' -v id="$dep" 'NR > 1 && $1 == id { print $3 }' "$GRAPH_FILE")"
+    if [ -z "$dep_status_file" ]; then
+      echo "unknown dependency $dep"
+      return 1
+    fi
+    dep_status="$(status_of "$PLAN_DIR/$dep_status_file")"
+    if [ "$dep_status" != "completed" ]; then
+      echo "$dep=$dep_status"
+      return 1
+    fi
+  done
+  return 0
+}
+
+all_launchable_complete() {
+  local package_id package_doc status_file dependencies manual current_status
+  while IFS=$'\t' read -r package_id package_doc status_file dependencies manual; do
+    [ "$package_id" = "package_id" ] && continue
+    [ -z "$package_id" ] && continue
+    [ "$manual" = "1" ] && [ "$ORCHESTRATION_INCLUDE_MANUAL" != "1" ] && continue
+    current_status="$(status_of "$PLAN_DIR/$status_file")"
+    [ "$current_status" = "completed" ] || return 1
+  done < "$GRAPH_FILE"
+  return 0
+}
 
 launch_agent() {
   local package_id="$1"
@@ -322,14 +422,69 @@ launch_agent() {
     return "$status"
   fi
   echo "$output"
+  printf "%s\t%s\t%s\n" "$package_id" "$name" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$DISPATCH_STATE"
 }
 
-# Group 1 — parallel safe
-launch_agent "01-xxx" "$PLAN_DIR/packages/01-xxx.md" "$PLAN_DIR/status/01-xxx.md"
-launch_agent "02-xxx" "$PLAN_DIR/packages/02-xxx.md" "$PLAN_DIR/status/02-xxx.md"
+dispatch_ready_once() {
+  local launched_any=0
+  while IFS=$'\t' read -r package_id package_doc status_file dependencies manual; do
+    [ "$package_id" = "package_id" ] && continue
+    [ -z "$package_id" ] && continue
+
+    local abs_package_doc="$PLAN_DIR/$package_doc"
+    local abs_status_file="$PLAN_DIR/$status_file"
+    [ -f "$abs_package_doc" ] || { echo "ERROR: missing package doc $abs_package_doc"; exit 1; }
+
+    local current_status
+    current_status="$(status_of "$abs_status_file")"
+    if [ "$current_status" = "completed" ]; then
+      echo "SKIP $package_id: completed"
+      continue
+    fi
+    if [ "$current_status" = "in_progress" ] || already_launched "$package_id"; then
+      echo "SKIP $package_id: already launched or in progress"
+      continue
+    fi
+    if [ "$manual" = "1" ] && [ "$ORCHESTRATION_INCLUDE_MANUAL" != "1" ]; then
+      echo "SKIP $package_id: manual package"
+      continue
+    fi
+
+    local blocked_reason
+    if ! blocked_reason="$(dependencies_ready "$dependencies")"; then
+      echo "BLOCKED $package_id: waiting for $blocked_reason"
+      continue
+    fi
+
+    launch_agent "$package_id" "$abs_package_doc" "$abs_status_file"
+    launched_any=1
+  done < "$GRAPH_FILE"
+
+  return "$launched_any"
+}
+
+if [ "$ORCHESTRATION_WATCH" = "1" ]; then
+  while true; do
+    if all_launchable_complete; then
+      echo "All launchable packages are completed."
+      break
+    fi
+    set +e
+    dispatch_ready_once
+    launched=$?
+    set -e
+    if [ "$launched" -eq 0 ]; then
+      sleep "$ORCHESTRATION_POLL_SECONDS"
+    else
+      sleep 5
+    fi
+  done
+else
+  dispatch_ready_once || true
+fi
 
 echo
-echo "=== Background agents launched ==="
+echo "=== Dispatch pass complete ==="
 echo "View them with:"
 if [ -n "$CLAUDE_PERMISSION_MODE" ]; then
   echo "  claude agents --cwd \"$REPO_ROOT\" --model \"$CLAUDE_MODEL\" --effort \"$CLAUDE_EFFORT\" --permission-mode \"$CLAUDE_PERMISSION_MODE\" --setting-sources \"$CLAUDE_SETTING_SOURCES\""
@@ -337,7 +492,9 @@ else
   echo "  claude agents --cwd \"$REPO_ROOT\" --model \"$CLAUDE_MODEL\" --effort \"$CLAUDE_EFFORT\" --setting-sources \"$CLAUDE_SETTING_SOURCES\""
 fi
 echo
-echo "After all agents complete, run the integration audit."
+echo "Rerun this script after upstream packages complete to launch newly-ready downstream packages."
+echo "For continuous dependency dispatch: ORCHESTRATION_WATCH=1 bash launchers/dispatch-claude-agents.sh"
+echo "After all implementation packages complete, run the integration audit."
 
 if [ "$CLAUDE_OPEN_AGENT_VIEW" = "1" ] && [ -t 1 ]; then
   if [ -n "$CLAUDE_PERMISSION_MODE" ]; then
@@ -362,8 +519,14 @@ fi
 - `cd` to repo root.
 - Check that `claude` CLI exists.
 - Check that it's a git repo.
-- Check that plan files exist before launching.
-- Launch one background session per package with `claude --bg --name`.
+- Check that plan files and `launchers/package-graph.tsv` exist before launching.
+- Launch one background session per ready package with `claude --bg --name`.
+- Never launch a package whose dependencies are not completed.
+- Never launch a package that is already completed, in progress, or recorded in `status/.dispatch-state.tsv`.
+- Print exact blocked dependency statuses for ordered work packages.
+- Include optional watch mode with `ORCHESTRATION_WATCH=1`; keep it off by default.
+- Keep final integration audit manual by default unless the user explicitly requests full automation.
+- To retry a launched package that never writes completion evidence, the user may remove that package's row from `status/.dispatch-state.tsv` after inspecting the failure.
 - Default generated scripts to inherit the user's configured Claude Code permission mode by omitting `--permission-mode`; set `CLAUDE_PERMISSION_MODE=bypassPermissions`, `auto`, `default`, or another supported mode only when an explicit override is needed.
 - For users who set `permissions.defaultMode` to `bypassPermissions` in `~/.claude/settings.json`, the generated background sessions will start in bypass mode without the script hard-coding it.
 - If `--permission-mode auto` fails with the opt-in error, print the exact interactive opt-in command and a `CLAUDE_PERMISSION_MODE=default` fallback.
@@ -379,6 +542,7 @@ To prevent concurrent-write conflicts, package executors MUST NOT edit INDEX.md 
 
 - Each agent writes ONLY to `status/<package-id>.md`.
 - The status file uses the `package-status-template.md` format.
+- The dispatch script may write only `status/.dispatch-state.tsv` for launched-session bookkeeping.
 - The integration auditor (Codex or final agent) reads all `status/*.md` files and summarizes into INDEX or a `FINAL_REPORT.md`.
 
 **status/README.md**:
@@ -482,10 +646,12 @@ The audit task MUST:
 After generating the orchestration kit, report concisely in chat:
 
 - **Recommended mode**: <mode>
+- **Dependency order**: <which packages run first, which packages wait, and what unlocks them>
 - **Generated files**: <count and key paths>
 - **How to run**:
   - Agent View: paste prompts from `launchers/agent-view-prompts.md`
-  - Background script: `bash launchers/dispatch-claude-agents.sh`
+  - Background script one pass: `bash launchers/dispatch-claude-agents.sh`
+  - Background script continuous dependency dispatch: `ORCHESTRATION_WATCH=1 bash launchers/dispatch-claude-agents.sh`
   - Batch: see `launchers/batch-instruction.md`
 - **What not to do**: force-push, hard reset, delete worktrees, edit INDEX.md from package agents
 - **Where final audit starts**: `validation/final-audit-prompt.md`
