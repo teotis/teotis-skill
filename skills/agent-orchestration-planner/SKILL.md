@@ -126,8 +126,9 @@ You (the external agent) are authorized to do the following WITHOUT asking for c
 - Run the listed verification commands.
 - Commit locally within the worktree branch.
 - Merge, push, or create PRs for worktree branches (incremental, non-destructive operations).
-- Write to ONLY your assigned status/<package-id>.md file — never edit INDEX.md or another package's status file.
-- Mark your own status file `in_progress` when starting, then `completed` or `blocked` when finishing.
+- Write to ONLY the assigned coordinator status file at the absolute path given in the prompt — never edit INDEX.md or another package's status file.
+- Mark that coordinator status file `in_progress` when starting, then `completed` or `blocked` when finishing.
+- If you work in an isolated git worktree, do NOT rely on the worktree copy of `status/<package-id>.md`; the dispatcher only reads the coordinator status file under the original plan directory.
 
 ## Stop Gates — Must Ask
 
@@ -142,7 +143,8 @@ STOP and ask the user before:
 ## Completion Policy
 
 After completing your assigned package:
-- Write your evidence pack to status/<package-id>.md and set `Status` to `completed`, or `blocked` if acceptance criteria cannot be met — do NOT edit INDEX.md.
+- Write your evidence pack to the coordinator status file and set `Status` to `completed`, or `blocked` if acceptance criteria cannot be met — do NOT edit INDEX.md.
+- If sandbox permissions prevent writing the coordinator status file directly, write the evidence to your worktree copy and report the exact source path plus the required sync command; do NOT claim the package is dependency-unlocking until the coordinator status file is updated.
 - Merge, push, or create a PR as the final step — no need to ask.
 - Report: what changed, test results, merge/PR status, and branch/worktree path.
 - Do NOT delete the worktree unless explicitly instructed.
@@ -255,7 +257,7 @@ Copy the block below into Claude Code Agent View.
 
 **File ownership**: you may edit <allowed-paths>. Do NOT touch <forbidden-paths>.
 **Dependencies**: <none | wait for package X to complete first>. If dependencies exist, start only after the dependency status files show `completed`.
-**Status updates**: immediately set your status file to `in_progress`; when finished, set it to `completed` or `blocked` and include the evidence pack.
+**Status updates**: the status file above is the coordinator status file, even if you create a separate implementation worktree. Immediately set that exact file to `in_progress`; when finished, set that exact file to `completed` or `blocked` and include the evidence pack. Do not only update a same-path copy inside your implementation worktree.
 
 **Stop gates**: force-push, hard reset, delete worktree, expand scope, touch forbidden paths → stop and ask.
 
@@ -390,7 +392,7 @@ launch_agent() {
   local status_file="$3"
   local name="agent-${package_id}"
   local prompt
-  prompt="Read $PLAN_DIR/INDEX.md and $package_doc. Implement package $package_id. Immediately mark $status_file Status as in_progress. When done, set Status to completed or blocked and write the evidence pack to $status_file. Do NOT edit INDEX.md or other status files."
+  prompt="Read $PLAN_DIR/INDEX.md and $package_doc. Implement package $package_id. Treat $status_file as the coordinator status file outside any implementation worktree. Immediately mark that exact file Status as in_progress. When done, set that exact file Status to completed or blocked and write the evidence pack there. Do NOT only update a same-path copy inside your worktree. Do NOT edit INDEX.md or other status files."
   echo "Launching $name"
   set +e
   if [ -n "$CLAUDE_PERMISSION_MODE" ]; then
@@ -524,6 +526,7 @@ fi
 - Check that plan files and `launchers/package-graph.tsv` exist before launching.
 - Launch one background session per ready package with `claude --bg --name`.
 - Never launch a package whose dependencies are not completed.
+- Read status only from the coordinator plan directory (`$PLAN_DIR/status/...`), not from implementation worktree copies.
 - Never launch a package that is already completed, in progress, or recorded in `status/.dispatch-state.tsv`.
 - Print exact blocked dependency statuses for ordered work packages.
 - Include optional watch mode with `ORCHESTRATION_WATCH=1`; keep it off by default.
@@ -540,26 +543,28 @@ fi
 
 ### 7. Status Files Instead of Shared Ledger Writes
 
-To prevent concurrent-write conflicts, package executors MUST NOT edit INDEX.md directly.
+To prevent concurrent-write conflicts, package executors MUST NOT edit INDEX.md directly. Status files are coordination files in the original plan directory, not implementation files owned by a worktree branch.
 
-- Each agent writes ONLY to `status/<package-id>.md`.
+- Each agent writes ONLY to its assigned coordinator status file at the absolute path given in the prompt.
 - The status file uses the `package-status-template.md` format.
 - The dispatch script may write only `status/.dispatch-state.tsv` for launched-session bookkeeping.
 - The integration auditor (Codex or final agent) reads all `status/*.md` files and summarizes into INDEX or a `FINAL_REPORT.md`.
+- If an implementation worktree also contains a stale copy of `docs/plans/.../status/<package-id>.md`, ignore it unless it has been explicitly synchronized back to the coordinator status path.
 
 **status/README.md**:
 
 ```markdown
 # Status Files
 
-Each package executor writes to its own status file. Do NOT edit INDEX.md.
+Each package executor writes to its own coordinator status file in this plan directory. Do NOT edit INDEX.md.
 
 ## How to use
 1. Copy `package-status-template.md` to `<package-id>.md`.
-2. Set `Status` to `in_progress` when starting.
-3. Set `Status` to `completed` when done, or `blocked` if acceptance criteria cannot be met.
+2. Set `Status` to `in_progress` in this coordinator file when starting.
+3. Set `Status` to `completed` in this coordinator file when done, or `blocked` if acceptance criteria cannot be met.
 4. Fill in each evidence section as you complete the package.
-5. Do not edit other packages' status files.
+5. Do not rely on a status-file copy inside an implementation worktree; dependency dispatch reads this coordinator file only.
+6. Do not edit other packages' status files.
 ```
 
 **status/package-status-template.md**:
