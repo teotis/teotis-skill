@@ -273,7 +273,7 @@ git rev-parse --git-dir >/dev/null 2>&1 || { echo "ERROR: not a git repository";
 CLAUDE_VERSION="$(claude --version || true)"
 CLAUDE_MODEL="${CLAUDE_MODEL:-sonnet}"
 CLAUDE_EFFORT="${CLAUDE_EFFORT:-xhigh}"
-CLAUDE_PERMISSION_MODE="${CLAUDE_PERMISSION_MODE:-auto}"
+CLAUDE_PERMISSION_MODE="${CLAUDE_PERMISSION_MODE:-default}"
 CLAUDE_SETTING_SOURCES="${CLAUDE_SETTING_SOURCES:-user,project,local}"
 CLAUDE_OPEN_AGENT_VIEW="${CLAUDE_OPEN_AGENT_VIEW:-1}"
 
@@ -290,14 +290,28 @@ launch_agent() {
   local prompt
   prompt="Read $PLAN_DIR/INDEX.md and $package_doc. Implement package $package_id. Write evidence to $status_file when done. Do NOT edit INDEX.md or other status files."
   echo "Launching $name"
-  claude \
+  set +e
+  output="$(claude \
     --bg \
     --name "$name" \
     --model "$CLAUDE_MODEL" \
     --effort "$CLAUDE_EFFORT" \
     --permission-mode "$CLAUDE_PERMISSION_MODE" \
     --setting-sources "$CLAUDE_SETTING_SOURCES" \
-    "$prompt"
+    "$prompt" 2>&1)"
+  status=$?
+  set -e
+  if [ "$status" -ne 0 ]; then
+    echo "$output" >&2
+    if [ "$CLAUDE_PERMISSION_MODE" = "auto" ] && grep -qi "requires opting in" <<<"$output"; then
+      echo >&2
+      echo "ERROR: Claude Code requires one interactive auto-mode opt-in before --bg can use --permission-mode auto." >&2
+      echo "Run once interactively: claude --permission-mode auto" >&2
+      echo "Or rerun this script without auto mode: CLAUDE_PERMISSION_MODE=default bash launchers/dispatch-claude-agents.sh" >&2
+    fi
+    return "$status"
+  fi
+  echo "$output"
 }
 
 # Group 1 — parallel safe
@@ -328,6 +342,8 @@ fi
 - Check that it's a git repo.
 - Check that plan files exist before launching.
 - Launch one background session per package with `claude --bg --name`.
+- Default generated scripts to `CLAUDE_PERMISSION_MODE=default`; `auto` is allowed only when the user opts in interactively with `claude --permission-mode auto` first.
+- If `--permission-mode auto` fails with the opt-in error, print the exact interactive opt-in command and a `CLAUDE_PERMISSION_MODE=default` fallback.
 - Open `claude agents --cwd "$REPO_ROOT"` when running interactively, unless `CLAUDE_OPEN_AGENT_VIEW=0`.
 - Never use `--dangerously-skip-permissions`.
 - Never delete worktrees.
