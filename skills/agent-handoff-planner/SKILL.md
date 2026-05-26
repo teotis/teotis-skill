@@ -200,7 +200,7 @@ Copy this exact message to start an external Claude Code agent:
 
 The authorization sections eliminate unnecessary confirmation prompts (worktree creation, merge asking, cleanup) while keeping the human safety gates intact.
 
-**Boundary**: agent-handoff-planner produces a basic INDEX with the four authorization sections, but it does NOT generate batch launch scripts, Agent View prompt lists, `claude --bg` dispatch scripts, status ledgers, or automated concurrency plans. Those belong to `agent-orchestration-planner`. If the user wants full multi-agent orchestration, hand off the INDEX and package docs to that skill.
+**Boundary**: agent-handoff-planner produces a basic INDEX with the four authorization sections, but it does NOT generate batch launch scripts, Agent View prompt lists, Claude Code agent launchers, status ledgers, or automated concurrency plans. Those belong to `agent-orchestration-planner`. If the user wants full multi-agent orchestration, hand off the INDEX and package docs to that skill.
 
 ### 5. Keep The Handoff Executable
 

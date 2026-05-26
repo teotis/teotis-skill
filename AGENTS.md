@@ -9,6 +9,7 @@ Codex 与 Claude Code 的私有技能工作区。技能覆盖工程、研究、�
 ## How to work
 
 - Read this file before making changes to skill layout, release guidance, or shared conventions.
+- Shell commands run by agents in this workspace must follow `/Users/dingren/.codex/RTK.md`; prefix commands with `rtk` unless the active environment transparently rewrites them.
 - Skill 正文使用英语编写（SKILL.md、脚本、prompt），可见介绍和 frontmatter 可使用中文。
 - Skill frontmatter 必须包含 `name` 和 `description`，优先中文描述，必要时补充英文关键词。
 - 共享工具放在 `skills/<skill>/scripts/` 或 `skills/<skill>/references/`。
@@ -30,10 +31,10 @@ Codex 与 Claude Code 的私有技能工作区。技能覆盖工程、研究、�
 
 ```bash
 # 同步 agent 入口文件
-python3 control/project.py sync-agents
+rtk python3 control/project.py sync-agents
 
 # 检查共享指导同步和技能布局
-python3 control/project.py check
+rtk python3 control/project.py check
 ```
 
 ## Coding conventions
@@ -64,6 +65,6 @@ control/                     — 工程管理工具
 
 ## Agent-specific adapters
 
-- Claude Code should read `CLAUDE.md`, which points back to this file.
+- Claude Code should read `CLAUDE.md`, which points back to this file. For Claude Code 2.x, verify current CLI flags with `claude --version` and `claude --help` before generating launch commands; prefer Agent View and `claude agents` defaults over obsolete `claude --bg` snippets unless the installed CLI still exposes that flag.
 - Gemini CLI should read `GEMINI.md`, which is generated from this file.
 - Codex app should use this `AGENTS.md` as the shared project instruction file.
