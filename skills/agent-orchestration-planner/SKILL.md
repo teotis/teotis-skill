@@ -273,9 +273,13 @@ git rev-parse --git-dir >/dev/null 2>&1 || { echo "ERROR: not a git repository";
 CLAUDE_VERSION="$(claude --version || true)"
 CLAUDE_MODEL="${CLAUDE_MODEL:-sonnet}"
 CLAUDE_EFFORT="${CLAUDE_EFFORT:-xhigh}"
-CLAUDE_PERMISSION_MODE="${CLAUDE_PERMISSION_MODE:-default}"
+CLAUDE_PERMISSION_MODE="${CLAUDE_PERMISSION_MODE:-}"
 CLAUDE_SETTING_SOURCES="${CLAUDE_SETTING_SOURCES:-user,project,local}"
 CLAUDE_OPEN_AGENT_VIEW="${CLAUDE_OPEN_AGENT_VIEW:-0}"
+CLAUDE_PERMISSION_ARGS=()
+if [ -n "$CLAUDE_PERMISSION_MODE" ]; then
+  CLAUDE_PERMISSION_ARGS=(--permission-mode "$CLAUDE_PERMISSION_MODE")
+fi
 
 echo "=== Claude Code ==="
 echo "$CLAUDE_VERSION"
@@ -296,7 +300,7 @@ launch_agent() {
     --name "$name" \
     --model "$CLAUDE_MODEL" \
     --effort "$CLAUDE_EFFORT" \
-    --permission-mode "$CLAUDE_PERMISSION_MODE" \
+    "${CLAUDE_PERMISSION_ARGS[@]}" \
     --setting-sources "$CLAUDE_SETTING_SOURCES" \
     "$prompt" 2>&1)"
   status=$?
@@ -321,7 +325,11 @@ launch_agent "02-xxx" "$PLAN_DIR/packages/02-xxx.md" "$PLAN_DIR/status/02-xxx.md
 echo
 echo "=== Background agents launched ==="
 echo "View them with:"
-echo "  claude agents --cwd \"$REPO_ROOT\" --model \"$CLAUDE_MODEL\" --effort \"$CLAUDE_EFFORT\" --permission-mode \"$CLAUDE_PERMISSION_MODE\" --setting-sources \"$CLAUDE_SETTING_SOURCES\""
+if [ -n "$CLAUDE_PERMISSION_MODE" ]; then
+  echo "  claude agents --cwd \"$REPO_ROOT\" --model \"$CLAUDE_MODEL\" --effort \"$CLAUDE_EFFORT\" --permission-mode \"$CLAUDE_PERMISSION_MODE\" --setting-sources \"$CLAUDE_SETTING_SOURCES\""
+else
+  echo "  claude agents --cwd \"$REPO_ROOT\" --model \"$CLAUDE_MODEL\" --effort \"$CLAUDE_EFFORT\" --setting-sources \"$CLAUDE_SETTING_SOURCES\""
+fi
 echo
 echo "After all agents complete, run the integration audit."
 
@@ -330,7 +338,7 @@ if [ "$CLAUDE_OPEN_AGENT_VIEW" = "1" ] && [ -t 1 ]; then
     --cwd "$REPO_ROOT" \
     --model "$CLAUDE_MODEL" \
     --effort "$CLAUDE_EFFORT" \
-    --permission-mode "$CLAUDE_PERMISSION_MODE" \
+    "${CLAUDE_PERMISSION_ARGS[@]}" \
     --setting-sources "$CLAUDE_SETTING_SOURCES"
 fi
 ```
@@ -342,7 +350,8 @@ fi
 - Check that it's a git repo.
 - Check that plan files exist before launching.
 - Launch one background session per package with `claude --bg --name`.
-- Default generated scripts to `CLAUDE_PERMISSION_MODE=default`; `auto` is allowed only when the user opts in interactively with `claude --permission-mode auto` first.
+- Default generated scripts to inherit the user's configured Claude Code permission mode by omitting `--permission-mode`; set `CLAUDE_PERMISSION_MODE=bypassPermissions`, `auto`, `default`, or another supported mode only when an explicit override is needed.
+- For users who set `permissions.defaultMode` to `bypassPermissions` in `~/.claude/settings.json`, the generated background sessions will start in bypass mode without the script hard-coding it.
 - If `--permission-mode auto` fails with the opt-in error, print the exact interactive opt-in command and a `CLAUDE_PERMISSION_MODE=default` fallback.
 - Print `claude agents --cwd "$REPO_ROOT"` after dispatch.
 - Do not open Agents View by default; open it only when `CLAUDE_OPEN_AGENT_VIEW=1`.
