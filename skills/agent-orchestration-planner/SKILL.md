@@ -293,21 +293,50 @@ Success rules:
 
 ### 9. Output Style
 
-After generating the kit, chat output must show only the primary user paths:
+After generating the kit, chat output must be immediately actionable and must show only the two primary user entry paths plus status/recovery commands.
 
-- **Manual**: copy prompts from `<plan>/launchers/agent-prompts.md`.
-- **Script**: run `bash <plan>/launchers/orchestrate.sh start`.
-- **Status**: run `bash <plan>/launchers/orchestrate.sh status`.
-- **Recovery**: run `bash <plan>/launchers/orchestrate.sh retry <package-id>`.
+Always include this information:
+- Plan directory path.
+- Mainline branch.
+- Integration branch.
+- Max parallel agents.
+- First wave packages.
+- Final package: `99-finalize`.
+- A statement that downstream dispatch is triggered by package tail calls to `advance`.
 
-Also include:
-- dependency order
-- first wave packages
-- final package: `99-finalize`
-- mainline branch
-- integration branch
-- max parallel agents
-- statement that downstream dispatch is triggered by package tail calls to `advance`
+For the **Manual** path, include a package table so the user can decide which prompts to copy first:
+
+| Package | Prompt Location | Can Start Now | Must Wait For | Dependency Type | Notes |
+|---|---|---|---|---|---|
+| 01-xxx | `<plan>/launchers/agent-prompts.md#01-xxx` | yes | none | status | first wave |
+| 02-xxx | `<plan>/launchers/agent-prompts.md#02-xxx` | yes | none | status | first wave |
+| 03-xxx | `<plan>/launchers/agent-prompts.md#03-xxx` | no | 01-xxx, 02-xxx | code | started by `advance` |
+| 99-finalize | `<plan>/launchers/agent-prompts.md#99-finalize` | no | all functional packages | status+code | auto final package |
+
+The Manual section must say:
+- Copy prompts from `<plan>/launchers/agent-prompts.md`.
+- Start every row where `Can Start Now = yes` in any agent platform.
+- Later packages should not be manually started unless their dependencies are satisfied or the user intentionally overrides automation.
+- If an agent platform cannot run local shell commands, the user may manually run `advance`.
+
+For the **Script** path, include complete copy-paste commands for a new macOS Terminal. Commands must use absolute paths and avoid assuming the user's current directory.
+
+```bash
+cd "<repo-root>"
+bash "<absolute-plan-dir>/launchers/orchestrate.sh" start
+```
+
+Also include status and recovery commands:
+
+```bash
+bash "<absolute-plan-dir>/launchers/orchestrate.sh" status
+bash "<absolute-plan-dir>/launchers/orchestrate.sh" advance
+bash "<absolute-plan-dir>/launchers/orchestrate.sh" retry <package-id>
+bash "<absolute-plan-dir>/launchers/orchestrate.sh" finalize
+claude agents --cwd "<repo-root>"
+```
+
+If a command contains placeholders such as `<package-id>`, explicitly say which concrete package IDs are valid recovery targets. Do not leave the user to infer them from the docs.
 
 Do not present `/batch`, `dispatch-claude-agents.sh`, or a separate audit prompt as peer user entrypoints.
 
