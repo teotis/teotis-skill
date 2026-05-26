@@ -1,19 +1,21 @@
 ---
 name: agent-orchestration-planner
-description: 用于把多个 handoff packages 转换为可执行的多 agent 调度包，生成 Claude Code Agent View / claude --bg / claude agents / /batch 启动材料、并发计划、文件所有权、状态回填模板和最终集成验收入口。Use for multi-agent orchestration, Claude Code Agent View dispatch, Claude Code background sessions, /batch decisions, status ledgers, and integration audit workflows.
+description: 用于中大型多 agent 落地、Claude Code Agents View、claude --bg 自动派工、10+ 线程分批调度、worktree/分支管理、状态账本和最终集成验收。Use for multi-agent orchestration, background dispatch, status ledgers, branch/worktree control, and integration audit workflows.
 ---
 
 # Agent Orchestration Planner
 
 ## Mission
 
-Turn handoff packages (typically from `agent-handoff-planner`) into an executable orchestration kit:
-- Decide whether to use single agent, Agent View with `claude --bg` and `claude agents`, `/batch`, or agent team.
+Turn medium and large implementation needs into an executable multi-agent orchestration kit. This skill can start from an existing handoff package set, or directly from a user request when the work clearly needs Agent View, background sessions, automated dispatch, coordinator status, and branch/worktree control:
+- Decide whether to use Agent View with `claude --bg` and `claude agents`, `/batch`, agent team, or a staged orchestration plan.
+- Create orchestration-ready package docs when they do not already exist.
 - Generate launch prompts automatically.
 - Generate optional shell dispatch scripts that are idempotent and dependency-aware.
 - Define package ownership and concurrency groups.
 - Prevent file conflicts.
 - Require evidence packs.
+- Define worktree, branch, integration, and coordinator-status policies.
 - Provide integration audit and final validation entrypoints.
 
 ## When To Use
@@ -30,11 +32,15 @@ Use this skill when the request contains signals like:
 - "自动派工"
 - "状态账本"
 - "多个 Claude Code 窗口"
+- "十个线程"
+- "10+ agents"
+- "worktree 管理"
+- "分支管理"
 - "Codex 负责验收"
 - "生成启动 prompt"
 - "生成 dispatch script"
 
-Do not use it for one tiny implementation package unless the user explicitly asks for automation or launch materials. For single-package handoff planning without orchestration, use `agent-handoff-planner`.
+Do not use it for one tiny implementation package, or for a lightweight design that the user can run in one to three Claude Code windows in the current checkout. Use `agent-handoff-planner` for that smaller mode.
 
 ## Core Principle
 
@@ -42,17 +48,18 @@ An orchestration kit is a **machine-readable execution contract**, not a brainst
 
 ## Workflow
 
-### 1. Inspect Existing Handoff Materials
+### 1. Inspect Or Create Package Materials
 
-Before generating any orchestration artifacts, verify that the input is executable:
+Before generating any orchestration artifacts, verify that the work is executable. If package docs already exist, inspect them. If they do not exist, create orchestration-ready package docs directly from the user request and local context.
 
 - Read the original user request.
-- Read INDEX.md and ALL package docs.
+- Read INDEX.md and ALL package docs when they exist.
+- If no package docs exist, inspect enough local context to split the work into concrete packages.
 - Check that every package has concrete acceptance criteria and verification commands.
 - Check current git status.
 - If package docs lack the [orchestration-ready fields](`) (Package ID, File Ownership, Allowed Paths, Forbidden Paths, Dependencies, Parallel Safety, Expected Evidence Pack), either:
-  - Generate a fix-up prompt for the user to run `agent-handoff-planner` first, OR
-  - Fill in the missing fields yourself if the information is obvious from the package content.
+  - Fill in the missing fields yourself if the information is obvious from the package content, OR
+  - Create new orchestration package docs with those fields.
 
 ### 2. Select Execution Mode
 
@@ -61,17 +68,18 @@ Analyze the packages and automatically select the best mode. Document your choic
 | Mode | When To Use | Max Packages | Key Trait |
 |---|---|---|---|
 | `SINGLE_AGENT` | 1–2 packages, tightly coupled files, low concurrency benefit | 1–2 | Simplest; one agent does everything in sequence |
-| `AGENT_VIEW` | 2–8 relatively independent packages | 2–8 | User pastes prompts into Claude Code Agent View; agent manages its own worktree |
-| `BACKGROUND_AGENT_SCRIPT` | User wants automatic task creation for independently launchable packages | 2–8 | Generated `dispatch-claude-agents.sh` launches one `claude --bg --name` background session per package, then opens or points to `claude agents` |
+| `AGENT_VIEW` | 2–10 relatively independent packages, user wants manual Agents View control | 2–10 | User pastes prompts into Claude Code Agent View; each agent uses its assigned branch/worktree policy |
+| `BACKGROUND_AGENT_SCRIPT` | User wants automatic task creation for independently launchable packages | 2–20 | Generated `dispatch-claude-agents.sh` launches one `claude --bg --name` background session per ready package, then opens or points to `claude agents` |
 | `BATCH` | Repo-wide mechanical migration, lint/type rule rollout, test migration | Any (single command) | Output one `/batch` instruction, not N package prompts |
 | `AGENT_TEAM` | Research, review, multi-hypothesis debugging, cross-layer exploration only | 2–5 | Experimental; higher token cost; NOT for direct implementation of risky changes |
 | `CODEX_RETAINED_REVIEW` | Final acceptance, multimodal judgment, product taste, cross-package consistency audit | 1 (Codex) | Codex does NOT do grunt implementation; it validates deliverables |
 
 **Decision rules**:
-- If all packages touch the same 1–3 files → `SINGLE_AGENT`.
-- If packages are file-disjoint and 2–8 → `AGENT_VIEW` (default).
+- If all packages touch the same 1–3 files → `SINGLE_AGENT`, or recommend `agent-handoff-planner` if no orchestration is needed.
+- If packages are file-disjoint and 2–10 → `AGENT_VIEW` (manual default).
 - If user says "自动" or "批量启动" → `BACKGROUND_AGENT_SCRIPT`.
 - If packages have ordered dependencies, still use `BACKGROUND_AGENT_SCRIPT` when automation is useful, but make the script dependency-aware instead of launching every package unconditionally.
+- If there are more than 10 implementation packages, use staged waves and an integration branch policy; do not start all agents at once unless file ownership and validation capacity are clearly safe.
 - If the task is a mechanical transform across the whole repo → `BATCH`.
 - If the user explicitly asks for research/review by multiple agents → `AGENT_TEAM` (warn about token cost).
 - Always reserve `CODEX_RETAINED_REVIEW` for final integration audit.
@@ -116,6 +124,14 @@ INDEX.md is the master control document. It MUST contain every section below.
 - Alternatives rejected: <mode — reason>
 - Max parallel agents: <N>
 - Codex-retained work: <what only Codex should do>
+
+## Repository And Branch Policy
+- Main checkout: <absolute path to coordinator checkout>
+- Coordinator plan root: <absolute path to docs/plans/<name>>
+- Implementation isolation: <worktree per package | shared worktree per wave | explicit no-worktree exception>
+- Branch naming: <branch prefix and package-id format>
+- Integration branch: <branch name | manual merge only>
+- Package agents must commit only implementation files, tests, and package-owned docs; coordinator status files are external coordination state and must not be included in implementation commits unless explicitly requested.
 
 ## Execution Authorization
 
@@ -194,6 +210,7 @@ After completing your assigned package:
 
 ## Merge Strategy
 - Merge order: <e.g., 01 → 02 → 03, or any order then integration rebase>
+- Code dependency policy: <downstream starts only after upstream commit is merged to integration branch | downstream may base on upstream branch | status-only dependency>
 - Rebase policy: <rebase on latest main before PR | merge as-is>
 - Conflict owner: <which package resolves conflicts if two packages touch adjacent code>
 - Final integration agent: <Codex | specific package agent>
@@ -207,12 +224,14 @@ Do NOT edit INDEX.md directly — that causes concurrent-write conflicts.
 Evidence pack must include:
 - [ ] worktree path
 - [ ] branch name
+- [ ] base commit
 - [ ] git status
 - [ ] git diff --stat
 - [ ] changed files (full list)
 - [ ] commands run (verification commands + output summary)
 - [ ] test result summary (pass/fail counts)
 - [ ] commit hash / PR link
+- [ ] merge/integration status
 - [ ] unresolved risks (if any)
 - [ ] whether it touched only allowed paths (self-certify)
 
@@ -292,6 +311,8 @@ package_id	package_doc	status_file	dependencies	manual
 99-integration-audit	packages/99-integration-audit.md	status/99-integration-audit.md	01-xxx,02-xxx,03-xxx	1
 ```
 
+For more than 10 packages, generate waves in the graph and cap concurrent launches with `ORCHESTRATION_MAX_PARALLEL`. Do not dispatch every package at once just because it is dependency-ready.
+
 The script launches one Claude Code background session per ready package with `claude --bg --name`, then prints the `claude agents` command. Do not open Agents View by default, because users may run several dispatch scripts from one terminal.
 
 ```bash
@@ -319,6 +340,7 @@ CLAUDE_OPEN_AGENT_VIEW="${CLAUDE_OPEN_AGENT_VIEW:-0}"
 ORCHESTRATION_WATCH="${ORCHESTRATION_WATCH:-0}"
 ORCHESTRATION_INCLUDE_MANUAL="${ORCHESTRATION_INCLUDE_MANUAL:-0}"
 ORCHESTRATION_POLL_SECONDS="${ORCHESTRATION_POLL_SECONDS:-30}"
+ORCHESTRATION_MAX_PARALLEL="${ORCHESTRATION_MAX_PARALLEL:-10}"
 
 echo "=== Claude Code ==="
 echo "$CLAUDE_VERSION"
@@ -431,6 +453,7 @@ launch_agent() {
 
 dispatch_ready_once() {
   local launched_any=0
+  local launch_count=0
   while IFS=$'\t' read -r package_id package_doc status_file dependencies manual; do
     [ "$package_id" = "package_id" ] && continue
     [ -z "$package_id" ] && continue
@@ -460,7 +483,13 @@ dispatch_ready_once() {
       continue
     fi
 
+    if [ "$launch_count" -ge "$ORCHESTRATION_MAX_PARALLEL" ]; then
+      echo "PAUSE $package_id: max launches reached for this pass ($ORCHESTRATION_MAX_PARALLEL)"
+      continue
+    fi
+
     launch_agent "$package_id" "$abs_package_doc" "$abs_status_file"
+    launch_count=$((launch_count + 1))
     launched_any=1
   done < "$GRAPH_FILE"
 
@@ -530,6 +559,7 @@ fi
 - Never launch a package that is already completed, in progress, or recorded in `status/.dispatch-state.tsv`.
 - Print exact blocked dependency statuses for ordered work packages.
 - Include optional watch mode with `ORCHESTRATION_WATCH=1`; keep it off by default.
+- Cap each dispatch pass with `ORCHESTRATION_MAX_PARALLEL`; default to 10 for large plans.
 - Keep final integration audit manual by default unless the user explicitly requests full automation.
 - To retry a launched package that never writes completion evidence, the user may remove that package's row from `status/.dispatch-state.tsv` after inspecting the failure.
 - Default generated scripts to inherit the user's configured Claude Code permission mode by omitting `--permission-mode`; set `CLAUDE_PERMISSION_MODE=bypassPermissions`, `auto`, `default`, or another supported mode only when an explicit override is needed.
@@ -580,6 +610,7 @@ Each package executor writes to its own coordinator status file in this plan dir
 ## Worktree
 - Path:
 - Branch:
+- Base commit:
 
 ## Changes
 - git status:
@@ -593,6 +624,7 @@ Each package executor writes to its own coordinator status file in this plan dir
 ## Delivery
 - Commit hash:
 - PR link:
+- Integration status:
 
 ## Self-Certification
 - [ ] Only touched allowed paths
@@ -695,4 +727,4 @@ After generating the orchestration kit, report concisely in chat:
 | Basic INDEX with auth sections | Yes | No (reads it) |
 | Full orchestration INDEX | No | Yes |
 
-Typical flow: `agent-handoff-planner` produces handoff docs → `agent-orchestration-planner` converts them into an executable orchestration kit.
+Use `agent-handoff-planner` for small design packages that the user will run manually in one to three Claude Code windows, usually in the current checkout. Use `agent-orchestration-planner` directly for medium or large multi-agent execution, Agent View, background dispatch scripts, coordinator status, worktrees, branches, staged waves, and final integration audit. Chaining the two skills is optional, not required.
