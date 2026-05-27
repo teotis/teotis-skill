@@ -1,0 +1,5 @@
+package_id	state	launched_at	completed_at	agent	branch	worktree	base_commit	commit_hash	verification	integration	cleanup	last_error
+01-complex-skill-evals	ready			agent	agent/skill-quality-governance-orchestration/01-complex-skill-evals	/Volumes/Extreme_SSD/project/teotis_skill/.worktrees/skill-quality-governance-orchestration/01-complex-skill-evals						
+02-tmp-repository-hygiene	ready			agent	agent/skill-quality-governance-orchestration/02-tmp-repository-hygiene	/Volumes/Extreme_SSD/project/teotis_skill/.worktrees/skill-quality-governance-orchestration/02-tmp-repository-hygiene						
+03-commit-message-guardrails	ready			agent	agent/skill-quality-governance-orchestration/03-commit-message-guardrails	/Volumes/Extreme_SSD/project/teotis_skill/.worktrees/skill-quality-governance-orchestration/03-commit-message-guardrails						
+99-finalize	pending			agent	agent/skill-quality-governance-orchestration/99-finalize	/Volumes/Extreme_SSD/project/teotis_skill/.worktrees/skill-quality-governance-orchestration/99-finalize						
