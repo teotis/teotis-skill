@@ -121,7 +121,14 @@ class OrchestrateTemplateTest(unittest.TestCase):
             encoding="utf-8",
         )
 
-    def fake_claude(self, *, logs_ok: bool = True, omit_session: bool = False) -> dict[str, str]:
+    def fake_claude(
+        self,
+        *,
+        logs_ok: bool = True,
+        omit_session: bool = False,
+        output_style: str = "plain",
+        agents_help_ok: bool = True,
+    ) -> dict[str, str]:
         bin_dir = self.tmp / "bin"
         bin_dir.mkdir(exist_ok=True)
         script = bin_dir / "claude"
@@ -142,9 +149,19 @@ class OrchestrateTemplateTest(unittest.TestCase):
                       exit 1
                     fi
                     ;;
+                  agents)
+                    if [ "${{2:-}}" = "--help" ] && [ "{'1' if agents_help_ok else '0'}" = "1" ]; then
+                      echo "Usage: claude agents"
+                    else
+                      echo "'claude agents' is not available in this environment." >&2
+                      exit 1
+                    fi
+                    ;;
                   --bg)
                     if [ "{'1' if omit_session else '0'}" = "1" ]; then
                       echo "backgrounded"
+                    elif [ "{output_style}" = "bullet" ]; then
+                      echo "backgrounded · fake-session-123"
                     else
                       echo "backgrounded fake-session-123"
                     fi
@@ -185,6 +202,27 @@ class OrchestrateTemplateTest(unittest.TestCase):
         self.assertTrue((self.repo / ".worktrees" / "sample-orchestration" / "01-alpha").exists())
         self.assertTrue((self.plan / "status" / "launch-01-alpha.log").exists())
 
+    def test_start_parses_bullet_backgrounded_session_id(self) -> None:
+        result = self.orchestrate("start", env=self.fake_claude(output_style="bullet"))
+        self.assertEqual(result.returncode, 0)
+        state = (self.plan / "status" / "state.tsv").read_text(encoding="utf-8")
+        self.assertIn("fake-session-123", state)
+        self.assertNotIn("\t·\t", state)
+
+    def test_auto_permission_mode_requires_explicit_opt_in(self) -> None:
+        env = self.fake_claude()
+        env["CLAUDE_PERMISSION_MODE"] = "auto"
+        result = self.orchestrate("start", env=env, check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("CLAUDE_PERMISSION_MODE=auto requires", result.stderr)
+
+    def test_bypass_permission_mode_requires_explicit_opt_in(self) -> None:
+        env = self.fake_claude()
+        env["CLAUDE_PERMISSION_MODE"] = "bypassPermissions"
+        result = self.orchestrate("start", env=env, check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("CLAUDE_PERMISSION_MODE=bypassPermissions requires", result.stderr)
+
     def test_unreadable_logs_mark_package_stale(self) -> None:
         result = self.orchestrate("start", env=self.fake_claude(logs_ok=False), check=False)
         self.assertNotEqual(result.returncode, 0)
@@ -213,6 +251,39 @@ class OrchestrateTemplateTest(unittest.TestCase):
         self.orchestrate("mark-state", "01-alpha", "blocked", "--error", "test blocker")
         result = self.orchestrate("retry", "01-alpha", env=self.fake_claude())
         self.assertEqual(result.returncode, 0)
+
+    def test_manual_packages_are_not_auto_launched(self) -> None:
+        graph = self.plan / "launchers" / "package-graph.tsv"
+        graph.write_text(
+            graph.read_text(encoding="utf-8").replace(
+                "02-beta\tpackages/02-beta.md\tstatus/02-beta.md\t01-alpha\tstatus\t2\tagent/sample/02-beta",
+                "02-beta\tpackages/02-beta.md\tstatus/02-beta.md\t01-alpha\tstatus\t2\tagent/sample/02-beta",
+            ).replace(
+                "\t0\t0\n99-finalize",
+                "\t1\t0\n99-finalize",
+                1,
+            ),
+            encoding="utf-8",
+        )
+        self.orchestrate("mark-state", "01-alpha", "completed", "--commit", "abc123", "--verification", "unit: pass")
+        result = self.orchestrate("advance", env=self.fake_claude())
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("manual package ready: 02-beta", result.stderr)
+        state = (self.plan / "status" / "state.tsv").read_text(encoding="utf-8")
+        self.assertIn("02-beta\tmanual_required\t", state)
+        self.assertFalse((self.repo / ".worktrees" / "sample-orchestration" / "02-beta").exists())
+
+    def test_doctor_environment_reports_claude_capabilities(self) -> None:
+        result = self.orchestrate("doctor", "--environment", env=self.fake_claude(agents_help_ok=False))
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("claude_version=2.1.142 (fake)", result.stdout)
+        self.assertIn("claude_agents_help=unavailable", result.stdout)
+
+    def test_verify_finalize_blocks_missing_package_evidence(self) -> None:
+        self.orchestrate("mark-state", "01-alpha", "completed", "--verification", "unit: pass")
+        result = self.orchestrate("verify-finalize", check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("01-alpha missing commit_hash", result.stderr)
 
 
 if __name__ == "__main__":
