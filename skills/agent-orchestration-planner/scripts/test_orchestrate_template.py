@@ -252,6 +252,30 @@ class OrchestrateTemplateTest(unittest.TestCase):
         result = self.orchestrate("retry", "01-alpha", env=self.fake_claude())
         self.assertEqual(result.returncode, 0)
 
+    def test_retry_breaker_stops_repeated_same_failure(self) -> None:
+        env = self.fake_claude(omit_session=True)
+        self.orchestrate("start", env=env, check=False)
+        self.orchestrate("retry", "01-alpha", env=env, check=False)
+        self.orchestrate("retry", "01-alpha", env=env, check=False)
+
+        result = self.orchestrate("retry", "01-alpha", env=env, check=False)
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("retry breaker open for 01-alpha", result.stderr)
+        self.assertIn("missing background session id", result.stderr)
+
+    def test_events_log_records_launch_and_state_changes(self) -> None:
+        self.orchestrate("start", env=self.fake_claude())
+        self.orchestrate("mark-state", "01-alpha", "completed", "--commit", "abc123", "--verification", "unit: pass")
+
+        events = (self.plan / "status" / "events.jsonl").read_text(encoding="utf-8")
+
+        self.assertIn('"event":"launch_succeeded"', events)
+        self.assertIn('"package_id":"01-alpha"', events)
+        self.assertIn('"session_id":"fake-session-123"', events)
+        self.assertIn('"event":"state_changed"', events)
+        self.assertIn('"new_state":"completed"', events)
+
     def test_manual_packages_are_not_auto_launched(self) -> None:
         graph = self.plan / "launchers" / "package-graph.tsv"
         graph.write_text(

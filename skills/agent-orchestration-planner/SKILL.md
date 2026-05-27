@@ -66,6 +66,7 @@ docs/plans/<plan-name>/
 ├── status/
 │   ├── README.md
 │   ├── state.tsv
+│   ├── events.jsonl
 │   ├── package-status-template.md
 │   ├── <package-id>.md
 │   └── 99-finalize.md
@@ -266,7 +267,7 @@ Required behavior:
 - `start`: preflight the graph, acquire lock, launch all currently ready functional packages up to `ORCHESTRATION_MAX_PARALLEL`, then exit.
 - `advance`: acquire lock, re-read graph/status/state, validate dependencies, stop on blocked/stale/invalid, launch newly ready functional packages, or launch `99-finalize` when all functional packages are completed.
 - `status`: print a concise table of package state, branch, worktree, verification, integration, and last error.
-- `retry <package-id>`: only reset `blocked`, `stale`, or `invalid` packages after reporting prior error. It must not retry already launched or completed packages unless the user explicitly changes state.
+- `retry <package-id>`: only reset `blocked`, `stale`, or `invalid` packages after reporting prior error. It must not retry already launched or completed packages unless the user explicitly changes state. If the same package hits the same terminal failure fingerprint three times, block further retry and require human diagnosis.
 - `finalize`: run or re-run the `99-finalize` package idempotently.
 - `mark-state`: the only supported way for package agents to mutate `state.tsv`; it also keeps Markdown status in sync.
 - `repair-state`: rebuild `state.tsv` from graph and Markdown status when a ledger is empty or malformed.
@@ -286,6 +287,8 @@ Implementation rules:
 - Do not silently grant elevated permission modes. Default to no explicit `--permission-mode`; `CLAUDE_PERMISSION_MODE=auto` requires `CLAUDE_AUTO_MODE_OPTED_IN=1` after an interactive opt-in, and `CLAUDE_PERMISSION_MODE=bypassPermissions` requires `CLAUDE_BYPASS_PERMISSIONS_APPROVED=1`.
 - Before launch, create or verify the recorded package worktree and branch.
 - If a graph row has `manual=1`, never auto-launch it. When its dependencies are satisfied, mark it `manual_required` and print the package id for manual execution.
+- Maintain `status/events.jsonl` as an append-only audit log. Record at minimum: `launch_requested`, `launch_succeeded`, `state_changed`, `terminal_failure`, `retry_requested`, and `retry_blocked` with timestamp, package id, state transition or session id, and error fingerprint where relevant.
+- Treat `events.jsonl` as the source for retry loop accounting. If `terminal_failure` records show the same package and normalized error fingerprint three times, `retry` must stop before relaunching and print the package id, failure count, and fingerprint.
 - Write raw launch output to `status/launch-<package-id>.log`.
 - Parse and record the background session id in the `agent` column.
 - After launch, run a short `claude logs <session-id>` postflight. If the session id is missing, mark the package `invalid`. If logs are not readable or the session exits immediately, mark it `stale`.
@@ -323,6 +326,7 @@ Generate a finalize package, not a passive audit-only prompt.
 Failure rules:
 - Any failure sets `99-finalize` to `blocked`.
 - Record failure stage, command, branch, conflict files if any, and recovery suggestion.
+- Check `status/events.jsonl` when explaining repeated failures; do not keep retrying the same fingerprint after the retry breaker opens.
 - Preserve branches/worktrees on failure.
 - If package status and current workspace disagree, verify the recorded package commit in a clean detached worktree before changing state.
 - Never force-push, hard reset, delete remote branches, or delete unrecorded local resources.

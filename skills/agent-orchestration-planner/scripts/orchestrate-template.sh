@@ -6,6 +6,7 @@ PLAN_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 REPO_ROOT="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel)"
 GRAPH="$PLAN_ROOT/launchers/package-graph.tsv"
 STATE="$PLAN_ROOT/status/state.tsv"
+EVENTS="$PLAN_ROOT/status/events.jsonl"
 PROMPTS="$PLAN_ROOT/launchers/agent-prompts.md"
 LOCK_DIR="$PLAN_ROOT/status/.orchestrate.lock"
 MAX_PARALLEL="${ORCHESTRATION_MAX_PARALLEL:-10}"
@@ -28,6 +29,73 @@ die() {
 
 timestamp() {
   date -u "+%Y-%m-%dT%H:%M:%SZ"
+}
+
+json_escape() {
+  local value="$1"
+  value="${value//\\/\\\\}"
+  value="${value//\"/\\\"}"
+  value="${value//$'\t'/\\t}"
+  value="${value//$'\n'/\\n}"
+  value="${value//$'\r'/\\r}"
+  printf '%s' "$value"
+}
+
+json_pair() {
+  local key="$1"
+  local value="$2"
+  printf ',"%s":"%s"' "$(json_escape "$key")" "$(json_escape "$value")"
+}
+
+emit_event() {
+  local event="$1"
+  local package_id="${2:-}"
+  local extra="${3:-}"
+  mkdir -p "$(dirname "$EVENTS")"
+  printf '{"ts":"%s","event":"%s","package_id":"%s"%s}\n' \
+    "$(timestamp)" "$(json_escape "$event")" "$(json_escape "$package_id")" "$extra" >> "$EVENTS"
+}
+
+failure_fingerprint() {
+  local message="$1"
+  message="${message%%; see *}"
+  message="${message//$'\t'/ }"
+  message="${message//$'\n'/ }"
+  printf '%s' "$message" | sed 's/[[:space:]][[:space:]]*/ /g; s/^[[:space:]]*//; s/[[:space:]]*$//'
+}
+
+terminal_failure_count() {
+  local package_id="$1"
+  local fingerprint="$2"
+  local package_json fingerprint_json line count=0
+  [ -f "$EVENTS" ] || {
+    printf '0\n'
+    return
+  }
+  package_json="$(json_escape "$package_id")"
+  fingerprint_json="$(json_escape "$fingerprint")"
+  while IFS= read -r line; do
+    if [[ "$line" == *'"event":"terminal_failure"'* ]] &&
+      [[ "$line" == *"\"package_id\":\"$package_json\""* ]] &&
+      [[ "$line" == *"\"fingerprint\":\"$fingerprint_json\""* ]]; then
+      count=$((count + 1))
+    fi
+  done < "$EVENTS"
+  printf '%s\n' "$count"
+}
+
+enforce_retry_breaker() {
+  local package_id="$1"
+  local last_error fingerprint count
+  last_error="$(state_field "$package_id" last_error || true)"
+  [ -n "$last_error" ] && [ "$last_error" != "pending" ] || return 0
+  fingerprint="$(failure_fingerprint "$last_error")"
+  [ -n "$fingerprint" ] || return 0
+  count="$(terminal_failure_count "$package_id" "$fingerprint")"
+  if [ "$count" -ge 3 ]; then
+    emit_event "retry_blocked" "$package_id" "$(json_pair "fingerprint" "$fingerprint")$(json_pair "failure_count" "$count")"
+    die "retry breaker open for $package_id after $count repeated failures: $fingerprint"
+  fi
 }
 
 acquire_lock() {
@@ -322,9 +390,10 @@ set_state_fields() {
   local integration="${11:-__KEEP__}"
   local cleanup="${12:-__KEEP__}"
   local last_error="${13:-__KEEP__}"
-  local now tmp
+  local now tmp old_state event_extra
 
   valid_state "$new_state" || die "invalid state: $new_state"
+  old_state="$(state_field "$package_id" state || true)"
   now="$(timestamp)"
   tmp="$(mktemp)"
   awk -F '\t' -v OFS='\t' \
@@ -372,13 +441,21 @@ set_state_fields() {
     }
   mv "$tmp" "$STATE"
   sync_markdown_state "$package_id" "$new_state"
+  event_extra="$(json_pair "old_state" "$old_state")$(json_pair "new_state" "$new_state")"
+  if [ "$last_error" != "__KEEP__" ]; then
+    event_extra="$event_extra$(json_pair "last_error" "$last_error")"
+  fi
+  emit_event "state_changed" "$package_id" "$event_extra"
 }
 
 set_error_state() {
   local package_id="$1"
   local new_state="$2"
   local message="$3"
+  local fingerprint
   set_state_fields "$package_id" "$new_state" "__KEEP__" "__NOW__" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__" "$message"
+  fingerprint="$(failure_fingerprint "$message")"
+  emit_event "terminal_failure" "$package_id" "$(json_pair "state" "$new_state")$(json_pair "error" "$message")$(json_pair "fingerprint" "$fingerprint")"
 }
 
 deps_completed() {
@@ -527,6 +604,7 @@ launch_package() {
   log "launching $package_id"
   log "  branch: $branch"
   log "  worktree: $worktree"
+  emit_event "launch_requested" "$package_id" "$(json_pair "branch" "$branch")$(json_pair "worktree" "$worktree")$(json_pair "finalize" "$finalize")"
 
   set +e
   if [ -n "$CLAUDE_PERMISSION_MODE" ]; then
@@ -572,6 +650,7 @@ launch_package() {
     new_state="launched"
   fi
   set_state_fields "$package_id" "$new_state" "__NOW__" "__KEEP__" "$session_id" "$branch" "$worktree" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__" ""
+  emit_event "launch_succeeded" "$package_id" "$(json_pair "session_id" "$session_id")$(json_pair "new_state" "$new_state")$(json_pair "branch" "$branch")$(json_pair "worktree" "$worktree")"
 }
 
 launch_ready_or_finalize() {
@@ -699,7 +778,9 @@ cmd_retry() {
   case "$state" in
     blocked|stale|invalid)
       acquire_lock
+      enforce_retry_breaker "$package_id"
       log "retrying $package_id from state $state"
+      emit_event "retry_requested" "$package_id" "$(json_pair "from_state" "$state")"
       set_state_fields "$package_id" "pending" "" "" "" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__" "pending" "pending" "pending" ""
       launch_package "$package_id"
       ;;

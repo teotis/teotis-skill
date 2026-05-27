@@ -224,6 +224,49 @@
           "text": "99-finalize runs verify-finalize and blocks missing branch, missing commit_hash, nonexistent commit, or dirty worktree evidence."
         }
       ]
+    },
+    {
+      "id": 11,
+      "prompt": "一个包反复因为同一个 Claude 启动错误失败，agent 一直 retry 导致空转。请让 orchestration kit 自动阻断这种重复失败。",
+      "expected_output": "Generates an orchestration kit whose orchestrate.sh records terminal failures with normalized fingerprints and blocks retry after the same package hits the same fingerprint three times.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "status/events.jsonl records terminal_failure events with package id, state, error, and fingerprint."
+        },
+        {
+          "text": "retry checks previous terminal_failure events before resetting state."
+        },
+        {
+          "text": "After three matching failures for the same package and fingerprint, retry stops before relaunching."
+        },
+        {
+          "text": "The retry blocker prints the package id, failure count, and failure fingerprint for human diagnosis."
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "prompt": "多 agent 跑完以后我需要知道到底发生过什么，不想只看最终 state.tsv。请让 orchestration kit 保留可审计事件流。",
+      "expected_output": "Generates an orchestration kit with append-only status/events.jsonl covering launch requests, launch success, state changes, terminal failures, retry requests, and retry blocks.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "The generated kit includes status/events.jsonl in its status directory design."
+        },
+        {
+          "text": "orchestrate.sh appends launch_requested and launch_succeeded events with package id and session id."
+        },
+        {
+          "text": "orchestrate.sh appends state_changed events for mark-state and internal state updates."
+        },
+        {
+          "text": "orchestrate.sh appends retry_requested and retry_blocked events."
+        },
+        {
+          "text": "99-finalize or failure reporting uses events.jsonl when explaining repeated failures."
+        }
+      ]
     }
   ]
 }
