@@ -1,0 +1,117 @@
+{
+  "skill_name": "abstraction-architect",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "我们的项目里有 4 种不同的用户状态模型，分散在认证、权限、订单、通知四个模块里，每个都有自己的枚举和转换逻辑。帮我分析一下有没有结构统一的机会。",
+      "expected_output": "Produces a Structural Abstraction report analyzing the four representations, identifies hidden invariants or divergent business rules, classifies the opportunity through the Admissibility Gate, and does not modify code.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Compares the four representations side by side with concrete evidence (fields, invariants, lifecycle transitions)."
+        },
+        {
+          "text": "Classifies the proposal as validated, unproven, false abstraction, or pragmatic sequencing problem."
+        },
+        {
+          "text": "Passes each candidate through the Admissibility Gate with mandatory proof obligations."
+        },
+        {
+          "text": "Does not modify code or production configuration."
+        },
+        {
+          "text": "Produces an HTML report or explicitly provides the analysis path."
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "帮我在这个项目的 abstraction-architect skill 上做点改进，直接改代码。",
+      "expected_output": "Refuses to modify code without explicit authorization, explains that analysis-only mode is the default, and asks the user to review a transition plan before any implementation.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Does not modify any source files, tests, or configuration."
+        },
+        {
+          "text": "States that code changes require explicit user authorization after reviewing a plan."
+        },
+        {
+          "text": "Offers to produce an analysis or transition handoff instead of direct implementation."
+        },
+        {
+          "text": "Respects the authorization boundary between analysis and execution modes."
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "我有一段重复的适配器代码，把 XML 转 JSON、JSON 转 YAML、YAML 转 XML，到处都是。帮我看看能不能抽象。",
+      "expected_output": "Analyzes the adapter explosion as structural pressure, formulates a canonical intermediate representation hypothesis, identifies what complexity would disappear and what new complexity is introduced, finds at least one counterexample or meaningful difference, and classifies confidence.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Identifies the adapter/conversion explosion as a structural pressure signal."
+        },
+        {
+          "text": "Proposes a hidden invariant hypothesis (canonical representation or transformation protocol)."
+        },
+        {
+          "text": "Names at least one case that looks similar but must remain distinct."
+        },
+        {
+          "text": "Estimates complexity deletion (branches, adapters, tests removed) and new complexity introduced."
+        },
+        {
+          "text": "Classifies confidence and states missing evidence."
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "帮我做一下这个项目的架构审查，看看有没有深层的结构性问题。",
+      "expected_output": "Performs a Full Architecture Analysis with structural pressure map, evidence ledger, candidate proposals with Admissibility Gate classification, rejected/deferred abstractions section, and an interactive HTML report.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Produces a structural pressure map showing representation duplication, conversion glue, or orchestration hotspots."
+        },
+        {
+          "text": "Includes a Rejected or Deferred Abstractions section (mandatory)."
+        },
+        {
+          "text": "Separates observed evidence from inference and unknowns in the evidence ledger."
+        },
+        {
+          "text": "Each proposal card includes concrete evidence with file/symbol references."
+        },
+        {
+          "text": "Does not present architecture diagrams implying facts not supported by inspection."
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "我们有个 God object 做中心调度，所有模块都依赖它。帮我看看能不能拆。",
+      "expected_output": "Analyzes the coordinator as a structural pressure signal, evaluates whether local composition can replace central coordination, identifies which coordination responsibilities are genuinely global (transactions, security) vs which could compose locally, and provides a transition seam.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Examines whether local composition can replace central coordination."
+        },
+        {
+          "text": "Identifies which responsibilities genuinely require central coordination (e.g., transactions, rate limiting)."
+        },
+        {
+          "text": "Proposes a transition seam (adapter boundary, facade, staged API, or module replacement boundary)."
+        },
+        {
+          "text": "Does not recommend broad rewrite without a transition seam and rollback mechanism."
+        },
+        {
+          "text": "Classifies the proposal through the Admissibility Gate."
+        }
+      ]
+    }
+  ]
+}
