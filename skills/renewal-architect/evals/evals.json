@@ -1,0 +1,111 @@
+{
+  "skill_name": "renewal-architect",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "我们有一个 8 年的 Java 单体系统，订单状态逻辑散布在 5 个入口点，每次改规则都要同步改多处。帮我诊断一下，先别动代码，给我一份工程决策报告。",
+      "expected_output": "Produces a Diagnostic Mode HTML report with a Fact Ledger separating evidence from inference, identifies the dominant constraint (order-state sprawl), recommends a measurable Pilot Cell with rollback, and does not modify any code.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Produces a Fact Ledger that separates verifiable facts from inferences and unknowns."
+        },
+        {
+          "text": "Identifies the dominant constraint affecting delivery capability, not just listing every debt item."
+        },
+        {
+          "text": "Recommends a specific Pilot Cell with scope, rollback, timebox, and success signals."
+        },
+        {
+          "text": "Does not modify code or recommend a full rewrite without a first verifiable slice."
+        },
+        {
+          "text": "Generates an HTML report or explicitly states the report path."
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "这个项目太烂了，应该推倒重来用微服务。帮我出一个全面重写的方案。",
+      "expected_output": "Rejects the grand-rewrite framing when evidence and rollback are absent, redirects toward a bounded pilot or evidence-gathering phase, and asks for specific pain points rather than accepting the rewrite premise.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Does not accept 'rewrite everything' without defining a first value slice."
+        },
+        {
+          "text": "Asks for or demands concrete evidence of pain before recommending broad changes."
+        },
+        {
+          "text": "Separates business capability bottlenecks from architecture-narrative preferences."
+        },
+        {
+          "text": "Proposes a bounded, reversible first step instead of a full rewrite."
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "我只想让你分析一下，不要改任何代码。项目在 /Volumes/Extreme_SSD/project/teotis_skill。",
+      "expected_output": "Operates strictly in Diagnostic Mode, explores the project structure, produces a report with fact ledger and recommendations, and explicitly states that no code has been modified.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Explicitly states or demonstrates Diagnostic Mode with no code modifications."
+        },
+        {
+          "text": "Produces a fact-based analysis tied to files, classes, or configuration in the project."
+        },
+        {
+          "text": "Does not create, edit, or delete any source files."
+        },
+        {
+          "text": "Final response includes a statement that no code has been modified."
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "帮我做一个 Pilot Design，目标是把支付模块从单体中隔离出来，我需要可回滚的试点方案。",
+      "expected_output": "Produces a Pilot Design with explicit scope, validation signals, timebox, rollback mechanism, stability floors, ownership, and a three-stage route from controlled pilot to scale-out with old-path retirement.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Defines a Pilot Cell with bounded scope and explicit rollback mechanism."
+        },
+        {
+          "text": "Specifies stability floors (SLOs, data correctness, security, compliance)."
+        },
+        {
+          "text": "Includes a three-stage route: controlled pilot, standardized replication, scale-out."
+        },
+        {
+          "text": "Names an accountable owner and describes knowledge transfer path."
+        },
+        {
+          "text": "Does not begin code execution without explicit authorization."
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "帮我分析一下这个项目的部署瓶颈，我想看看 CI/CD 流水线和发布流程有没有优化空间。",
+      "expected_output": "Analyzes the deployment and release pipeline as a capability constraint, produces evidence-backed findings about build/test/deploy friction, and frames optimization as capability benefit rather than aesthetic improvement.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Focuses on deployment/release pipeline as a capability bottleneck candidate."
+        },
+        {
+          "text": "Connects findings to concrete capability signals (lead time, deployment frequency, rollback time)."
+        },
+        {
+          "text": "Does not recommend technology changes purely for aesthetic or fashion reasons."
+        },
+        {
+          "text": "Separates observed evidence from inferred conclusions."
+        }
+      ]
+    }
+  ]
+}

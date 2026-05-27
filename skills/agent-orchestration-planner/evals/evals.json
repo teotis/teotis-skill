@@ -1,0 +1,108 @@
+{
+  "skill_name": "agent-orchestration-planner",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "我要并行重构三个独立模块：日志系统、认证中间件、数据导出管道。帮我做一个多 agent 编排方案，用 Claude Code 的 Agents View 来调度。",
+      "expected_output": "Generates a complete orchestration kit with INDEX.md, package docs, package-graph.tsv, state.tsv, agent-prompts.md, orchestrate.sh, and 99-finalize. Uses tail-driven execution with orchestrate.sh advance as the only dispatch mechanism.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Creates the full kit structure: INDEX.md, packages/, launchers/, status/."
+        },
+        {
+          "text": "INDEX.md includes Dependency Graph, Merge Strategy, Authorization, and Stop Conditions."
+        },
+        {
+          "text": "Package prompts end with orchestrate.sh advance --from <package-id>, not inline scheduling."
+        },
+        {
+          "text": "orchestrate.sh implements start/advance/status/retry/finalize subcommands."
+        },
+        {
+          "text": "99-finalize is a finalize package that verifies, merges, and reports, not a passive audit."
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "帮我用 dispatch-claude-agents.sh 来跑几个任务。",
+      "expected_output": "Does not present dispatch-claude-agents.sh as a primary entrypoint. Redirects to orchestrate.sh start as the script-based entry, or to agent-prompts.md as the manual entry. If dispatch-claude-agents.sh exists, it should be a thin wrapper calling orchestrate.sh.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Does not present dispatch-claude-agents.sh as a primary user entrypoint."
+        },
+        {
+          "text": "Presents orchestrate.sh start or agent-prompts.md as the entry paths."
+        },
+        {
+          "text": "If dispatch-claude-agents.sh is mentioned, it is described as a thin wrapper around orchestrate.sh."
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "帮我优化一下当前代码，不需要编排，直接改就行。",
+      "expected_output": "Does not trigger the orchestration skill. Explains that this skill is only for explicit multi-agent orchestration requests, and offers to do the work directly or use another appropriate skill.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Does not generate orchestration kit materials for a simple direct-work request."
+        },
+        {
+          "text": "Correctly identifies that the user did not ask for multi-agent orchestration."
+        },
+        {
+          "text": "Offers to perform the work directly or suggest an alternative skill."
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "我需要一个完整编排方案：把 docs/ 目录的 Markdown 翻译成中英双语，同时把 API 文档从 OpenAPI 生成，还要跑一次全量 lint 检查。三个任务互不依赖。",
+      "expected_output": "Creates three independent packages with no inter-dependencies (status dependency only), generates the orchestration kit with proper graph showing all three in wave 1, and ensures package branches own disjoint paths to avoid merge conflicts.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "All three packages have dependency type 'status' with no code dependencies between them."
+        },
+        {
+          "text": "Package-graph.tsv shows all three functional packages in wave 1."
+        },
+        {
+          "text": "Each package's allowed paths are disjoint to avoid merge conflicts."
+        },
+        {
+          "text": "orchestrate.sh launch logic can run all three in parallel up to ORCHESTRATION_MAX_PARALLEL."
+        },
+        {
+          "text": "State ledger initializes all three as ready/pending for first wave."
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "帮我做多 agent 调度，状态账本要实时更新，worktree 每个包一个，最终自动收口合并到 main。",
+      "expected_output": "Generates the orchestration kit with per-package worktrees, coordinator state.tsv as the scheduler source of truth, tail-driven advance calls, and 99-finalize authorized to merge integration branch back to mainline after verification.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Each functional package has its own worktree path in the graph."
+        },
+        {
+          "text": "state.tsv is the machine-readable source of truth, not worktree-local status."
+        },
+        {
+          "text": "Package prompts write coordinator status to the absolute status path, not inside the worktree."
+        },
+        {
+          "text": "99-finalize is authorized to create integration branch, merge packages, verify, and merge to mainline."
+        },
+        {
+          "text": "Cleanup only happens after every finalize step succeeds."
+        }
+      ]
+    }
+  ]
+}

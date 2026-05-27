@@ -1,0 +1,111 @@
+{
+  "skill_name": "html-response",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "谢谢你的帮助！",
+      "expected_output": "Keeps the trivial acknowledgement in chat without generating an HTML file. The response is a simple conversational exchange that does not benefit from a browser-based surface.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Does not generate an HTML file for a trivial conversational exchange."
+        },
+        {
+          "text": "Responds directly in chat."
+        },
+        {
+          "text": "Does not mention the activation score or HTML evaluation to the user."
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "帮我对比一下 React、Vue、Svelte 三个框架在性能、生态、学习曲线、团队适配度四个维度的优劣，我要给技术选型会议准备材料。",
+      "expected_output": "Generates an HTML Decision Board with a comparison matrix, decision controls for each dimension, and feedback export. Uses progressive disclosure for detailed evidence while showing the recommendation summary upfront.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Generates HTML output because the task involves multi-dimensional comparison and decision-making."
+        },
+        {
+          "text": "Uses Decision Board or Evidence Dashboard mode with structured comparison."
+        },
+        {
+          "text": "Includes feedback controls that match the actual review task (choosing, prioritizing)."
+        },
+        {
+          "text": "Shows the answer or recommendation in the opening viewport, not hidden below an ornamental title."
+        },
+        {
+          "text": "Provides a chat message with the conclusion and HTML link/path."
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "帮我审查一下这个 PDF 的排版效果，我需要逐页标注问题。",
+      "expected_output": "Generates an Artifact Review HTML with rendered page previews, point/region annotation support, stable review IDs per page, and structured feedback export including page references.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Generates HTML for artifact review with page-level annotation capability."
+        },
+        {
+          "text": "Uses Artifact Review or Mixed Workspace mode."
+        },
+        {
+          "text": "Each reviewable element has a stable data-item-id for traceability."
+        },
+        {
+          "text": "Supports region or page-level annotation, not just free-text comments."
+        },
+        {
+          "text": "Feedback export preserves review IDs so the next agent turn can map comments to content."
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "帮我生成一个项目状态仪表盘，要有进度条、风险矩阵、本周完成事项。",
+      "expected_output": "Generates an HTML Evidence Dashboard with visual progress indicators, risk matrix, and completed-items list. Uses semantic HTML, CSS-based visualizations without external CDN dependencies, and respects offline-first default.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Generates HTML with visual progress indicators and risk matrix."
+        },
+        {
+          "text": "Uses inline CSS for visualizations without requiring external CDN resources."
+        },
+        {
+          "text": "States 'offline-first' or self-contained without loading external fonts or scripts."
+        },
+        {
+          "text": "Uses semantic landmarks (header, main, section, nav)."
+        },
+        {
+          "text": "Includes keyboard-operable controls with visible focus indicators."
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "你刚才给的 HTML 报告里，风险矩阵那个部分我有两个问题，另外建议操作优先级需要调整。",
+      "expected_output": "Generates HTML with region-specific feedback controls attached to the risk matrix section and priority items. Feedback export includes stable IDs mapping to specific sections and elements.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Attaches feedback controls to specific sections (risk matrix, priority list) rather than generic page-level feedback."
+        },
+        {
+          "text": "Uses stable data-item-id or equivalent identifiers for traceable feedback."
+        },
+        {
+          "text": "Exported feedback includes section references so the agent can locate the commented content."
+        },
+        {
+          "text": "Does not instruct the next agent to send, deploy, or modify data without explicit user authorization."
+        }
+      ]
+    }
+  ]
+}
