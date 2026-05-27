@@ -26,6 +26,15 @@ Codex 与 Claude Code 的私有技能工作区。技能覆盖工程、研究、�
 
 - 使用 conventional commit 格式，中文描述。
 - 不 push 到远程，除非用户明确要求。
+- commit subject 应指明受影响的技能、工作流或不变量，让 `git log` 自身可审查。
+- 避免泛化 subject，例如 `chore: 更新 SKILL.md` 或 `chore: 更新 N 个文件`；这些 subject 无法传达改动意图。
+
+示例：
+
+- `docs: 为复杂技能补充 eval 行为契约`
+- `fix: 停止跟踪 .tmp 分析产物`
+- `chore: 同步 agent 入口文件`
+- `feat: 增加 orchestration 状态账本规则`
 
 ## Validation
 
