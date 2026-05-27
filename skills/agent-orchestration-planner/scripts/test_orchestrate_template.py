@@ -285,6 +285,21 @@ class OrchestrateTemplateTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("01-alpha missing commit_hash", result.stderr)
 
+    def test_verify_package_blocks_dirty_git_worktree(self) -> None:
+        worktree = self.repo / ".worktrees" / "sample-orchestration" / "01-alpha"
+        self.run_cmd(
+            ["git", "worktree", "add", "-B", "agent/sample/01-alpha", str(worktree), "HEAD"],
+            cwd=self.repo,
+        )
+        (worktree / "DIRTY.txt").write_text("uncommitted\n", encoding="utf-8")
+        commit = self.run_cmd(["git", "rev-parse", "HEAD"], cwd=self.repo).stdout.strip()
+        self.orchestrate("mark-state", "01-alpha", "completed", "--commit", commit, "--verification", "unit: pass")
+
+        result = self.orchestrate("verify-package", "01-alpha", check=False)
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("01-alpha worktree is dirty", result.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()

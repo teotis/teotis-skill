@@ -55,7 +55,7 @@ trap 'release_lock' EXIT
 
 valid_state() {
   case "$1" in
-    pending|ready|launched|in_progress|completed|blocked|stale|invalid|finalizing|finalized)
+    pending|ready|manual_required|launched|in_progress|completed|blocked|stale|invalid|finalizing|finalized)
       return 0
       ;;
     *)
@@ -262,7 +262,7 @@ preflight_state() {
         bad = 1
       }
       seen[$1] = 1
-      if ($2 !~ /^(pending|ready|launched|in_progress|completed|blocked|stale|invalid|finalizing|finalized)$/) {
+      if ($2 !~ /^(pending|ready|manual_required|launched|in_progress|completed|blocked|stale|invalid|finalizing|finalized)$/) {
         printf("invalid state for %s: %s\n", $1, $2) > "/dev/stderr"
         bad = 1
       }
@@ -415,12 +415,29 @@ running_count() {
 }
 
 ready_packages() {
-  local id state
+  local id state manual
   while IFS= read -r id; do
     [ -n "$id" ] || continue
     state="$(state_field "$id" state)"
-    if { [ "$state" = "pending" ] || [ "$state" = "ready" ]; } && deps_completed "$id"; then
+    manual="$(graph_field "$id" manual)"
+    if { [ "$state" = "pending" ] || [ "$state" = "ready" ]; } && [ "$manual" != "1" ] && deps_completed "$id"; then
       printf '%s\n' "$id"
+    fi
+  done < <(functional_package_ids)
+}
+
+mark_ready_manual_packages() {
+  local id state manual
+  while IFS= read -r id; do
+    [ -n "$id" ] || continue
+    state="$(state_field "$id" state)"
+    manual="$(graph_field "$id" manual)"
+    if { [ "$state" = "pending" ] || [ "$state" = "ready" ] || [ "$state" = "manual_required" ]; } &&
+      [ "$manual" = "1" ] && deps_completed "$id"; then
+      if [ "$state" != "manual_required" ]; then
+        set_state_fields "$id" "manual_required" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__" ""
+      fi
+      log "manual package ready: $id"
     fi
   done < <(functional_package_ids)
 }
@@ -447,6 +464,39 @@ ensure_worktree() {
   git -C "$REPO_ROOT" worktree add -B "$branch" "$worktree" HEAD >/dev/null
 }
 
+validate_permission_mode() {
+  case "$CLAUDE_PERMISSION_MODE" in
+    ""|default|acceptEdits|plan)
+      return 0
+      ;;
+    auto)
+      [ "${CLAUDE_AUTO_MODE_OPTED_IN:-}" = "1" ] ||
+        die "CLAUDE_PERMISSION_MODE=auto requires CLAUDE_AUTO_MODE_OPTED_IN=1 after running claude --permission-mode auto interactively"
+      ;;
+    bypassPermissions)
+      [ "${CLAUDE_BYPASS_PERMISSIONS_APPROVED:-}" = "1" ] ||
+        die "CLAUDE_PERMISSION_MODE=bypassPermissions requires CLAUDE_BYPASS_PERMISSIONS_APPROVED=1; this repo must not silently grant bypass permissions"
+      ;;
+    *)
+      die "unsupported CLAUDE_PERMISSION_MODE: $CLAUDE_PERMISSION_MODE"
+      ;;
+  esac
+}
+
+parse_session_id() {
+  awk '
+    /backgrounded/ {
+      for (i = 1; i <= NF; i++) {
+        if ($i == "backgrounded" || $i == "·" || $i == "-" || $i == "•") continue
+        if ($i ~ /^[[:alnum:]_-]{6,}$/) {
+          print $i
+          exit
+        }
+      }
+    }
+  '
+}
+
 launch_package() {
   local package_id="$1"
   local finalize name worktree branch prompt_file launch_log launch_output status session_id new_state version_output
@@ -470,6 +520,7 @@ launch_package() {
     die "claude command not found"
   fi
 
+  validate_permission_mode
   version_output="$(claude --version 2>&1 || true)"
   log "claude: $version_output"
   ensure_worktree "$package_id"
@@ -504,7 +555,7 @@ launch_package() {
   fi
 
   printf '%s\n' "$launch_output"
-  session_id="$(printf '%s\n' "$launch_output" | awk '/backgrounded/ { print $2; exit }')"
+  session_id="$(printf '%s\n' "$launch_output" | parse_session_id)"
   if [ -z "$session_id" ]; then
     set_error_state "$package_id" "invalid" "missing background session id; see $launch_log"
     die "missing background session id for $package_id"
@@ -532,6 +583,7 @@ launch_ready_or_finalize() {
     exit 1
   fi
   status_consistency_ok || exit 1
+  mark_ready_manual_packages
 
   if all_functional_completed; then
     finalize_id="$(finalize_package_id)"
@@ -669,9 +721,87 @@ cmd_finalize() {
 }
 
 cmd_doctor() {
+  if [ "${1:-}" = "--environment" ]; then
+    printf 'repo_root=%s\n' "$REPO_ROOT"
+    printf 'plan_root=%s\n' "$PLAN_ROOT"
+    if command -v claude >/dev/null 2>&1; then
+      printf 'claude_path=%s\n' "$(command -v claude)"
+      printf 'claude_version=%s\n' "$(claude --version 2>&1 || true)"
+      if claude agents --help >/dev/null 2>&1; then
+        printf 'claude_agents_help=available\n'
+      else
+        printf 'claude_agents_help=unavailable\n'
+      fi
+    else
+      printf 'claude_path=missing\n'
+      printf 'claude_version=missing\n'
+      printf 'claude_agents_help=unavailable\n'
+    fi
+    printf 'permission_mode=%s\n' "${CLAUDE_PERMISSION_MODE:-default}"
+    printf 'setting_sources=%s\n' "$CLAUDE_SETTING_SOURCES"
+    return 0
+  fi
   preflight_all
   status_consistency_ok
   printf 'doctor: ok\n'
+}
+
+verify_package_evidence() {
+  local package_id="$1"
+  local state branch worktree commit bad=0
+  state="$(state_field "$package_id" state)"
+  branch="$(state_field "$package_id" branch)"
+  worktree="$(state_field "$package_id" worktree)"
+  commit="$(state_field "$package_id" commit_hash)"
+
+  if [ "$state" != "completed" ] && [ "$state" != "finalized" ]; then
+    printf '%s not completed: %s\n' "$package_id" "$state" >&2
+    bad=1
+  fi
+  if [ -z "$commit" ] || [ "$commit" = "pending" ]; then
+    printf '%s missing commit_hash\n' "$package_id" >&2
+    bad=1
+  elif ! git -C "$REPO_ROOT" cat-file -e "$commit^{commit}" >/dev/null 2>&1; then
+    printf '%s commit_hash does not exist: %s\n' "$package_id" "$commit" >&2
+    bad=1
+  fi
+  if [ -z "$branch" ] || [ "$branch" = "pending" ]; then
+    printf '%s missing branch\n' "$package_id" >&2
+    bad=1
+  elif ! git -C "$REPO_ROOT" rev-parse --verify "$branch" >/dev/null 2>&1; then
+    printf '%s branch does not exist: %s\n' "$package_id" "$branch" >&2
+    bad=1
+  fi
+  if [ -n "$worktree" ] && [ "$worktree" != "pending" ] &&
+    git -C "$worktree" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    if [ -n "$(git -C "$worktree" status --porcelain)" ]; then
+      printf '%s worktree is dirty: %s\n' "$package_id" "$worktree" >&2
+      bad=1
+    fi
+  fi
+  return "$bad"
+}
+
+cmd_verify_package() {
+  local package_id="${1:-}"
+  [ -n "$package_id" ] || die "usage: verify-package <package-id>"
+  preflight_all
+  status_consistency_ok
+  verify_package_evidence "$package_id"
+}
+
+cmd_verify_finalize() {
+  local id bad=0
+  preflight_all
+  status_consistency_ok
+  while IFS= read -r id; do
+    [ -n "$id" ] || continue
+    if ! verify_package_evidence "$id"; then
+      bad=1
+    fi
+  done < <(functional_package_ids)
+  [ "$bad" -eq 0 ] || exit 1
+  printf 'verify-finalize: ok\n'
 }
 
 usage() {
@@ -686,7 +816,9 @@ Commands:
   finalize
   mark-state <package-id> <state> [--base <sha>] [--commit <sha>] [--verification <text>] [--integration <text>] [--cleanup <text>] [--error <text>]
   repair-state
-  doctor
+  doctor [--environment]
+  verify-package <package-id>
+  verify-finalize
 USAGE
 }
 
@@ -721,7 +853,15 @@ case "${1:-}" in
     cmd_repair_state
     ;;
   doctor)
-    cmd_doctor
+    shift || true
+    cmd_doctor "$@"
+    ;;
+  verify-package)
+    shift || true
+    cmd_verify_package "${1:-}"
+    ;;
+  verify-finalize)
+    cmd_verify_finalize
     ;;
   *)
     usage

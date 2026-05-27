@@ -233,6 +233,7 @@ package_id	state	launched_at	completed_at	agent	branch	worktree	base_commit	comm
 Allowed states:
 - `pending`
 - `ready`
+- `manual_required`
 - `launched`
 - `in_progress`
 - `completed`
@@ -256,7 +257,9 @@ bash launchers/orchestrate.sh retry <package-id>
 bash launchers/orchestrate.sh finalize
 bash launchers/orchestrate.sh mark-state <package-id> <state> [--base <sha>] [--commit <sha>] [--verification <text>] [--integration <text>] [--cleanup <text>] [--error <text>]
 bash launchers/orchestrate.sh repair-state
-bash launchers/orchestrate.sh doctor
+bash launchers/orchestrate.sh doctor [--environment]
+bash launchers/orchestrate.sh verify-package <package-id>
+bash launchers/orchestrate.sh verify-finalize
 ```
 
 Required behavior:
@@ -268,6 +271,8 @@ Required behavior:
 - `mark-state`: the only supported way for package agents to mutate `state.tsv`; it also keeps Markdown status in sync.
 - `repair-state`: rebuild `state.tsv` from graph and Markdown status when a ledger is empty or malformed.
 - `doctor`: run preflight and consistency checks without launching work.
+- `doctor --environment`: report repo root, plan root, Claude CLI path/version, `claude agents --help` availability, permission mode, and setting sources so users can tell whether Codex/rtk and macOS Terminal are using the same Claude environment.
+- `verify-package` / `verify-finalize`: verify package evidence before integration, including completed state, branch, commit hash, commit existence, and clean package worktree when present.
 
 Implementation rules:
 - Use `skills/agent-orchestration-planner/scripts/orchestrate-template.sh` as the script body.
@@ -277,7 +282,10 @@ Implementation rules:
 - Never trust `--from`; it is only a hint for logging. Always compute readiness from coordinator status/state.
 - Every package can be launched at most once unless `retry` explicitly resets it.
 - Launch Claude Code background agents with `claude --bg --name` from the package's assigned worktree.
+- Parse Claude Code session ids from both observed output formats: `backgrounded <id>` and `backgrounded · <id>`. Never record punctuation such as `·` as the session id.
+- Do not silently grant elevated permission modes. Default to no explicit `--permission-mode`; `CLAUDE_PERMISSION_MODE=auto` requires `CLAUDE_AUTO_MODE_OPTED_IN=1` after an interactive opt-in, and `CLAUDE_PERMISSION_MODE=bypassPermissions` requires `CLAUDE_BYPASS_PERMISSIONS_APPROVED=1`.
 - Before launch, create or verify the recorded package worktree and branch.
+- If a graph row has `manual=1`, never auto-launch it. When its dependencies are satisfied, mark it `manual_required` and print the package id for manual execution.
 - Write raw launch output to `status/launch-<package-id>.log`.
 - Parse and record the background session id in the `agent` column.
 - After launch, run a short `claude logs <session-id>` postflight. If the session id is missing, mark the package `invalid`. If logs are not readable or the session exits immediately, mark it `stale`.
@@ -292,7 +300,8 @@ Generate a finalize package, not a passive audit-only prompt.
 
 `99-finalize` must:
 1. Read INDEX, graph, all package docs, all status files, and `state.tsv`.
-2. Verify every functional package:
+2. Run `bash launchers/orchestrate.sh verify-finalize` before merging.
+3. Verify every functional package:
    - acceptance criteria addressed
    - changed files are within allowed paths
    - evidence pack complete
@@ -302,14 +311,14 @@ Generate a finalize package, not a passive audit-only prompt.
    - package commit hash exists
    - package changed files are within allowed paths
    - package worktree is clean, or dirty state is recorded as a blocker
-3. Decide whether merging is allowed.
-4. Create or update the integration branch.
-5. Merge functional package branches in Merge Strategy order.
-6. Stop and record conflicts without cleaning anything.
-7. Run integration verification.
-8. Merge integration branch back to mainline only after verification passes.
-9. Write `FINAL_REPORT.md` and `status/99-finalize.md` for both success and failure.
-10. Delete only local package branches/worktrees recorded by this orchestration after every prior step succeeds.
+4. Decide whether merging is allowed.
+5. Create or update the integration branch.
+6. Merge functional package branches in Merge Strategy order.
+7. Stop and record conflicts without cleaning anything.
+8. Run integration verification.
+9. Merge integration branch back to mainline only after verification passes.
+10. Write `FINAL_REPORT.md` and `status/99-finalize.md` for both success and failure.
+11. Delete only local package branches/worktrees recorded by this orchestration after every prior step succeeds.
 
 Failure rules:
 - Any failure sets `99-finalize` to `blocked`.
@@ -366,6 +375,8 @@ bash "<absolute-plan-dir>/launchers/orchestrate.sh" status
 bash "<absolute-plan-dir>/launchers/orchestrate.sh" advance
 bash "<absolute-plan-dir>/launchers/orchestrate.sh" retry <package-id>
 bash "<absolute-plan-dir>/launchers/orchestrate.sh" finalize
+bash "<absolute-plan-dir>/launchers/orchestrate.sh" doctor --environment
+bash "<absolute-plan-dir>/launchers/orchestrate.sh" verify-finalize
 claude agents --cwd "<repo-root>"
 ```
 

@@ -178,6 +178,52 @@
           "text": "99-finalize does not mix coordinator ledger commits with unrelated orchestration docs or concurrent mainline edits."
         }
       ]
+    },
+    {
+      "id": 9,
+      "prompt": "我用脚本启动后只看到 `backgrounded · 2072b1cc`，之前账本把 `·` 当成 session id，还误判为失败。请生成不会再犯这个错误的 orchestration kit。",
+      "expected_output": "Generates an orchestration kit whose shared orchestrate.sh parses Claude Code background session ids from both `backgrounded <id>` and `backgrounded · <id>`, stores the real id, writes launch logs, checks logs using the parsed id, and includes permission-mode guards for auto and bypassPermissions.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "The generated runtime parses `backgrounded · <id>` and stores `<id>`, not `·`, in state.tsv."
+        },
+        {
+          "text": "The launcher defaults to no explicit --permission-mode."
+        },
+        {
+          "text": "CLAUDE_PERMISSION_MODE=auto requires CLAUDE_AUTO_MODE_OPTED_IN=1 after interactive opt-in."
+        },
+        {
+          "text": "CLAUDE_PERMISSION_MODE=bypassPermissions requires CLAUDE_BYPASS_PERMISSIONS_APPROVED=1."
+        },
+        {
+          "text": "The kit exposes `doctor --environment` for Claude CLI path/version and agents availability diagnostics."
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "这个编排里有些包必须人工处理，比如 public 发布、force-push 或安全审核；同时 99-finalize 不能只信 FINAL_REPORT。请让脚本和包设计支持这种情况。",
+      "expected_output": "Generates package-graph rows that can use manual=1, never auto-launches manual packages, marks them manual_required when dependencies are satisfied, and requires 99-finalize to run verify-finalize before merging or claiming completion.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "manual=1 packages are not launched by start/advance/retry automatically."
+        },
+        {
+          "text": "When a manual package's dependencies are satisfied, state.tsv records manual_required."
+        },
+        {
+          "text": "status output and final chat response identify concrete manual package ids."
+        },
+        {
+          "text": "orchestrate.sh includes verify-package and verify-finalize commands."
+        },
+        {
+          "text": "99-finalize runs verify-finalize and blocks missing branch, missing commit_hash, nonexistent commit, or dirty worktree evidence."
+        }
+      ]
     }
   ]
 }
