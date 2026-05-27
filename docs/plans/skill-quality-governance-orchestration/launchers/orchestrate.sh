@@ -88,7 +88,7 @@ preflight() {
     { exists[$1] = 1; deps[$1] = $4 }
     END {
       for (pkg in deps) {
-        if (deps[pkg] == "") continue
+        if (deps[pkg] == "" || deps[pkg] == "none") continue
         n = split(deps[pkg], parts, ",")
         for (i = 1; i <= n; i++) {
           dep = parts[i]
@@ -107,7 +107,7 @@ preflight() {
 deps_satisfied() {
   local deps="$1"
   local dep
-  [[ -z "$deps" ]] && return 0
+  [[ -z "$deps" || "$deps" == "none" ]] && return 0
   IFS=',' read -ra dep_array <<< "$deps"
   for dep in "${dep_array[@]}"; do
     dep="${dep#"${dep%%[![:space:]]*}"}"
@@ -277,4 +277,3 @@ mkdir "$LOCKDIR" 2>/dev/null || {
 }
 trap 'rmdir "$LOCKDIR"' EXIT
 main "$@"
-
