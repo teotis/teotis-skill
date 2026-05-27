@@ -276,6 +276,27 @@ class OrchestrateTemplateTest(unittest.TestCase):
         self.assertIn('"event":"state_changed"', events)
         self.assertIn('"new_state":"completed"', events)
 
+    def test_scratch_path_creates_gitignored_package_workspace(self) -> None:
+        result = self.orchestrate("scratch-path", "01-alpha")
+
+        scratch_path = Path(result.stdout.strip())
+        self.assertEqual(scratch_path, self.plan / "scratch" / "01-alpha")
+        self.assertTrue(scratch_path.is_dir())
+        gitignore = (self.plan / "scratch" / ".gitignore").read_text(encoding="utf-8")
+        self.assertIn("*", gitignore)
+        self.assertIn("!.gitignore", gitignore)
+        state = (self.plan / "status" / "state.tsv").read_text(encoding="utf-8")
+        self.assertIn("01-alpha\tpending\t", state)
+        events = (self.plan / "status" / "events.jsonl").read_text(encoding="utf-8")
+        self.assertIn('"event":"scratch_path_requested"', events)
+        self.assertIn('"package_id":"01-alpha"', events)
+
+    def test_scratch_path_rejects_unknown_package(self) -> None:
+        result = self.orchestrate("scratch-path", "nope", check=False)
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("unknown package: nope", result.stderr)
+
     def test_manual_packages_are_not_auto_launched(self) -> None:
         graph = self.plan / "launchers" / "package-graph.tsv"
         graph.write_text(

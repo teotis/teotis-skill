@@ -267,6 +267,32 @@
           "text": "99-finalize or failure reporting uses events.jsonl when explaining repeated failures."
         }
       ]
+    },
+    {
+      "id": 13,
+      "prompt": "多 agent 之间需要临时共享调查笔记、命令输出和中间清单，但这些东西不能污染状态账本，也不能被当作完成证据。请让 orchestration kit 支持这种临时共享材料区。",
+      "expected_output": "Generates an orchestration kit with a plan-local gitignored scratch area and a scratch-path command that creates package-local scratch directories without changing scheduler truth.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "The generated kit includes scratch/.gitignore in its directory structure."
+        },
+        {
+          "text": "orchestrate.sh exposes scratch-path <package-id> and prints the absolute package scratch path."
+        },
+        {
+          "text": "scratch-path creates the package scratch directory and records scratch_path_requested in events.jsonl."
+        },
+        {
+          "text": "Package prompts say scratch is for temporary non-sensitive notes, inventories, logs, draft diffs, or intermediate artifacts only."
+        },
+        {
+          "text": "Scratch contents do not unlock dependencies, satisfy acceptance criteria by themselves, or replace state.tsv/status evidence."
+        },
+        {
+          "text": "Package prompts forbid credentials, tokens, private keys, .env files, hidden prompts, and proprietary raw data in scratch."
+        }
+      ]
     }
   ]
 }

@@ -7,6 +7,7 @@ REPO_ROOT="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel)"
 GRAPH="$PLAN_ROOT/launchers/package-graph.tsv"
 STATE="$PLAN_ROOT/status/state.tsv"
 EVENTS="$PLAN_ROOT/status/events.jsonl"
+SCRATCH="$PLAN_ROOT/scratch"
 PROMPTS="$PLAN_ROOT/launchers/agent-prompts.md"
 LOCK_DIR="$PLAN_ROOT/status/.orchestrate.lock"
 MAX_PARALLEL="${ORCHESTRATION_MAX_PARALLEL:-10}"
@@ -54,6 +55,21 @@ emit_event() {
   mkdir -p "$(dirname "$EVENTS")"
   printf '{"ts":"%s","event":"%s","package_id":"%s"%s}\n' \
     "$(timestamp)" "$(json_escape "$event")" "$(json_escape "$package_id")" "$extra" >> "$EVENTS"
+}
+
+ensure_scratch_root() {
+  mkdir -p "$SCRATCH"
+  if [ ! -f "$SCRATCH/.gitignore" ]; then
+    {
+      printf '*\n'
+      printf '!.gitignore\n'
+    } > "$SCRATCH/.gitignore"
+  fi
+}
+
+scratch_path_for() {
+  local package_id="$1"
+  printf '%s/%s\n' "$SCRATCH" "$package_id"
 }
 
 failure_fingerprint() {
@@ -827,6 +843,19 @@ cmd_doctor() {
   printf 'doctor: ok\n'
 }
 
+cmd_scratch_path() {
+  local package_id="${1:-}"
+  local path
+  [ -n "$package_id" ] || die "usage: scratch-path <package-id>"
+  preflight_graph
+  graph_field "$package_id" package_doc >/dev/null || die "unknown package: $package_id"
+  ensure_scratch_root
+  path="$(scratch_path_for "$package_id")"
+  mkdir -p "$path"
+  emit_event "scratch_path_requested" "$package_id" "$(json_pair "path" "$path")"
+  printf '%s\n' "$path"
+}
+
 verify_package_evidence() {
   local package_id="$1"
   local state branch worktree commit bad=0
@@ -900,6 +929,7 @@ Commands:
   doctor [--environment]
   verify-package <package-id>
   verify-finalize
+  scratch-path <package-id>
 USAGE
 }
 
@@ -943,6 +973,10 @@ case "${1:-}" in
     ;;
   verify-finalize)
     cmd_verify_finalize
+    ;;
+  scratch-path)
+    shift || true
+    cmd_scratch_path "${1:-}"
     ;;
   *)
     usage

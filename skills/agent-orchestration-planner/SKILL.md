@@ -70,6 +70,8 @@ docs/plans/<plan-name>/
 │   ├── package-status-template.md
 │   ├── <package-id>.md
 │   └── 99-finalize.md
+├── scratch/
+│   └── .gitignore
 └── FINAL_REPORT.md (created by 99-finalize)
 ```
 
@@ -111,6 +113,7 @@ Package agents are authorized to:
 - Commit local package changes.
 - Write only their assigned coordinator status file.
 - Update the state ledger only through `bash <plan-root>/launchers/orchestrate.sh mark-state ...`; do not edit `state.tsv` manually.
+- Write temporary, non-sensitive shared working notes or intermediate artifacts only under their assigned scratch path from `bash <plan-root>/launchers/orchestrate.sh scratch-path <package-id>`.
 - Call `bash <plan-root>/launchers/orchestrate.sh advance --from <package-id>` after recording final status.
 
 `99-finalize` is authorized by default to perform incremental orchestration operations for this plan:
@@ -172,9 +175,12 @@ Copy this prompt into an agent, or let `orchestrate.sh start/advance` launch it 
 **Package doc**: <absolute-plan-dir>/packages/<package-id>.md
 **Coordinator status**: <absolute-plan-dir>/status/<package-id>.md
 **Coordinator state**: <absolute-plan-dir>/status/state.tsv
+**Scratch path**: run `bash <absolute-plan-dir>/launchers/orchestrate.sh scratch-path <package-id>`
 **Orchestrator**: <absolute-plan-dir>/launchers/orchestrate.sh
 
 You may edit only the allowed paths in the package doc. Do not edit INDEX.md or another package status file. If you create/use an implementation worktree, do not rely on status files inside that worktree; write the coordinator status path above.
+
+Use scratch only for temporary shared notes, inventories, command transcripts, draft diffs, or intermediate artifacts that help another package or finalizer inspect the work. Do not put credentials, tokens, private keys, `.env` files, hidden prompts, proprietary raw data, or authoritative completion evidence in scratch. Anything required for scheduling, completion, or final acceptance must be summarized into coordinator status through `mark-state` and the package status file.
 
 Before calling `advance`, you must:
 - Set coordinator status to `completed` or `blocked`.
@@ -261,6 +267,7 @@ bash launchers/orchestrate.sh repair-state
 bash launchers/orchestrate.sh doctor [--environment]
 bash launchers/orchestrate.sh verify-package <package-id>
 bash launchers/orchestrate.sh verify-finalize
+bash launchers/orchestrate.sh scratch-path <package-id>
 ```
 
 Required behavior:
@@ -274,6 +281,7 @@ Required behavior:
 - `doctor`: run preflight and consistency checks without launching work.
 - `doctor --environment`: report repo root, plan root, Claude CLI path/version, `claude agents --help` availability, permission mode, and setting sources so users can tell whether Codex/rtk and macOS Terminal are using the same Claude environment.
 - `verify-package` / `verify-finalize`: verify package evidence before integration, including completed state, branch, commit hash, commit existence, and clean package worktree when present.
+- `scratch-path <package-id>`: create `scratch/.gitignore`, create the package-local scratch directory, print its absolute path, and record the request in `events.jsonl`.
 
 Implementation rules:
 - Use `skills/agent-orchestration-planner/scripts/orchestrate-template.sh` as the script body.
@@ -287,8 +295,9 @@ Implementation rules:
 - Do not silently grant elevated permission modes. Default to no explicit `--permission-mode`; `CLAUDE_PERMISSION_MODE=auto` requires `CLAUDE_AUTO_MODE_OPTED_IN=1` after an interactive opt-in, and `CLAUDE_PERMISSION_MODE=bypassPermissions` requires `CLAUDE_BYPASS_PERMISSIONS_APPROVED=1`.
 - Before launch, create or verify the recorded package worktree and branch.
 - If a graph row has `manual=1`, never auto-launch it. When its dependencies are satisfied, mark it `manual_required` and print the package id for manual execution.
-- Maintain `status/events.jsonl` as an append-only audit log. Record at minimum: `launch_requested`, `launch_succeeded`, `state_changed`, `terminal_failure`, `retry_requested`, and `retry_blocked` with timestamp, package id, state transition or session id, and error fingerprint where relevant.
+- Maintain `status/events.jsonl` as an append-only audit log. Record at minimum: `launch_requested`, `launch_succeeded`, `state_changed`, `terminal_failure`, `retry_requested`, `retry_blocked`, and `scratch_path_requested` with timestamp, package id, state transition or session id, path, and error fingerprint where relevant.
 - Treat `events.jsonl` as the source for retry loop accounting. If `terminal_failure` records show the same package and normalized error fingerprint three times, `retry` must stop before relaunching and print the package id, failure count, and fingerprint.
+- Maintain `scratch/` as a plan-local, gitignored, non-authoritative exchange area. Runtime commands must create `scratch/.gitignore` with ignored contents, and package prompts must direct agents to request their package path through `scratch-path`. Scratch contents must never unlock dependencies, satisfy acceptance criteria by themselves, or replace status/evidence fields.
 - Write raw launch output to `status/launch-<package-id>.log`.
 - Parse and record the background session id in the `agent` column.
 - After launch, run a short `claude logs <session-id>` postflight. If the session id is missing, mark the package `invalid`. If logs are not readable or the session exits immediately, mark it `stale`.
@@ -381,6 +390,7 @@ bash "<absolute-plan-dir>/launchers/orchestrate.sh" retry <package-id>
 bash "<absolute-plan-dir>/launchers/orchestrate.sh" finalize
 bash "<absolute-plan-dir>/launchers/orchestrate.sh" doctor --environment
 bash "<absolute-plan-dir>/launchers/orchestrate.sh" verify-finalize
+bash "<absolute-plan-dir>/launchers/orchestrate.sh" scratch-path <package-id>
 claude agents --cwd "<repo-root>"
 ```
 
@@ -397,6 +407,7 @@ Do not present `/batch`, `dispatch-claude-agents.sh`, or a separate audit prompt
 - Do NOT use worktree-local status as coordinator truth.
 - Do NOT launch downstream packages from a package agent directly.
 - Do NOT run `99-finalize` if any functional package is not `completed`.
+- Do NOT treat scratch files as scheduler truth, final evidence, or a place for secrets.
 - Do NOT clean up branches/worktrees unless finalize fully succeeds.
 - Do NOT delete resources not recorded as created by this orchestration.
 
