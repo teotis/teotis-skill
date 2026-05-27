@@ -51,3 +51,7 @@ Teotis 的公开 Codex skill 集合，当前聚焦架构优化、复杂结果呈
 它们不模仿人物，也不把隐喻当结论。真正的标准只有一个：能否让工程判断更有证据、更可审阅、更能安全地转化为行动。
 
 两个 planner skill 把同样的标准用于协作：让 agent 工作边界清楚、可验收、可恢复。轻量 planner 面向人手动控制的分包交接；orchestration planner 只在并发、依赖和集成收口值得单独建执行契约时使用。
+
+## License
+
+Apache License 2.0。详见 [LICENSE](LICENSE)。

@@ -85,3 +85,7 @@ agent work explicit, bounded, verifiable, and easier to resume. The lightweight
 planner is optimized for human-controlled handoff; the orchestration planner is
 reserved for cases where concurrency, dependencies, and integration deserve
 their own execution contract.
+
+## License
+
+Apache License 2.0. See [LICENSE](LICENSE).
