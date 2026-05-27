@@ -1,6 +1,6 @@
 # Teotis Skills
 
-Teotis 的公开 Codex skill 集合，当前聚焦架构优化与复杂结果呈现。
+Teotis 的公开 Codex skill 集合，当前聚焦架构优化、复杂结果呈现和可复用 agent 规划工作流。
 
 [English](README.md)
 
@@ -21,6 +21,16 @@ Teotis 的公开 Codex skill 集合，当前聚焦架构优化与复杂结果呈
 **效果：** 把复杂回答、架构报告、计划、对比、审查和产物预览转成离线优先的交互式 HTML 审阅页面。  
 **适配场景：** 适合内容太密、证据太多、需要批注反馈、需要视觉检查，或聊天窗口不再是最佳阅读界面的任务。
 
+### `agent-handoff-planner`
+
+**效果：** 把小型实现想法、外部 agent 发现和验收请求转成可直接执行的 Markdown 分包，适合 1-3 个手动 agent 窗口。  
+**适配场景：** 适合轻量委派：先核验说法，再区分 Codex 保留判断和本地实现任务，并把验收标准写成可执行契约。
+
+### `agent-orchestration-planner`
+
+**效果：** 生成完整的多 agent 编排套件，包括分包文档、prompt、依赖图、状态账本和 Claude Code 后台 agent 启动流程。  
+**适配场景：** 适合明确的中大型 agent 落地：需要分支/worktree 隔离、DAG 调度、尾部推进和最终集成收口。
+
 ## Self Assessment
 
 | Skill | 专项能力 | 自评 | 说明 |
@@ -28,6 +38,8 @@ Teotis 的公开 Codex skill 集合，当前聚焦架构优化与复杂结果呈
 | `abstraction-architect` | 结构洞察与复杂度删除 | 94 / 100 | 强在发现缺失不变量和错误边界；不负责直接落地迁移。 |
 | `renewal-architect` | 遗留系统演进与试点设计 | 95 / 100 | 强在现实约束、稳定性、回滚、owner 和渐进扩展。 |
 | `html-response` | 复杂内容的可读呈现与反馈闭环 | 92 / 100 | 强在报告、审查、批注和反馈导出；简单回答不应强行 HTML 化。 |
+| `agent-handoff-planner` | 小型分包委派与验收契约 | 91 / 100 | 强在核验后的 1-3 个 agent 分包；刻意不负责批量派工和分支编排。 |
+| `agent-orchestration-planner` | 多 agent 执行控制与收口 | 93 / 100 | 强在明确的编排套件；单点修改或轻量 handoff 时会显得过重。 |
 
 ## Design Philosophy
 
@@ -37,3 +49,5 @@ Teotis 的公开 Codex skill 集合，当前聚焦架构优化与复杂结果呈
 - `renewal-architect` 参考数十亿人口规模发展实践中的现实主义智慧：在历史包袱、稳定性约束和资源限制下，先找到可验证的突破点，再把局部成功扩展成系统能力。
 
 它们不模仿人物，也不把隐喻当结论。真正的标准只有一个：能否让工程判断更有证据、更可审阅、更能安全地转化为行动。
+
+两个 planner skill 把同样的标准用于协作：让 agent 工作边界清楚、可验收、可恢复。轻量 planner 面向人手动控制的分包交接；orchestration planner 只在并发、依赖和集成收口值得单独建执行契约时使用。
