@@ -15,7 +15,7 @@ CLAUDE_MODEL="${CLAUDE_MODEL:-sonnet}"
 CLAUDE_EFFORT="${CLAUDE_EFFORT:-xhigh}"
 CLAUDE_PERMISSION_MODE="${CLAUDE_PERMISSION_MODE:-}"
 CLAUDE_SETTING_SOURCES="${CLAUDE_SETTING_SOURCES:-user,project,local}"
-STATE_HEADER="package_id	state	launched_at	completed_at	agent	branch	worktree	base_commit	commit_hash	verification	integration	cleanup	last_error"
+STATE_HEADER="package_id	state	launched_at	completed_at	agent	branch	worktree	base_commit	commit_hash	verification	integration	cleanup	last_error	failed_command	conflict_files	log_summary	recovery_hint"
 GRAPH_HEADER="package_id	package_doc	status_file	dependencies	dependency_type	wave	branch	worktree	manual	finalize"
 LOCK_ACQUIRED=0
 
@@ -46,6 +46,14 @@ json_pair() {
   local key="$1"
   local value="$2"
   printf ',"%s":"%s"' "$(json_escape "$key")" "$(json_escape "$value")"
+}
+
+tsv_safe() {
+  local value="$1"
+  value="${value//$'\t'/ }"
+  value="${value//$'\n'/ }"
+  value="${value//$'\r'/ }"
+  printf '%s' "$value" | sed 's/[[:space:]][[:space:]]*/ /g; s/^[[:space:]]*//; s/[[:space:]]*$//'
 }
 
 emit_event() {
@@ -337,8 +345,8 @@ preflight_state() {
     FNR == 1 { next }
     NF == 0 { next }
     {
-      if (NF != 13) {
-        printf("state row has %d fields, expected 13: %s\n", NF, $0) > "/dev/stderr"
+      if (NF != 17) {
+        printf("state row has %d fields, expected 17: %s\n", NF, $0) > "/dev/stderr"
         bad = 1
       }
       if (!($1 in ids)) {
@@ -406,6 +414,10 @@ set_state_fields() {
   local integration="${11:-__KEEP__}"
   local cleanup="${12:-__KEEP__}"
   local last_error="${13:-__KEEP__}"
+  local failed_command="${14:-__KEEP__}"
+  local conflict_files="${15:-__KEEP__}"
+  local log_summary="${16:-__KEEP__}"
+  local recovery_hint="${17:-__KEEP__}"
   local now tmp old_state event_extra
 
   valid_state "$new_state" || die "invalid state: $new_state"
@@ -426,7 +438,11 @@ set_state_fields() {
     -v verification="$verification" \
     -v integration="$integration" \
     -v cleanup="$cleanup" \
-    -v last_error="$last_error" '
+    -v last_error="$last_error" \
+    -v failed_command="$failed_command" \
+    -v conflict_files="$conflict_files" \
+    -v log_summary="$log_summary" \
+    -v recovery_hint="$recovery_hint" '
       FNR == 1 {
         for (i = 1; i <= NF; i++) idx[$i] = i
         print
@@ -447,6 +463,15 @@ set_state_fields() {
         if (integration != "__KEEP__") $idx["integration"] = integration
         if (cleanup != "__KEEP__") $idx["cleanup"] = cleanup
         if (last_error != "__KEEP__") $idx["last_error"] = last_error
+        else if (new_state == "completed" || new_state == "finalized") $idx["last_error"] = ""
+        if (failed_command != "__KEEP__") $idx["failed_command"] = failed_command
+        else if (new_state == "completed" || new_state == "finalized") $idx["failed_command"] = ""
+        if (conflict_files != "__KEEP__") $idx["conflict_files"] = conflict_files
+        else if (new_state == "completed" || new_state == "finalized") $idx["conflict_files"] = ""
+        if (log_summary != "__KEEP__") $idx["log_summary"] = log_summary
+        else if (new_state == "completed" || new_state == "finalized") $idx["log_summary"] = ""
+        if (recovery_hint != "__KEEP__") $idx["recovery_hint"] = recovery_hint
+        else if (new_state == "completed" || new_state == "finalized") $idx["recovery_hint"] = ""
         touched = 1
       }
       { print }
@@ -461,6 +486,18 @@ set_state_fields() {
   if [ "$last_error" != "__KEEP__" ]; then
     event_extra="$event_extra$(json_pair "last_error" "$last_error")"
   fi
+  if [ "$failed_command" != "__KEEP__" ]; then
+    event_extra="$event_extra$(json_pair "failed_command" "$failed_command")"
+  fi
+  if [ "$conflict_files" != "__KEEP__" ]; then
+    event_extra="$event_extra$(json_pair "conflict_files" "$conflict_files")"
+  fi
+  if [ "$log_summary" != "__KEEP__" ]; then
+    event_extra="$event_extra$(json_pair "log_summary" "$log_summary")"
+  fi
+  if [ "$recovery_hint" != "__KEEP__" ]; then
+    event_extra="$event_extra$(json_pair "recovery_hint" "$recovery_hint")"
+  fi
   emit_event "state_changed" "$package_id" "$event_extra"
 }
 
@@ -468,10 +505,19 @@ set_error_state() {
   local package_id="$1"
   local new_state="$2"
   local message="$3"
+  local failed_command="${4:-}"
+  local conflict_files="${5:-}"
+  local log_summary="${6:-}"
+  local recovery_hint="${7:-}"
   local fingerprint
-  set_state_fields "$package_id" "$new_state" "__KEEP__" "__NOW__" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__" "$message"
+  message="$(tsv_safe "$message")"
+  failed_command="$(tsv_safe "$failed_command")"
+  conflict_files="$(tsv_safe "$conflict_files")"
+  log_summary="$(tsv_safe "$log_summary")"
+  recovery_hint="$(tsv_safe "$recovery_hint")"
+  set_state_fields "$package_id" "$new_state" "__KEEP__" "__NOW__" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__" "$message" "$failed_command" "$conflict_files" "$log_summary" "$recovery_hint"
   fingerprint="$(failure_fingerprint "$message")"
-  emit_event "terminal_failure" "$package_id" "$(json_pair "state" "$new_state")$(json_pair "error" "$message")$(json_pair "fingerprint" "$fingerprint")"
+  emit_event "terminal_failure" "$package_id" "$(json_pair "state" "$new_state")$(json_pair "error" "$message")$(json_pair "fingerprint" "$fingerprint")$(json_pair "failed_command" "$failed_command")$(json_pair "conflict_files" "$conflict_files")$(json_pair "log_summary" "$log_summary")$(json_pair "recovery_hint" "$recovery_hint")"
 }
 
 deps_completed() {
@@ -603,13 +649,13 @@ launch_package() {
   prompt_for_package "$package_id" > "$prompt_file"
   if [ ! -s "$prompt_file" ]; then
     rm -f "$prompt_file"
-    set_error_state "$package_id" "invalid" "prompt section missing"
+    set_error_state "$package_id" "invalid" "prompt section missing" "prompt_for_package $package_id" "" "agent-prompts.md has no matching package section" "Regenerate launchers/agent-prompts.md for this package."
     die "prompt section missing for $package_id"
   fi
 
   if ! command -v claude >/dev/null 2>&1; then
     rm -f "$prompt_file"
-    set_error_state "$package_id" "invalid" "claude command not found"
+    set_error_state "$package_id" "invalid" "claude command not found" "command -v claude" "" "Claude CLI is unavailable in PATH" "Run doctor --environment in the same shell and fix PATH before retry."
     die "claude command not found"
   fi
 
@@ -643,7 +689,7 @@ launch_package() {
   rm -f "$prompt_file"
 
   if [ "$status" -ne 0 ]; then
-    set_error_state "$package_id" "invalid" "claude launch failed; see $launch_log"
+    set_error_state "$package_id" "invalid" "claude launch failed; see $launch_log" "claude --bg --name $name" "" "Launch output saved to $launch_log" "Inspect the launch log and Claude environment, then retry."
     printf '%s\n' "$launch_output" >&2
     die "claude launch failed for $package_id"
   fi
@@ -651,12 +697,12 @@ launch_package() {
   printf '%s\n' "$launch_output"
   session_id="$(printf '%s\n' "$launch_output" | parse_session_id)"
   if [ -z "$session_id" ]; then
-    set_error_state "$package_id" "invalid" "missing background session id; see $launch_log"
+    set_error_state "$package_id" "invalid" "missing background session id; see $launch_log" "parse_session_id" "" "Launch output did not contain a parseable background session id; see $launch_log" "Check the Claude CLI output format before retry."
     die "missing background session id for $package_id"
   fi
 
   if ! claude logs "$session_id" >/dev/null 2>&1; then
-    set_error_state "$package_id" "stale" "claude session $session_id logs are not readable; see $launch_log"
+    set_error_state "$package_id" "stale" "claude session $session_id logs are not readable; see $launch_log" "claude logs $session_id" "" "Session was launched but logs could not be read" "Open claude agents/logs manually, then mark completed or retry."
     die "claude session $session_id logs are not readable"
   fi
 
@@ -665,7 +711,7 @@ launch_package() {
   else
     new_state="launched"
   fi
-  set_state_fields "$package_id" "$new_state" "__NOW__" "__KEEP__" "$session_id" "$branch" "$worktree" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__" ""
+  set_state_fields "$package_id" "$new_state" "__NOW__" "__KEEP__" "$session_id" "$branch" "$worktree" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__"
   emit_event "launch_succeeded" "$package_id" "$(json_pair "session_id" "$session_id")$(json_pair "new_state" "$new_state")$(json_pair "branch" "$branch")$(json_pair "worktree" "$worktree")"
 }
 
@@ -729,9 +775,9 @@ print_agents_command() {
 
 cmd_status() {
   preflight_all
-  printf '%-36s %-12s %-54s %-22s %-14s %s\n' "PACKAGE" "STATE" "BRANCH" "VERIFICATION" "INTEGRATION" "LAST_ERROR"
+  printf '%-36s %-12s %-54s %-22s %-14s %-30s %-30s %s\n' "PACKAGE" "STATE" "BRANCH" "VERIFICATION" "INTEGRATION" "LAST_ERROR" "FAILED_COMMAND" "RECOVERY_HINT"
   awk -F '\t' 'FNR > 1 {
-    printf "%-36s %-12s %-54s %-22s %-14s %s\n", $1, $2, $6, $10, $11, $13
+    printf "%-36s %-12s %-54s %-22s %-14s %-30s %-30s %s\n", $1, $2, $6, $10, $11, $13, $14, $17
   }' "$STATE"
   if status_consistency_ok; then
     printf '\nCoordinator consistency: ok\n'
@@ -745,6 +791,8 @@ cmd_mark_state() {
   local package_id="${1:-}"
   local new_state="${2:-}"
   local base="__KEEP__" commit="__KEEP__" verification="__KEEP__" integration="__KEEP__" cleanup="__KEEP__" error="__KEEP__"
+  local failed_command="__KEEP__" conflict_files="__KEEP__" log_summary="__KEEP__" recovery_hint="__KEEP__"
+  local fingerprint event_failed_command event_conflict_files event_log_summary event_recovery_hint
   [ -n "$package_id" ] || die "usage: mark-state <package-id> <state>"
   [ -n "$new_state" ] || die "usage: mark-state <package-id> <state>"
   shift 2 || true
@@ -756,13 +804,34 @@ cmd_mark_state() {
       --integration) shift; integration="${1:-}" ;;
       --cleanup) shift; cleanup="${1:-}" ;;
       --error) shift; error="${1:-}" ;;
+      --failed-command) shift; failed_command="${1:-}" ;;
+      --conflict-files) shift; conflict_files="${1:-}" ;;
+      --log-summary) shift; log_summary="${1:-}" ;;
+      --recovery-hint) shift; recovery_hint="${1:-}" ;;
       *) die "unknown mark-state option: $1" ;;
     esac
     shift || true
   done
   preflight_all
   acquire_lock
-  set_state_fields "$package_id" "$new_state" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__" "$base" "$commit" "$verification" "$integration" "$cleanup" "$error"
+  [ "$verification" = "__KEEP__" ] || verification="$(tsv_safe "$verification")"
+  [ "$integration" = "__KEEP__" ] || integration="$(tsv_safe "$integration")"
+  [ "$cleanup" = "__KEEP__" ] || cleanup="$(tsv_safe "$cleanup")"
+  [ "$error" = "__KEEP__" ] || error="$(tsv_safe "$error")"
+  [ "$failed_command" = "__KEEP__" ] || failed_command="$(tsv_safe "$failed_command")"
+  [ "$conflict_files" = "__KEEP__" ] || conflict_files="$(tsv_safe "$conflict_files")"
+  [ "$log_summary" = "__KEEP__" ] || log_summary="$(tsv_safe "$log_summary")"
+  [ "$recovery_hint" = "__KEEP__" ] || recovery_hint="$(tsv_safe "$recovery_hint")"
+  set_state_fields "$package_id" "$new_state" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__" "$base" "$commit" "$verification" "$integration" "$cleanup" "$error" "$failed_command" "$conflict_files" "$log_summary" "$recovery_hint"
+  if { [ "$new_state" = "blocked" ] || [ "$new_state" = "stale" ] || [ "$new_state" = "invalid" ]; } &&
+    [ "$error" != "__KEEP__" ] && [ -n "$error" ]; then
+    fingerprint="$(failure_fingerprint "$error")"
+    [ "$failed_command" = "__KEEP__" ] && event_failed_command="" || event_failed_command="$failed_command"
+    [ "$conflict_files" = "__KEEP__" ] && event_conflict_files="" || event_conflict_files="$conflict_files"
+    [ "$log_summary" = "__KEEP__" ] && event_log_summary="" || event_log_summary="$log_summary"
+    [ "$recovery_hint" = "__KEEP__" ] && event_recovery_hint="" || event_recovery_hint="$recovery_hint"
+    emit_event "terminal_failure" "$package_id" "$(json_pair "state" "$new_state")$(json_pair "error" "$error")$(json_pair "fingerprint" "$fingerprint")$(json_pair "failed_command" "$event_failed_command")$(json_pair "conflict_files" "$event_conflict_files")$(json_pair "log_summary" "$event_log_summary")$(json_pair "recovery_hint" "$event_recovery_hint")"
+  fi
   log "marked $package_id as $new_state"
 }
 
@@ -778,7 +847,7 @@ cmd_repair_state() {
     worktree="$(graph_field "$id" worktree)"
     md_state="$(markdown_status "$id")"
     valid_state "$md_state" || md_state="pending"
-    printf '%s\t%s\t\t\t\t%s\t%s\t\t\tpending\tpending\tpending\t\n' "$id" "$md_state" "$branch" "$worktree" >> "$tmp"
+    printf '%s\t%s\t\t\t\t%s\t%s\t\t\tpending\tpending\tpending\t\t\t\t\t\n' "$id" "$md_state" "$branch" "$worktree" >> "$tmp"
   done < <(all_package_ids)
   mv "$tmp" "$STATE"
   log "repaired state ledger from graph and markdown status files"
@@ -786,7 +855,7 @@ cmd_repair_state() {
 
 cmd_retry() {
   local package_id="$1"
-  local state
+  local state last_error failed_command conflict_files log_summary recovery_hint
   [ -n "$package_id" ] || die "usage: retry <package-id>"
   preflight_all
   graph_field "$package_id" package_doc >/dev/null || die "unknown package: $package_id"
@@ -795,9 +864,22 @@ cmd_retry() {
     blocked|stale|invalid)
       acquire_lock
       enforce_retry_breaker "$package_id"
+      last_error="$(state_field "$package_id" last_error || true)"
+      failed_command="$(state_field "$package_id" failed_command || true)"
+      conflict_files="$(state_field "$package_id" conflict_files || true)"
+      log_summary="$(state_field "$package_id" log_summary || true)"
+      recovery_hint="$(state_field "$package_id" recovery_hint || true)"
       log "retrying $package_id from state $state"
-      emit_event "retry_requested" "$package_id" "$(json_pair "from_state" "$state")"
-      set_state_fields "$package_id" "pending" "" "" "" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__" "pending" "pending" "pending" ""
+      if [ -n "$last_error$failed_command$conflict_files$log_summary$recovery_hint" ]; then
+        log "prior failure context:"
+        log "  last_error: ${last_error:-none}"
+        log "  failed_command: ${failed_command:-none}"
+        log "  conflict_files: ${conflict_files:-none}"
+        log "  log_summary: ${log_summary:-none}"
+        log "  recovery_hint: ${recovery_hint:-none}"
+      fi
+      emit_event "retry_requested" "$package_id" "$(json_pair "from_state" "$state")$(json_pair "last_error" "$last_error")$(json_pair "failed_command" "$failed_command")$(json_pair "conflict_files" "$conflict_files")$(json_pair "log_summary" "$log_summary")$(json_pair "recovery_hint" "$recovery_hint")"
+      set_state_fields "$package_id" "pending" "" "" "" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__" "pending" "pending" "pending"
       launch_package "$package_id"
       ;;
     *)
@@ -924,7 +1006,7 @@ Commands:
   status
   retry <package-id>
   finalize
-  mark-state <package-id> <state> [--base <sha>] [--commit <sha>] [--verification <text>] [--integration <text>] [--cleanup <text>] [--error <text>]
+  mark-state <package-id> <state> [--base <sha>] [--commit <sha>] [--verification <text>] [--integration <text>] [--cleanup <text>] [--error <text>] [--failed-command <text>] [--conflict-files <text>] [--log-summary <text>] [--recovery-hint <text>]
   repair-state
   doctor [--environment]
   verify-package <package-id>

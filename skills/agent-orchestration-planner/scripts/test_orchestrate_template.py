@@ -90,10 +90,10 @@ class OrchestrateTemplateTest(unittest.TestCase):
         (self.plan / "status" / "state.tsv").write_text(
             "\n".join(
                 [
-                    "package_id\tstate\tlaunched_at\tcompleted_at\tagent\tbranch\tworktree\tbase_commit\tcommit_hash\tverification\tintegration\tcleanup\tlast_error",
-                    f"01-alpha\tpending\t\t\t\tagent/sample/01-alpha\t{worktree_base / '01-alpha'}\t\t\tpending\tpending\tpending\t",
-                    f"02-beta\tpending\t\t\t\tagent/sample/02-beta\t{worktree_base / '02-beta'}\t\t\tpending\tpending\tpending\t",
-                    f"99-finalize\tpending\t\t\t\tagent/sample/99-finalize\t{worktree_base / '99-finalize'}\t\t\tpending\tpending\tpending\t",
+                    "package_id\tstate\tlaunched_at\tcompleted_at\tagent\tbranch\tworktree\tbase_commit\tcommit_hash\tverification\tintegration\tcleanup\tlast_error\tfailed_command\tconflict_files\tlog_summary\trecovery_hint",
+                    f"01-alpha\tpending\t\t\t\tagent/sample/01-alpha\t{worktree_base / '01-alpha'}\t\t\tpending\tpending\tpending\t\t\t\t\t",
+                    f"02-beta\tpending\t\t\t\tagent/sample/02-beta\t{worktree_base / '02-beta'}\t\t\tpending\tpending\tpending\t\t\t\t\t",
+                    f"99-finalize\tpending\t\t\t\tagent/sample/99-finalize\t{worktree_base / '99-finalize'}\t\t\tpending\tpending\tpending\t\t\t\t\t",
                     "",
                 ]
             ),
@@ -263,6 +263,43 @@ class OrchestrateTemplateTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("retry breaker open for 01-alpha", result.stderr)
         self.assertIn("missing background session id", result.stderr)
+
+    def test_failure_recovery_context_survives_retry_until_completion(self) -> None:
+        self.orchestrate(
+            "mark-state",
+            "01-alpha",
+            "blocked",
+            "--error",
+            "merge failed",
+            "--failed-command",
+            "git merge agent/sample/01-alpha",
+            "--conflict-files",
+            "app/A.kt,app/B.kt",
+            "--log-summary",
+            "both branches edited constructor",
+            "--recovery-hint",
+            "resolve A before B",
+        )
+
+        state = (self.plan / "status" / "state.tsv").read_text(encoding="utf-8")
+        events = (self.plan / "status" / "events.jsonl").read_text(encoding="utf-8")
+        self.assertIn("merge failed\tgit merge agent/sample/01-alpha\tapp/A.kt,app/B.kt", state)
+        self.assertIn('"event":"terminal_failure"', events)
+        self.assertIn('"failed_command":"git merge agent/sample/01-alpha"', events)
+        self.assertIn('"recovery_hint":"resolve A before B"', events)
+
+        result = self.orchestrate("retry", "01-alpha", env=self.fake_claude())
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("prior failure context", result.stderr)
+        self.assertIn("resolve A before B", result.stderr)
+        state = (self.plan / "status" / "state.tsv").read_text(encoding="utf-8")
+        self.assertIn("01-alpha\tlaunched\t", state)
+        self.assertIn("merge failed\tgit merge agent/sample/01-alpha\tapp/A.kt,app/B.kt", state)
+
+        self.orchestrate("mark-state", "01-alpha", "completed", "--commit", "abc123", "--verification", "unit: pass")
+        state = (self.plan / "status" / "state.tsv").read_text(encoding="utf-8")
+        self.assertNotIn("merge failed", state)
+        self.assertNotIn("resolve A before B", state)
 
     def test_events_log_records_launch_and_state_changes(self) -> None:
         self.orchestrate("start", env=self.fake_claude())

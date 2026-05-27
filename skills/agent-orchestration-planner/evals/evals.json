@@ -143,7 +143,7 @@
           "text": "Package prompts use orchestrate.sh mark-state for completed, blocked, and finalized states."
         },
         {
-          "text": "orchestrate.sh validates exact state.tsv header and 13-field rows."
+          "text": "orchestrate.sh validates exact state.tsv header and 17-field rows, including failure recovery context columns."
         },
         {
           "text": "orchestrate.sh validates exact package-graph.tsv header and 10-field rows."
@@ -291,6 +291,29 @@
         },
         {
           "text": "Package prompts forbid credentials, tokens, private keys, .env files, hidden prompts, and proprietary raw data in scratch."
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "prompt": "多 agent finalize 时 merge/test 失败以后不要盲目 retry。请把冲突文件、失败命令和日志摘要写进状态账本，让后续 agent 带着上下文修。",
+      "expected_output": "Generates an orchestration kit whose state.tsv includes structured failure recovery context, whose mark-state command can record failed command, conflict files, log summary, and recovery hint, and whose retry path reports prior context before relaunching.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "state.tsv includes last_error, failed_command, conflict_files, log_summary, and recovery_hint columns."
+        },
+        {
+          "text": "mark-state supports --failed-command, --conflict-files, --log-summary, and --recovery-hint."
+        },
+        {
+          "text": "blocked/stale/invalid package failures are recorded as terminal_failure events with recovery context."
+        },
+        {
+          "text": "retry reports prior recovery context before resetting or relaunching a package."
+        },
+        {
+          "text": "99-finalize records merge or test failures in the coordinator ledger, not only in prose."
         }
       ]
     }

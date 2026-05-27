@@ -185,6 +185,7 @@ Use scratch only for temporary shared notes, inventories, command transcripts, d
 Before calling `advance`, you must:
 - Set coordinator status to `completed` or `blocked`.
 - Fill evidence: worktree, branch, base commit, commit hash, changed files, verification commands/results, risks.
+- If this package was retried or previously blocked, inspect `state.tsv`, the package status file, and `status/events.jsonl` before editing. Carry forward the recorded `last_error`, `failed_command`, `conflict_files`, `log_summary`, and `recovery_hint` into your diagnosis.
 - Update the machine-readable state row only through the orchestrator; do not edit `state.tsv` manually:
 
 ```bash
@@ -194,7 +195,12 @@ bash <absolute-plan-dir>/launchers/orchestrate.sh mark-state <package-id> comple
 For a blocker:
 
 ```bash
-bash <absolute-plan-dir>/launchers/orchestrate.sh mark-state <package-id> blocked --error "<specific blocker>"
+bash <absolute-plan-dir>/launchers/orchestrate.sh mark-state <package-id> blocked \
+  --error "<specific blocker>" \
+  --failed-command "<failed command, if any>" \
+  --conflict-files "<comma-separated files, if any>" \
+  --log-summary "<short log summary>" \
+  --recovery-hint "<specific next action>"
 ```
 
 Tail step:
@@ -233,8 +239,8 @@ Rules:
 Generate a machine-readable state ledger with a header:
 
 ```tsv
-package_id	state	launched_at	completed_at	agent	branch	worktree	base_commit	commit_hash	verification	integration	cleanup	last_error
-01-xxx	pending	pending	pending	pending	agent/<plan>/01-xxx	<worktree-path>	pending	pending	pending	pending	pending	pending
+package_id	state	launched_at	completed_at	agent	branch	worktree	base_commit	commit_hash	verification	integration	cleanup	last_error	failed_command	conflict_files	log_summary	recovery_hint
+01-xxx	pending	pending	pending	pending	agent/<plan>/01-xxx	<worktree-path>	pending	pending	pending	pending	pending	pending	pending	pending	pending	pending
 ```
 
 Allowed states:
@@ -252,6 +258,15 @@ Allowed states:
 
 Markdown status is for humans. `state.tsv` is the scheduler source of truth. If Markdown status and `state.tsv` disagree, `orchestrate.sh status` reports `invalid` and does not unlock downstream packages.
 
+Failure recovery context is part of the scheduler ledger, not an informal chat note. For merge conflicts, failed tests, launch failures, or verification failures, write:
+- `last_error`: concise failure statement.
+- `failed_command`: exact command or operation that failed, such as `git merge agent/...` or `./gradlew test`.
+- `conflict_files`: comma-separated conflicted or suspect files, or empty when none.
+- `log_summary`: short summary of the decisive log lines; keep raw logs in `status/` or scratch when needed.
+- `recovery_hint`: the next action a downstream retry or repair agent should try first.
+
+Do not blindly retry a blocked package. A retry must preserve the prior recovery context long enough for the relaunched package agent to inspect it, and repeated identical fingerprints must trip the retry breaker.
+
 ### 7. launchers/orchestrate.sh
 
 Generate one script with these subcommands:
@@ -262,7 +277,7 @@ bash launchers/orchestrate.sh advance [--from <package-id>]
 bash launchers/orchestrate.sh status
 bash launchers/orchestrate.sh retry <package-id>
 bash launchers/orchestrate.sh finalize
-bash launchers/orchestrate.sh mark-state <package-id> <state> [--base <sha>] [--commit <sha>] [--verification <text>] [--integration <text>] [--cleanup <text>] [--error <text>]
+bash launchers/orchestrate.sh mark-state <package-id> <state> [--base <sha>] [--commit <sha>] [--verification <text>] [--integration <text>] [--cleanup <text>] [--error <text>] [--failed-command <text>] [--conflict-files <text>] [--log-summary <text>] [--recovery-hint <text>]
 bash launchers/orchestrate.sh repair-state
 bash launchers/orchestrate.sh doctor [--environment]
 bash launchers/orchestrate.sh verify-package <package-id>
@@ -273,8 +288,8 @@ bash launchers/orchestrate.sh scratch-path <package-id>
 Required behavior:
 - `start`: preflight the graph, acquire lock, launch all currently ready functional packages up to `ORCHESTRATION_MAX_PARALLEL`, then exit.
 - `advance`: acquire lock, re-read graph/status/state, validate dependencies, stop on blocked/stale/invalid, launch newly ready functional packages, or launch `99-finalize` when all functional packages are completed.
-- `status`: print a concise table of package state, branch, worktree, verification, integration, and last error.
-- `retry <package-id>`: only reset `blocked`, `stale`, or `invalid` packages after reporting prior error. It must not retry already launched or completed packages unless the user explicitly changes state. If the same package hits the same terminal failure fingerprint three times, block further retry and require human diagnosis.
+- `status`: print a concise table of package state, branch, worktree, verification, integration, last error, failed command, and recovery hint.
+- `retry <package-id>`: only reset `blocked`, `stale`, or `invalid` packages after reporting prior recovery context. It must not retry already launched or completed packages unless the user explicitly changes state. If the same package hits the same terminal failure fingerprint three times, block further retry and require human diagnosis.
 - `finalize`: run or re-run the `99-finalize` package idempotently.
 - `mark-state`: the only supported way for package agents to mutate `state.tsv`; it also keeps Markdown status in sync.
 - `repair-state`: rebuild `state.tsv` from graph and Markdown status when a ledger is empty or malformed.
@@ -296,6 +311,7 @@ Implementation rules:
 - Before launch, create or verify the recorded package worktree and branch.
 - If a graph row has `manual=1`, never auto-launch it. When its dependencies are satisfied, mark it `manual_required` and print the package id for manual execution.
 - Maintain `status/events.jsonl` as an append-only audit log. Record at minimum: `launch_requested`, `launch_succeeded`, `state_changed`, `terminal_failure`, `retry_requested`, `retry_blocked`, and `scratch_path_requested` with timestamp, package id, state transition or session id, path, and error fingerprint where relevant.
+- On terminal package failures (`blocked`, `stale`, or `invalid` with `--error`), record recovery context in both `state.tsv` and `events.jsonl`: error, failed command, conflict files, log summary, and recovery hint. Sanitize tabs/newlines before writing TSV.
 - Treat `events.jsonl` as the source for retry loop accounting. If `terminal_failure` records show the same package and normalized error fingerprint three times, `retry` must stop before relaunching and print the package id, failure count, and fingerprint.
 - Maintain `scratch/` as a plan-local, gitignored, non-authoritative exchange area. Runtime commands must create `scratch/.gitignore` with ignored contents, and package prompts must direct agents to request their package path through `scratch-path`. Scratch contents must never unlock dependencies, satisfy acceptance criteria by themselves, or replace status/evidence fields.
 - Write raw launch output to `status/launch-<package-id>.log`.
@@ -334,7 +350,8 @@ Generate a finalize package, not a passive audit-only prompt.
 
 Failure rules:
 - Any failure sets `99-finalize` to `blocked`.
-- Record failure stage, command, branch, conflict files if any, and recovery suggestion.
+- Record failure stage, command, branch, conflict files if any, log summary, and recovery suggestion in `status/99-finalize.md`.
+- Also update the coordinator ledger with `mark-state 99-finalize blocked --error ... --failed-command ... --conflict-files ... --log-summary ... --recovery-hint ...`; do not leave merge/test failures only in prose.
 - Check `status/events.jsonl` when explaining repeated failures; do not keep retrying the same fingerprint after the retry breaker opens.
 - Preserve branches/worktrees on failure.
 - If package status and current workspace disagree, verify the recorded package commit in a clean detached worktree before changing state.
