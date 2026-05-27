@@ -74,6 +74,8 @@ docs/plans/<plan-name>/
 
 `dispatch-claude-agents.sh` is no longer a primary generated entrypoint. If backward compatibility is useful, generate it only as a thin wrapper that calls `orchestrate.sh start`. Both scripts must compute `REPO_ROOT` with `git rev-parse --show-toplevel`, not hardcoded relative paths.
 
+`launchers/orchestrate.sh` must be copied from `skills/agent-orchestration-planner/scripts/orchestrate-template.sh`, then syntax-checked with `bash -n`. Do not recreate this script from memory or prose. The template is the tested runtime contract for launch handshakes, state mutation, repair, and retry behavior.
+
 ### 3. INDEX.md Required Sections
 
 `INDEX.md` is the static execution contract. Dynamic status belongs in `status/`.
@@ -106,7 +108,8 @@ Package agents are authorized to:
 - Edit only allowed paths.
 - Run listed verification commands.
 - Commit local package changes.
-- Write only their assigned coordinator status file and state row.
+- Write only their assigned coordinator status file.
+- Update the state ledger only through `bash <plan-root>/launchers/orchestrate.sh mark-state ...`; do not edit `state.tsv` manually.
 - Call `bash <plan-root>/launchers/orchestrate.sh advance --from <package-id>` after recording final status.
 
 `99-finalize` is authorized by default to perform incremental orchestration operations for this plan:
@@ -175,7 +178,17 @@ You may edit only the allowed paths in the package doc. Do not edit INDEX.md or 
 Before calling `advance`, you must:
 - Set coordinator status to `completed` or `blocked`.
 - Fill evidence: worktree, branch, base commit, commit hash, changed files, verification commands/results, risks.
-- Update the machine-readable state row consistently.
+- Update the machine-readable state row only through the orchestrator; do not edit `state.tsv` manually:
+
+```bash
+bash <absolute-plan-dir>/launchers/orchestrate.sh mark-state <package-id> completed --commit <commit-sha> --verification "<command: result>"
+```
+
+For a blocker:
+
+```bash
+bash <absolute-plan-dir>/launchers/orchestrate.sh mark-state <package-id> blocked --error "<specific blocker>"
+```
 
 Tail step:
 ```bash
@@ -214,7 +227,7 @@ Generate a machine-readable state ledger with a header:
 
 ```tsv
 package_id	state	launched_at	completed_at	agent	branch	worktree	base_commit	commit_hash	verification	integration	cleanup	last_error
-01-xxx	pending
+01-xxx	pending	pending	pending	pending	agent/<plan>/01-xxx	<worktree-path>	pending	pending	pending	pending	pending	pending
 ```
 
 Allowed states:
@@ -241,6 +254,9 @@ bash launchers/orchestrate.sh advance [--from <package-id>]
 bash launchers/orchestrate.sh status
 bash launchers/orchestrate.sh retry <package-id>
 bash launchers/orchestrate.sh finalize
+bash launchers/orchestrate.sh mark-state <package-id> <state> [--base <sha>] [--commit <sha>] [--verification <text>] [--integration <text>] [--cleanup <text>] [--error <text>]
+bash launchers/orchestrate.sh repair-state
+bash launchers/orchestrate.sh doctor
 ```
 
 Required behavior:
@@ -249,14 +265,23 @@ Required behavior:
 - `status`: print a concise table of package state, branch, worktree, verification, integration, and last error.
 - `retry <package-id>`: only reset `blocked`, `stale`, or `invalid` packages after reporting prior error. It must not retry already launched or completed packages unless the user explicitly changes state.
 - `finalize`: run or re-run the `99-finalize` package idempotently.
+- `mark-state`: the only supported way for package agents to mutate `state.tsv`; it also keeps Markdown status in sync.
+- `repair-state`: rebuild `state.tsv` from graph and Markdown status when a ledger is empty or malformed.
+- `doctor`: run preflight and consistency checks without launching work.
 
 Implementation rules:
+- Use `skills/agent-orchestration-planner/scripts/orchestrate-template.sh` as the script body.
 - Compute `REPO_ROOT` dynamically with `git rev-parse --show-toplevel` from the script's directory. Never use hardcoded relative path traversal like `../../..` — the plan directory depth from repo root varies per project.
 - When awk processes the same TSV file twice (e.g. `awk '...' "$GRAPH" "$GRAPH"`), use `FNR == 1` to skip each file's header, not `NR == 1` which only skips the first file's header.
 - Use a lock such as `status/.orchestrate.lock` so concurrent `advance` calls cannot double-launch packages.
 - Never trust `--from`; it is only a hint for logging. Always compute readiness from coordinator status/state.
 - Every package can be launched at most once unless `retry` explicitly resets it.
-- Launch Claude Code background agents with `claude --bg --name`.
+- Launch Claude Code background agents with `claude --bg --name` from the package's assigned worktree.
+- Before launch, create or verify the recorded package worktree and branch.
+- Write raw launch output to `status/launch-<package-id>.log`.
+- Parse and record the background session id in the `agent` column.
+- After launch, run a short `claude logs <session-id>` postflight. If the session id is missing, mark the package `invalid`. If logs are not readable or the session exits immediately, mark it `stale`.
+- Never unlock downstream packages from `launched`, `in_progress`, or `finalizing`; downstream unlock requires `completed` or `finalized`.
 - Default `ORCHESTRATION_MAX_PARALLEL=10`.
 - Print the `claude agents` command after launching agents.
 - Do not run as a permanent watcher. Tail calls and manual `advance` drive progression.
@@ -273,6 +298,10 @@ Generate a finalize package, not a passive audit-only prompt.
    - evidence pack complete
    - branch, worktree, base commit, commit hash recorded
    - verification commands passed or failure is explicitly justified
+   - package branch exists
+   - package commit hash exists
+   - package changed files are within allowed paths
+   - package worktree is clean, or dirty state is recorded as a blocker
 3. Decide whether merging is allowed.
 4. Create or update the integration branch.
 5. Merge functional package branches in Merge Strategy order.
@@ -286,7 +315,9 @@ Failure rules:
 - Any failure sets `99-finalize` to `blocked`.
 - Record failure stage, command, branch, conflict files if any, and recovery suggestion.
 - Preserve branches/worktrees on failure.
+- If package status and current workspace disagree, verify the recorded package commit in a clean detached worktree before changing state.
 - Never force-push, hard reset, delete remote branches, or delete unrecorded local resources.
+- Never mix coordinator ledger/final-report commits with unrelated orchestration documents or concurrent mainline edits.
 
 Success rules:
 - Mark `99-finalize` as `finalized`.

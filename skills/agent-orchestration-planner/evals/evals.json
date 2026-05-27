@@ -103,6 +103,81 @@
           "text": "Cleanup only happens after every finalize step succeeds."
         }
       ]
+    },
+    {
+      "id": 6,
+      "prompt": "生成一个可用脚本触发的多 agent orchestration kit。要求脚本在 Claude Code 后台 session 启动失败或瞬退时能可靠降级，不要误以为任务还在跑。",
+      "expected_output": "Generates an orchestration kit whose orchestrate.sh comes from the shared runtime template. It records launch logs, captures background session ids, checks claude logs after launch, marks missing session ids invalid, marks unreadable or exited sessions stale, and never unlocks downstream work from launched alone.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "orchestrate.sh is copied from skills/agent-orchestration-planner/scripts/orchestrate-template.sh."
+        },
+        {
+          "text": "Launch writes status/launch-<package-id>.log."
+        },
+        {
+          "text": "The background session id is recorded in the agent column of state.tsv."
+        },
+        {
+          "text": "A missing background session id marks the package invalid."
+        },
+        {
+          "text": "Unreadable claude logs or immediate session disappearance marks the package stale."
+        },
+        {
+          "text": "Downstream packages unlock only from completed/finalized, not launched."
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "帮我做多 agent 编排，但之前 state.tsv 经常被 agent 写坏。请让状态账本更稳。",
+      "expected_output": "Uses script-owned state mutation. Package prompts instruct agents to update state through orchestrate.sh mark-state, not manual TSV editing. The generated runtime validates graph/state headers and row widths, supports repair-state and doctor, and reports status/ledger mismatches as invalid.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Package prompts explicitly say not to edit state.tsv manually."
+        },
+        {
+          "text": "Package prompts use orchestrate.sh mark-state for completed, blocked, and finalized states."
+        },
+        {
+          "text": "orchestrate.sh validates exact state.tsv header and 13-field rows."
+        },
+        {
+          "text": "orchestrate.sh validates exact package-graph.tsv header and 10-field rows."
+        },
+        {
+          "text": "orchestrate.sh includes repair-state and doctor commands."
+        },
+        {
+          "text": "Markdown status and state.tsv mismatch blocks downstream dispatch."
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "外部 agent 说包完成了，但我怀疑 worktree 里有脏改动和越界文件。请让 99-finalize 更可靠。",
+      "expected_output": "Generates a finalize package that treats agent reports as claims, verifies package branches, commit hashes, allowed paths, clean worktrees, recorded evidence, and integration merge order before merging. It blocks dirty/unrecorded state and verifies recorded package commits in a clean detached worktree when status and workspace disagree.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "99-finalize verifies branch existence and recorded commit existence for each package."
+        },
+        {
+          "text": "99-finalize checks changed files against allowed paths."
+        },
+        {
+          "text": "99-finalize blocks dirty package worktrees unless explicitly recorded as a blocker."
+        },
+        {
+          "text": "99-finalize verifies recorded commits in a clean detached worktree when status and workspace disagree."
+        },
+        {
+          "text": "99-finalize does not mix coordinator ledger commits with unrelated orchestration docs or concurrent mainline edits."
+        }
+      ]
     }
   ]
 }
