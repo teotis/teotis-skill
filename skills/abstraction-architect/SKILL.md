@@ -77,6 +77,14 @@ For every candidate, ask:
 
 > What recurring engineering burden exists, what hidden invariant might unify it, and what proof would demonstrate that the proposed abstraction is simpler in practice rather than merely more elegant on paper?
 
+### Entry Diagnostic: Question the Inherited Vocabulary
+
+Before searching for structural pressure, ask a prior question: **is the current domain vocabulary, type enumeration, or boundary naming itself misleading the system into false distinctions?**
+
+Many structural problems begin not with wrong code but with wrong language — DTOs named after implementation concerns rather than domain invariants, status enums that split what is essentially one state, boundary names that create artificial separations between coupled behaviors.
+
+This diagnostic is not a finding. It is a **lens calibration step**: suspend trust in the inherited names long enough to see whether they faithfully represent the underlying structure. If the language is the cage, no amount of local refactoring inside it will suffice.
+
 ## A. Seeing Structural Pressure
 
 ### 1. Patch Pressure Reveals Missing Structure
@@ -109,15 +117,29 @@ A structural improvement is valuable only when future work becomes easier to exp
 
 **Reject the candidate** when it merely moves complexity into a more sophisticated framework.
 
+### 5. Exception Family Table
+
+Repeated patches, adapters, edge-case branches, and workarounds are not merely cleanup targets — they are **alarms from the current framework**. An exception that keeps recurring is evidence that the model is missing a dimension.
+
+For each structural pressure site, classify every exception family into exactly one of three categories:
+
+| Category | Meaning | Action |
+|---|---|---|
+| **Absorbable by new structure** | The exception exists only because the current model is too narrow. A better invariant or canonical representation would make it a natural case, not an exception. | Candidate for unification. |
+| **Must remain as real difference** | The exception carries genuinely distinct business rules, failure semantics, lifecycle transitions, or ownership. Erasing it would create bugs. | Preserve explicitly in the proposed design. |
+| **False alarm** | The exception looks like a variant of the pressure pattern but actually belongs to a different concern entirely. | Exclude from this structural analysis. |
+
+This classification is mandatory for every candidate that passes through the Admissibility Gate. A proposal that cannot sort its exception families into these three buckets has not been understood well enough to unify.
+
 ## B. Constructing Better Structures
 
-### 5. Context-Relative Analysis
+### 6. Context-Relative Analysis
 
 A component cannot be judged in isolation. Its meaning depends on dependencies, callers, deployment environment, persistence guarantees, security boundaries, and operational expectations.
 
 **Technique:** For a candidate component `X`, map `X relative to context S`: inputs, outputs, dependencies, callers, invariants, environmental variants, and failure modes.
 
-### 6. Contract and Invariant First
+### 7. Contract and Invariant First
 
 Before proposing a new abstraction, state what it must preserve and what differences it must intentionally expose.
 
@@ -132,13 +154,15 @@ Before proposing a new abstraction, state what it must preserve and what differe
 
 An abstraction without explicit invariants is only a naming exercise.
 
-### 7. Structure-Preserving Transformations
+After stating the invariant, ask: **what previously ad-hoc work would become a natural consequence of this definition?** A well-chosen definition not only constrains the current design — it determines what is visible, what is composable, and what future changes become trivial special cases.
+
+### 8. Structure-Preserving Transformations
 
 Transformations such as mapping, validation, configuration resolution, lifecycle transitions, serialization, and protocol conversion should preserve named structure instead of being reimplemented per case.
 
 **Engineering question:** Which transformations are repeated because the system lacks a canonical intermediate representation or invariant-preserving operation?
 
-### 8. Local Composition into Global Behavior
+### 9. Local Composition into Global Behavior
 
 Prefer components that compose through stable local contracts over systems that require a central object to know every special case.
 
@@ -146,7 +170,7 @@ Prefer components that compose through stable local contracts over systems that 
 
 **Caution:** Central coordination may still be necessary for transactions, security policy, rate limiting, or globally ordered workflows. State why decentralization is safe before recommending it.
 
-### 9. Generalization Must Delete Exceptions
+### 10. Generalization Must Delete Exceptions
 
 Generalization is legitimate only when it makes multiple existing implementations or branches unnecessary and does not erase meaningful domain distinctions.
 
@@ -159,13 +183,27 @@ Generalization is legitimate only when it makes multiple existing implementation
 - divergent configuration paths;
 - ownership boundaries affected.
 
-### 10. Parameterize Environmental Variation
+### 11. Parent Problem Search
+
+When bottom-up unification from similar variants stalls — the variants resist a common kernel, or the proposed abstraction keeps leaking special cases — reverse direction. Ask whether the current pain point is a **projection of a larger problem** that the system has not yet named.
+
+**Technique:** For a stubborn structural problem `P`, search upward:
+
+> What larger contract, state machine, capability model, or canonical representation would make `P` a trivial projection or special case?
+
+The parent problem is not an excuse for unbounded abstraction. It remains subject to the Admissibility Gate: it must have concrete evidence, a measurable complexity deletion claim, and a feasible transition seam.
+
+**When to apply:** Use only after bottom-up generalization (Section A.2, Section B.10) has been attempted and the result is either too many preserved exceptions or an invariant too weak to delete complexity.
+
+**When to stop:** If the parent problem cannot name eliminated code paths, it is philosophy, not engineering.
+
+### 12. Parameterize Environmental Variation
 
 Differences across platforms, tenants, protocols, deployment environments, feature sets, or dependency versions often create branch explosion.
 
 **Engineering question:** Which environmental variation belongs in an explicit parameter, capability model, policy object, plugin boundary, or generated configuration rather than copied control flow?
 
-### 11. Derive APIs from Caller Reality
+### 13. Derive APIs from Caller Reality
 
 An API is defined operationally by how consumers use, wrap, avoid, and compensate for it.
 
@@ -184,7 +222,9 @@ No proposal qualifies as a recommended structural direction until it passes this
 | Concrete symptom | Specific files, modules, call sites, schemas, tests, or dependency edges exhibiting the burden. |
 | Hidden invariant hypothesis | The exact common rule or domain meaning believed to unify the symptom family. |
 | Difference preservation | Cases that look similar but must remain distinct, and how the design preserves them. |
+| Exception classification | Which exception families would be absorbed by the new structure, which must remain as real differences, and which are false alarms unrelated to this pressure. |
 | Complexity deletion | Named branches, adapters, duplicate models, coordinators, or workflow copies removed or made unnecessary. |
+| Definition power | What future changes, feature additions, or variant introductions become trivial projections or special cases of this definition. |
 | Contract safety | Invariants, compatibility, error behavior, and observability that must not regress. |
 | Transition seam | A feasible seam such as adapter boundary, façade, compatibility layer, staged API, dual-read comparison, or module replacement boundary. |
 | Disproof test | Evidence that would prove the abstraction wrong or premature. |
@@ -246,6 +286,7 @@ Identify recurring forms of pressure:
 | Mode/platform branching | Unparameterized environmental variation | Branch families and variant rules |
 | God coordinator | Local composition failure | Coordination responsibilities and callers |
 | Painful API | Boundary designed away from caller reality | Multiple caller workarounds |
+| Caller compensation / workaround accumulation | Missing transformation protocol or canonical intermediate representation | Multiple callers implementing identical pre-processing, post-processing, or format adaptation |
 | Repeated lifecycle bugs | Missing explicit state machine/invariant | Transitions, tests, incident or bug evidence |
 
 ## Phase 3: Candidate construction and falsification
@@ -312,6 +353,12 @@ Generate an HTML report named `structural_abstraction_architect_report.html` con
 8. **Uncertainties and Missing Evidence**
    - Explicit limitations and what further inspection would change confidence.
 
+9. **Reusable Analysis Artifacts** (include when the analysis yields artifacts the team can reuse independently)
+   - **Counterexample catalog** — cases that look structurally similar to a recommended unification but must remain distinct, with the specific rule or invariant that distinguishes them.
+   - **Complexity deletion scorecard** — before/after counts of representations, adapters, branch families, duplicated tests, and divergent configuration paths, so the team can track whether the abstraction actually simplified the system.
+   - **Subsequent eval cases** — concrete scenarios the team can test after refactoring to verify the structure has not regressed (e.g., "add a new payment method without touching the order lifecycle").
+   - **Definition quality checklist** — self-check questions derived from this analysis: does the new definition make future variants trivial projections? Does it preserve all meaningful differences? Can a new team member explain the structure in under 5 minutes?
+
 ## Proposal card schema
 
 Every proposal card MUST contain:
@@ -327,6 +374,11 @@ Every proposal card MUST contain:
 - Proof obligations and disproof signals.
 - Transition seam and authorization boundary.
 - Optional code sketches in `<details>` sections; sketches are explanatory only.
+- **Transformation Network** (include for proposals whose value depends on changing how data flows, deforms, or is probed across components):
+  - *Probing operations* — who reads or queries this object, through what interface, and with what expectation?
+  - *Deformation paths* — what shape changes does the object undergo across its lifecycle (serialization, validation, enrichment, projection)?
+  - *Caller compensation patterns* — what pre-processing, post-processing, or defensive wrapping do callers repeat because the current interface is incomplete?
+  - *Lifecycle flows* — trace the full path of a representative entity or event through the system, noting where it crosses artificial boundaries.
 
 ## Topology diagrams
 
@@ -488,7 +540,7 @@ Do NOT produce:
 
 1. Confirm the target codebase or inspect the supplied project context.
 2. Determine whether this skill is the right first lens or whether the task should be routed to pragmatic transition analysis.
-3. Survey structure, interfaces, representations, variations, transformations, tests, and available operational evidence.
+3. Survey structure, interfaces, representations, variations, transformations, tests, and available operational evidence. Question whether the current domain vocabulary, type system, or boundary naming distorts the underlying structure.
 4. Build the structural pressure map and evidence ledger.
 5. Construct candidate abstractions and aggressively test them against counterexamples and the admissibility gate.
 6. Classify validated opportunities, unproven hypotheses, false abstractions, and pragmatic sequencing problems.
