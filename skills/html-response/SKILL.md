@@ -47,28 +47,21 @@ Generate HTML when any of the following is true:
   layout-heavy file, or a mixed artifact plus explanatory report.
 - The task-specific skill explicitly requires an HTML deliverable.
 
-### 1.2 Adaptive Activation Score
+### 1.2 Adaptive Activation: Binary Decision
 
-For other responses, score each dimension `0`, `1`, or `2`:
+When 1.1 does not apply, ask two questions:
 
-| Dimension | 0 | 1 | 2 |
-|---|---|---|---|
-| Reading load | Short, direct | Several sections | Long or dense reasoning/report |
-| Structural complexity | Linear prose | List/table | Multiple alternatives, hierarchy, timeline, dependencies |
-| Visual inspection | None | Helpful | File, image, chart, diagram, code diff, topology |
-| Decision burden | No decision | Minor choice | Trade-off, approval, prioritization, review |
-| Feedback precision | Simple reply sufficient | Comments helpful | Region/card/line-specific feedback required |
+1. **Does the response need visual inspection?** Files, diagrams, charts, code diffs, topology, rendered pages, or layout review.
+2. **Does the response need structured review?** Trade-offs with approvals, multi-step plans, multi-criterion evidence, or region-specific feedback.
 
-- Total `0–2`: answer in chat only, unless HTML is explicitly requested.
-- Total `3–5`: generate HTML only when it provides a clear interaction or reading advantage.
-- Total `6–10`: generate HTML as an accompanying deliverable by default.
-
-Never mention the score to the user unless explaining why a mode was selected.
+Answer in chat only when both are false. Generate HTML when either is true and at least one of the five core outcomes (Orientation, Comprehension, Inspection, Actionability, Feedback) would clearly improve.
 
 ### 1.3 Anti-Overproduction Rule
 
 Do **not** generate HTML merely because an answer is longer than an arbitrary character threshold. A long but simple answer can
 remain readable in chat; a short but high-stakes comparison may benefit from a decision board.
+
+Never mention the activation decision to the user.
 
 ---
 
@@ -166,16 +159,16 @@ use the review controls. The HTML must not be the only place where a high-stakes
 Default output must work without network access. Inline the page CSS and the interaction JavaScript. Use local data/assets or
 embedded data URLs according to the chosen packaging profile.
 
-### 6.2 No Contradictory CDN Requirements
+### 6.2 Diagram and External Asset Policy
 
-Do not state that output is offline/self-contained while loading Mermaid, fonts, syntax highlighters, or other assets from a CDN.
+Default output uses inline SVG or CSS-only diagrams for true offline use.
 
-For diagrams:
+When a task-specific skill mandates Mermaid diagrams (e.g., abstraction-architect, renewal-architect, analyze-success), CDN-loaded Mermaid is permitted. In these cases:
+- Mark the document as network-dependent with a visible note.
+- Provide readable Mermaid source in `<pre>` blocks as a fallback in case CDN loading fails.
+- The Mermaid global initialization block (from the calling skill) serves as the declaration that CDN is required.
 
-- Prefer accessible inline SVG or simple CSS flow diagrams.
-- A locally bundled diagram renderer may be used if it is already available and packaged with the output.
-- External CDN enhancement is permitted only when the user explicitly accepts an online-enhanced document; mark that document
-  as network-dependent and provide a usable fallback view.
+Do not load fonts, syntax highlighters, or other CDN assets beyond what the calling skill's spec requires.
 
 ### 6.3 Portable vs Large Review Outputs
 

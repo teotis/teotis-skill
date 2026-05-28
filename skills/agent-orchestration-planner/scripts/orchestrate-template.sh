@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# orchestrate-template v1.0.0 — see skills/agent-orchestration-planner/scripts/orchestrate-template.sh
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

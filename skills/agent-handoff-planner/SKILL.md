@@ -7,7 +7,7 @@ description: 用于小型任务方案、外部 agent 反馈核验、1-3 个 Clau
 
 ## Mission
 
-Turn broad requests, external-agent findings, and implementation ideas into lightweight, handoff-ready design packages for small execution runs. This skill is for plans that a user can execute by opening one to three Claude Code windows in the current checkout, usually without worktree isolation or branch orchestration. Preserve Codex for the parts that require deep local context, multimodal judgment, product taste, or final validation.
+Turn broad requests, external-agent findings, and implementation ideas into lightweight, handoff-ready design packages for small execution runs. This skill is for plans that a user can execute by opening one to three Claude Code windows. Each package gets its own worktree and branch for clean isolation, using `using-git-worktrees` to create the worktrees. Preserve Codex for the parts that require deep local context, multimodal judgment, product taste, or final validation.
 
 ## When To Use
 
@@ -154,19 +154,19 @@ For small multi-window execution, create an INDEX document that ties packages to
 
 You (the external agent) are authorized to do the following WITHOUT asking for confirmation:
 - Read the plan, index, and all referenced package documents.
-- Work directly in the current checkout unless the package explicitly says otherwise.
+- Create one worktree and branch per assigned package (use `using-git-worktrees`), or reuse an existing one.
 - Make scope-bounded edits, add/update tests, and update docs as described in each package.
 - Run the listed verification commands.
 - Continue fixing verification failures that remain inside the package scope.
-- Commit locally only if the user or package explicitly asks for a commit.
+- Commit locally after completing each logical unit of work.
+- After all packages complete: merge to integration branch or mainline, push, and create a PR if applicable.
 
 ## Stop Gates — Must Ask
 
 STOP and ask the user before:
 - Crossing Stage boundaries or making architectural decisions beyond scope.
 - Product-level decisions where requirements are genuinely ambiguous.
-- Destructive git operations: force-push, hard reset, deleting branches/worktrees.
-- Creating worktrees, changing branches, merging branches, pushing, or creating PRs unless explicitly authorized by the package or user.
+- Destructive git operations: force-push, hard reset, deleting branches/worktrees not created by this package.
 - Network access, external API calls, or adding secrets/credentials.
 - Overwriting unrelated dirty changes outside this package.
 - Fixing verification failures when the fix expands scope beyond this package.
@@ -174,8 +174,10 @@ STOP and ask the user before:
 ## Completion Policy
 
 After completing all packages:
-- Report: what changed, verification results, remaining risks, and current git status.
-- Do NOT merge, push, create PRs, delete branches, or delete worktrees unless explicitly instructed.
+- Merge package branches to the integration branch or mainline.
+- Push to remote and create a PR if the project uses PR workflow.
+- Report: what changed, verification results, merge/PR status, remaining risks.
+- Do NOT delete branches or worktrees (the user may want to inspect them).
 
 ## Package Documents
 | Work Package | Target Agent | Dependency | Purpose |
@@ -195,14 +197,14 @@ Copy this exact message to start an external Claude Code agent:
 
 ```
 /using-superpowers
-执行授权：你可以在当前 checkout 内读取方案，实施 scope 内修复，更新必要测试/文档，运行列出的验证命令，并继续修复 scope 内验证失败；不要为这些常规步骤询问确认。不要自行创建 worktree、切换分支、merge、push、PR、force-push、hard reset 或删除 worktree。只有遇到 Stop Gates 才停下询问。
+执行授权：为每个包创建独立 worktree 和分支，读取方案，实施 scope 内修复，更新必要测试/文档，运行列出的验证命令，并继续修复 scope 内验证失败；完成后合并到主分支并推送/创建 PR。不要为这些常规步骤询问确认。禁止 force-push、hard reset、删除其他包的分支或 worktree。只有遇到 Stop Gates 才停下询问。
 核查现状，并恰当落地如下优化方案：<PLAN_PATH>
 ```
 ````
 
 The authorization sections eliminate unnecessary confirmation prompts for normal direct execution while keeping branch, worktree, merge, push, and cleanup operations behind explicit authorization.
 
-**Boundary**: agent-handoff-planner produces lightweight design packages and a basic INDEX for one to three manual Claude Code windows. It does NOT generate batch launch scripts, Agent View prompt lists, Claude Code agent launchers, status ledgers, worktree policies, branch integration plans, or automated concurrency plans. Use `agent-orchestration-planner` directly for medium/large multi-agent orchestration.
+**Boundary**: agent-handoff-planner produces lightweight design packages and a basic INDEX for one to three Claude Code windows, each in its own worktree. It does NOT generate batch launch scripts, Agent View prompt lists, Claude Code agent launchers, status ledgers, or automated concurrency plans. Use `agent-orchestration-planner` directly for medium/large multi-agent orchestration.
 
 ### 5. Keep The Handoff Executable
 
@@ -245,5 +247,6 @@ Then provide links to generated docs or cite exact files inspected. Keep chat co
 - Splitting work so finely that agents collide in the same files; if coordination needs a ledger or branch plan, use agent-orchestration-planner instead.
 - Reporting success before comparing delivery against the original acceptance criteria.
 - Producing an INDEX.md without execution authorization, stop gates, completion policy, or launch prompt — this causes external agents to interrupt the human with unnecessary confirmation prompts.
+- Skipping worktree isolation: letting multiple packages share a checkout — use `using-git-worktrees` to create one worktree per package so parallel agents never collide on dirty state.
 - Reporting validation success before listing every unmet acceptance criterion.
 - Adding batch-launch scripts, Agent View prompts, status ledgers, or worktree/branch orchestration to INDEX — those belong to agent-orchestration-planner, not handoff-planner.

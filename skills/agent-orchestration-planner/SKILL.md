@@ -294,6 +294,8 @@ Failure recovery context is part of the scheduler ledger, not an informal chat n
 
 Do not blindly retry a blocked package. A retry must preserve the prior recovery context long enough for the relaunched package agent to inspect it, and repeated identical fingerprints must trip the retry breaker.
 
+Note on state.tsv width: the five recovery context columns (`last_error`, `failed_command`, `conflict_files`, `log_summary`, `recovery_hint`) are necessary for failure diagnosis but make the TSV hard to scan manually. The package status Markdown file is the human-readable failure record; `state.tsv` and `events.jsonl` together are the machine-readable record. Future versions may narrow `state.tsv` by extracting recovery context to `events.jsonl` only, keeping the TSV at 11 core columns.
+
 ### 7. launchers/orchestrate.sh
 
 Generate one script with these subcommands:
@@ -321,12 +323,12 @@ Required behavior:
 - `mark-state`: the only supported way for package agents to mutate `state.tsv`; it also keeps Markdown status in sync.
 - `repair-state`: rebuild `state.tsv` from graph and Markdown status when a ledger is empty or malformed.
 - `doctor`: run preflight and consistency checks without launching work.
-- `doctor --environment`: report repo root, plan root, Claude CLI path/version, `claude agents --help` availability, permission mode, and setting sources so users can tell whether Codex/rtk and macOS Terminal are using the same Claude environment.
+- `doctor --environment`: report repo root, plan root, Claude CLI path/version, `claude agents --help` availability, permission mode, setting sources, and generated template version vs current template version. Warn if the generated script is older than the current template.
 - `verify-package` / `verify-finalize`: verify package evidence before integration, including completed state, branch, commit hash, commit existence, and clean package worktree when present.
 - `scratch-path <package-id>`: create `scratch/.gitignore`, create the package-local scratch directory, print its absolute path, and record the request in `events.jsonl`.
 
 Implementation rules:
-- Use `scripts/orchestrate-template.sh` (resolved relative to this SKILL.md file) as the script body.
+- Use `scripts/orchestrate-template.sh` (resolved relative to this SKILL.md file) as the script body. Preserve the version comment (`# orchestrate-template vX.Y.Z`) in the generated script so `doctor --environment` can compare against the current template.
 - Compute `REPO_ROOT` dynamically with `git rev-parse --show-toplevel` from the script's directory. Never use hardcoded relative path traversal like `../../..` — the plan directory depth from repo root varies per project.
 - When awk processes the same TSV file twice (e.g. `awk '...' "$GRAPH" "$GRAPH"`), use `FNR == 1` to skip each file's header, not `NR == 1` which only skips the first file's header.
 - Use a lock such as `status/.orchestrate.lock` so concurrent `advance` calls cannot double-launch packages.
@@ -341,6 +343,7 @@ Implementation rules:
 - Maintain `status/events.jsonl` as an append-only audit log. Record at minimum: `launch_requested`, `launch_succeeded`, `state_changed`, `terminal_failure`, `retry_requested`, `retry_blocked`, and `scratch_path_requested` with timestamp, package id, state transition or session id, path, and error fingerprint where relevant.
 - On terminal package failures (`blocked`, `stale`, or `invalid` with `--error`), record recovery context in both `state.tsv` and `events.jsonl`: error, failed command, conflict files, log summary, and recovery hint. Sanitize tabs/newlines before writing TSV.
 - Treat `events.jsonl` as the source for retry loop accounting. If `terminal_failure` records show the same package and normalized error fingerprint three times, `retry` must stop before relaunching and print the package id, failure count, and fingerprint.
+- **Fingerprint normalization**: Before comparing retry fingerprints, strip variable noise from the error string: timestamps, ISO dates, hex session IDs (8+ hex chars), absolute paths to the repo root or worktree, line numbers (`:\d+`), and ephemeral port numbers. Normalize whitespace to single spaces and trim. Compare the normalized strings case-insensitively.
 - Maintain `scratch/` as a plan-local, gitignored, non-authoritative exchange area. Runtime commands must create `scratch/.gitignore` with ignored contents, and package prompts must direct agents to request their package path through `scratch-path`. Scratch contents must never unlock dependencies, satisfy acceptance criteria by themselves, or replace status/evidence fields.
 - Write raw launch output to `status/launch-<package-id>.log`.
 - Parse and record the background session id in the `agent` column.
