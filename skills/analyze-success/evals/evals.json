@@ -1,0 +1,86 @@
+{
+  "skill_name": "analyze-success",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "帮我分析邓小平的成功本质。不要只总结他的政策（什么特区、改革开放），我要理解他面对绝境时如何持续产生正确判断的认知算法。",
+      "expected_output": "Applies the three-layer model and nine-step distillation method. Does not merely list policies (moves). Uses the 'X is not X; its function is Y' formula to translate moves into mechanisms. Identifies an energy converter (e.g., converting local bureaucratic incentives and desire for wealth into reform momentum). Identifies a resistance bypass mechanism (e.g., not confronting ideology head-on; opening experimental space at the margin). Distills core invariants across multiple successes (rural reform, urban reform, opening-up, HK handover, southern tour, etc.). Runs counterfactual transfer tests in at least 3 domains. Answers the five verification questions. Produces or explicitly describes the HTML report path.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Does not simply list policies (moves) without identifying their system functions (mechanisms)."
+        },
+        {
+          "text": "Uses the 'X is not X; its function is Y' translation formula at least 3 times."
+        },
+        {
+          "text": "Identifies a specific energy converter (concrete desire/resource/tension converted into driving force)."
+        },
+        {
+          "text": "Identifies a resistance bypass mechanism (what was NOT confronted head-on)."
+        },
+        {
+          "text": "Distills core invariants that repeat across multiple successes in different contexts."
+        },
+        {
+          "text": "Runs counterfactual transfer tests (e.g., would this generator work in a corporation? another country?)."
+        },
+        {
+          "text": "Answers the five verification questions, including describing at least 3 wrong-copy patterns."
+        },
+        {
+          "text": "Produces or explicitly states the path of the HTML report."
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "我们公司有一个产品经理，他去年做了一个爆款功能。帮我分析他的成功方法论，提炼可复制的模式。",
+      "expected_output": "Flags the single-success risk (could be luck, era dividend, or resource advantage). Refuses to produce confident generator-level claims from a single data point. Explains the minimum evidence threshold (at least 3 successes across different contexts). Offers to run a limited moves-and-possible-mechanisms analysis with strong caveats. Explains what additional evidence would enable a full generator-level analysis. Does not fabricate patterns from insufficient data.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Warns that a single success does not support generator-level distillation."
+        },
+        {
+          "text": "Explains the minimum evidence threshold (N >= 3, cross-context) before generator claims."
+        },
+        {
+          "text": "Does not fabricate patterns or a 'methodology' from one data point."
+        },
+        {
+          "text": "Offers limited moves/mechanisms analysis with explicit caveats about confidence."
+        },
+        {
+          "text": "Explains what additional evidence would be needed for a full analysis."
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "分析任天堂为什么在游戏行业屡次从绝境中重生（从N64落后到Wii翻身，从Wii U失败到Switch大成功）。提炼他们的创新生成器。",
+      "expected_output": "Applies the nine-step method across multiple documented cycles of failure and resurgence. Verifies cross-context repeatability (N64→Wii, Wii U→Switch are distinct cycles). Identifies mechanisms behind moves (e.g., 'withered technology' is not cheapness; its function is making novel interaction the value axis instead of graphics performance). Identifies the energy converter and resistance bypass. Identifies the feedback loop (how Nintendo knows it's wrong — market rejection triggers creative recalibration). Identifies common mis-copying patterns (competitors who copy 'quirkiness' without the generator). Runs counterfactual transfer tests. Produces HTML report.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Verifies multi-success repeatability across distinct cycles (N64→Wii, Wii U→Switch)."
+        },
+        {
+          "text": "Translates moves into mechanisms using the 'X is not X; its function is Y' formula."
+        },
+        {
+          "text": "Identifies the feedback loop — how does the system detect and correct errors?"
+        },
+        {
+          "text": "Identifies at least 3 common mis-copying patterns specific to Nintendo."
+        },
+        {
+          "text": "Runs counterfactual transfer tests in unrelated domains (e.g., automotive, enterprise software)."
+        },
+        {
+          "text": "Produces or explicitly states the path of the HTML report."
+        }
+      ]
+    }
+  ]
+}
