@@ -96,7 +96,7 @@ docs/plans/<plan-name>/
 
 `dispatch-claude-agents.sh` is no longer a primary generated entrypoint. If backward compatibility is useful, generate it only as a thin wrapper that calls `orchestrate.sh start`. Both scripts must compute `REPO_ROOT` with `git rev-parse --show-toplevel`, not hardcoded relative paths.
 
-`launchers/orchestrate.sh` must be copied from `skills/agent-orchestration-planner/scripts/orchestrate-template.sh`, then syntax-checked with `bash -n`. Do not recreate this script from memory or prose. The template is the tested runtime contract for launch handshakes, state mutation, repair, and retry behavior.
+`launchers/orchestrate.sh` must be copied from `scripts/orchestrate-template.sh` (resolved relative to this SKILL.md file), then syntax-checked with `bash -n`. Do not recreate this script from memory or prose. The template is the tested runtime contract for launch handshakes, state mutation, repair, and retry behavior.
 
 ### 3. INDEX.md Required Sections
 
@@ -326,7 +326,7 @@ Required behavior:
 - `scratch-path <package-id>`: create `scratch/.gitignore`, create the package-local scratch directory, print its absolute path, and record the request in `events.jsonl`.
 
 Implementation rules:
-- Use `skills/agent-orchestration-planner/scripts/orchestrate-template.sh` as the script body.
+- Use `scripts/orchestrate-template.sh` (resolved relative to this SKILL.md file) as the script body.
 - Compute `REPO_ROOT` dynamically with `git rev-parse --show-toplevel` from the script's directory. Never use hardcoded relative path traversal like `../../..` — the plan directory depth from repo root varies per project.
 - When awk processes the same TSV file twice (e.g. `awk '...' "$GRAPH" "$GRAPH"`), use `FNR == 1` to skip each file's header, not `NR == 1` which only skips the first file's header.
 - Use a lock such as `status/.orchestrate.lock` so concurrent `advance` calls cannot double-launch packages.

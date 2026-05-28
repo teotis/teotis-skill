@@ -404,6 +404,8 @@ For applicable cards, render two full-width Mermaid diagrams beneath the compari
 
 ### Mermaid global initialization
 
+Use the Mermaid initialization pattern from `../shared/report_base.md` (resolved relative to this SKILL.md). This skill's theme uses:
+
 ```html
 <script type="module">
   import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
@@ -425,6 +427,8 @@ For applicable cards, render two full-width Mermaid diagrams beneath the compari
   });
 </script>
 ```
+
+Mermaid compatibility rules are in `../shared/report_base.md`.
 
 ### Minimum CSS for topology comparison and lightbox
 
@@ -455,30 +459,7 @@ For applicable cards, render two full-width Mermaid diagrams beneath the compari
 
 ### Lightbox JavaScript
 
-```javascript
-document.querySelectorAll('.topology-diagram').forEach(diagram => {
-  diagram.addEventListener('click', () => {
-    const rendered = diagram.querySelector('.mermaid svg');
-    if (!rendered) return;
-    const lb = document.createElement('div');
-    lb.className = 'lightbox active';
-    const wrapper = document.createElement('div');
-    wrapper.className = 'diagram-wrapper';
-    wrapper.addEventListener('click', event => event.stopPropagation());
-    wrapper.appendChild(rendered.cloneNode(true));
-    lb.appendChild(wrapper);
-    document.body.appendChild(lb);
-    const close = () => lb.remove();
-    lb.addEventListener('click', close);
-    document.addEventListener('keydown', function onEsc(event) {
-      if (event.key === 'Escape') {
-        close();
-        document.removeEventListener('keydown', onEsc);
-      }
-    });
-  });
-});
-```
+Use the lightbox JavaScript from `../shared/report_base.md` (resolved relative to this SKILL.md). The code is identical across all report skills.
 
 ## Interactive review system
 

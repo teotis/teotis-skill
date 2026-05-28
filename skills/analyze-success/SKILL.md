@@ -113,7 +113,7 @@ Every success can be examined at three layers. The distinction between them is t
 
 ## 3. The Nine-Step Distillation Method
 
-Each step produces specific outputs. Steps must be applied sequentially — each feeds the next. Detailed methodology with examples and failure modes is in `references/nine_step_framework.md`.
+Each step produces specific outputs. Steps must be applied sequentially — each feeds the next. Detailed methodology with examples and failure modes is in `references/nine_step_framework.md` (resolve relative to this SKILL.md file's directory).
 
 ### Step 1: Find Multiple Successes
 
@@ -380,6 +380,8 @@ When clicked:
 
 ### Mermaid Import — Must Be Included in `<head>`
 
+Use the Mermaid initialization pattern from `../shared/report_base.md` (resolved relative to this SKILL.md). This skill's theme uses:
+
 ```html
 <script type="module">
 import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
@@ -403,6 +405,8 @@ mermaid.initialize({
 });
 </script>
 ```
+
+Mermaid compatibility rules are in `../shared/report_base.md`.
 
 ### Required Diagrams
 
@@ -527,27 +531,7 @@ flowchart LR
 
 ### Lightbox JavaScript
 
-```javascript
-document.querySelectorAll('.topology-diagram').forEach(diagram => {
-  diagram.addEventListener('click', () => {
-    const sourceSvg = diagram.querySelector('.mermaid svg');
-    if (!sourceSvg) return;
-    const svg = sourceSvg.cloneNode(true);
-    const lb = document.createElement('div');
-    lb.className = 'lightbox active';
-    const wrapper = document.createElement('div');
-    wrapper.className = 'mermaid';
-    wrapper.appendChild(svg);
-    lb.appendChild(wrapper);
-    document.body.appendChild(lb);
-    const close = () => lb.remove();
-    lb.addEventListener('click', e => { if (e.target === lb) close(); });
-    document.addEventListener('keydown', function onEsc(e) {
-      if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onEsc); }
-    });
-  });
-});
-```
+Use the lightbox JavaScript from `../shared/report_base.md` (resolved relative to this SKILL.md). The code is identical across all report skills.
 
 ---
 

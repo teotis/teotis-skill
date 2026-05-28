@@ -92,7 +92,7 @@ The opening viewport must deliver the answer or the review task, not an ornament
 ## 3. Presentation Modes
 
 Choose one primary mode. Combine modes only when materially necessary.
-Detailed structures are defined in `references/presentation_modes.md`.
+Detailed structures are defined in `references/presentation_modes.md` (resolve relative to this SKILL.md).
 
 | Mode | Use for | Primary feedback affordance |
 |---|---|---|
@@ -150,7 +150,7 @@ use the review controls. The HTML must not be the only place where a high-stakes
 3. **Choose packaging profile**:
    - `single-file-portable`: text, small images, compact artifacts; CSS/JS/data embedded inline.
    - `local-review-bundle`: large page-rendered artifacts or large datasets; HTML plus sibling asset/data files to avoid an unusably huge HTML file.
-4. **Render semantic HTML** according to `references/html_system_spec.md`.
+4. **Render semantic HTML** according to `references/html_system_spec.md` (resolve relative to this SKILL.md).
 5. **Add mode-specific feedback** according to `references/feedback_spec.md`.
 6. **Render artifact previews**, if needed, according to `references/artifact_review_spec.md`.
 7. **Validate quality and safety** with `references/quality_checklist.md`; use `scripts/validate_html.py` when available.
@@ -262,6 +262,8 @@ Do not merely say “opened in browser”; the user needs a durable link and eno
 
 ## 11. Reference Files
 
+All paths below are relative to this SKILL.md file's directory. When reading or executing them, resolve against the skill directory, not the current working directory.
+
 - `references/presentation_modes.md` — selection and structure of each response mode.
 - `references/html_system_spec.md` — shared shell, layout, responsive, accessibility, offline, and security requirements.
 - `references/feedback_spec.md` — interactive feedback model and export schema.
@@ -272,3 +274,4 @@ Do not merely say “opened in browser”; the user needs a durable link and eno
 - `scripts/open_browser.py` — local browser opening helper.
 - `scripts/validate_html.py` — lightweight structural and safety checks for generated output.
 - `templates/interactive_response_base.html` — accessible offline-first starting shell for interactive text/review modes.
+- `references/dependencies.md` — external system and Python package dependencies required by scripts.

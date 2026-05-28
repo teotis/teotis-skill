@@ -9,7 +9,7 @@ Codex 与 Claude Code 的私有技能工作区。技能覆盖工程、研究、�
 ## How to work
 
 - Read this file before making changes to skill layout, release guidance, or shared conventions.
-- Shell commands run by agents in this workspace must follow `/Users/dingren/.codex/RTK.md`; prefix commands with `rtk` unless the active environment transparently rewrites them.
+- When `rtk` is available, prefix shell commands with `rtk` (see `~/.codex/RTK.md` for the token-optimized CLI proxy). When `rtk` is not installed, run commands directly — the `rtk` prefix is an optimization, not a requirement.
 - Skill 正文使用英语编写（SKILL.md、脚本、prompt），可见介绍和 frontmatter 可使用中文。
 - Skill frontmatter 必须包含 `name` 和 `description`，优先中文描述，必要时补充英文关键词。
 - 共享工具放在 `skills/<skill>/scripts/` 或 `skills/<skill>/references/`。

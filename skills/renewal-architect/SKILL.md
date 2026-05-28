@@ -699,6 +699,8 @@ Each recommendation card can be scored, assigned a review status, and commented 
 
 ### Mermaid Import — Must Be Included in `<head>`
 
+Use the Mermaid initialization pattern from `../shared/report_base.md` (resolved relative to this SKILL.md). This skill's theme uses:
+
 ```html
 <script type="module">
 import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
@@ -722,6 +724,8 @@ mermaid.initialize({
 });
 </script>
 ```
+
+Mermaid compatibility rules are in `../shared/report_base.md`.
 
 ### Topology Comparison for Each Key Recommendation
 
@@ -785,7 +789,7 @@ Required HTML structure:
   }
 }
 .topology-compare { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 24px; }
-.topology-diagram { flex: 1; min-width: 340px; }
+.topology-diagram { flex: 1; min-width: 340px; cursor: pointer; }
 .topology-diagram .mermaid { min-height: 380px; width: 100%; background: var(--topo-bg); }
 .topology-diagram .label { font-size: 14px; font-weight: 600; margin-bottom: 8px; padding: 4px 12px; border-radius: 4px; display: inline-block; }
 .topology-diagram.current .label { background: var(--topo-current-label-bg); color: var(--topo-current-label-color); }
@@ -799,31 +803,7 @@ Required HTML structure:
 
 ### Required Lightbox JavaScript
 
-```javascript
-document.querySelectorAll('.topology-diagram').forEach(diagram => {
-  diagram.style.cursor = 'pointer';
-  diagram.addEventListener('click', () => {
-    const sourceSvg = diagram.querySelector('.mermaid svg');
-    if (!sourceSvg) return;
-    const svg = sourceSvg.cloneNode(true);
-    const lb = document.createElement('div');
-    lb.className = 'lightbox active';
-    const wrapper = document.createElement('div');
-    wrapper.className = 'mermaid';
-    wrapper.appendChild(svg);
-    lb.appendChild(wrapper);
-    document.body.appendChild(lb);
-    const close = () => lb.remove();
-    lb.addEventListener('click', e => { if (e.target === lb) close(); });
-    document.addEventListener('keydown', function onEsc(e) {
-      if (e.key === 'Escape') {
-        close();
-        document.removeEventListener('keydown', onEsc);
-      }
-    });
-  });
-});
-```
+Use the lightbox JavaScript from `../shared/report_base.md` (resolved relative to this SKILL.md). The code is identical across all report skills.
 
 ---
 
