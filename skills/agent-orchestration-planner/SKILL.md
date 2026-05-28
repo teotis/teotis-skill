@@ -47,6 +47,25 @@ Before generating artifacts:
 - Inspect enough local context to split work into concrete packages when package docs do not exist.
 - Check current git status.
 - Ensure every functional package has: Package ID, allowed/forbidden paths, dependencies, acceptance criteria, verification commands, expected evidence, branch/worktree policy, and unlock conditions.
+- Run a capability preflight before finalizing the graph: for every package, verification command, and acceptance criterion, identify whether Claude Code can execute it autonomously in the planned environment. Anything requiring a physical device, human visual judgment, external account approval, credential entry, proprietary console access, paid service approval, remote hardware, or user-only decision must not be assigned to an auto-launched functional package.
+
+### Capability Preflight
+
+Prevent non-autonomous work from becoming a surprise blocker. For each candidate package and acceptance criterion, classify it as:
+
+| Class | Meaning | Orchestration treatment |
+|---|---|---|
+| `autonomous` | Claude Code can execute it with local tools and allowed permissions. | Put it in a normal functional package. |
+| `agent-verifiable substitute` | Claude cannot perform the final real-world check, but can produce meaningful evidence such as tests, builds, APKs, logs, screenshots, emulator checks, or checklists. | Put the substitute in an implementation package and state what remains externally unverified. |
+| `external-assist` | Requires a human, Codex multimodal/device access, physical hardware, credentials, external approval, or a service console Claude cannot access. | Predeclare it in the INDEX as external assistance or a manual release gate; do not auto-launch it as Claude work. |
+
+Examples of `external-assist`: real-device camera UI validation, hardware-in-the-loop checks, app-store release approval, CAPTCHA/account onboarding, entering private API keys, visual QA that needs user-owned media, and security approval outside the repository.
+
+Design rules:
+- Do not make downstream implementation waves depend on external-assist validation unless the user explicitly says it is a mandatory release gate.
+- If external validation is required before release, model it as a known manual gate from the first output, with owner, exact commands/checklist, expected evidence, and how to report results back. The automation may stop at "ready for external QA"; it must not pretend the gate passed.
+- If external validation is not required for implementation progress, keep it outside the package graph or as `manual=1` documentation that does not block autonomous implementation waves.
+- For Android or camera work, package agents should produce APK paths, install commands, logs, emulator checks, and focused tests; real-device pass/fail remains external evidence unless the active environment actually provides that device workflow.
 
 ### 2. Generate Orchestration Kit
 
@@ -155,6 +174,12 @@ Forbidden without explicit user approval:
 - Package changed forbidden paths.
 - Merge conflict or verification failure occurs.
 - Status/state mismatch cannot be reconciled.
+
+## Capability Preflight
+| Package Or Gate | Class | Owner | Why Not Fully Autonomous | Autonomous Substitute | External Evidence Required | Blocks |
+|---|---|---|---|---|---|---|
+| 01-implementation | autonomous | Claude Code | n/a | tests/build | none | normal graph |
+| real-device-qa | external-assist | user/Codex/device owner | requires physical device or human visual judgment | APK path, install command, logs, focused tests | checklist result, screenshot/video/log if available | release only, unless user says otherwise |
 ```
 
 ### 4. launchers/agent-prompts.md
@@ -181,6 +206,8 @@ Copy this prompt into an agent, or let `orchestrate.sh start/advance` launch it 
 You may edit only the allowed paths in the package doc. Do not edit INDEX.md or another package status file. If you create/use an implementation worktree, do not rely on status files inside that worktree; write the coordinator status path above.
 
 Use scratch only for temporary shared notes, inventories, command transcripts, draft diffs, or intermediate artifacts that help another package or finalizer inspect the work. Do not put credentials, tokens, private keys, `.env` files, hidden prompts, proprietary raw data, or authoritative completion evidence in scratch. Anything required for scheduling, completion, or final acceptance must be summarized into coordinator status through `mark-state` and the package status file.
+
+Do not attempt external-assist work inside a Claude package. If you discover a package requires a physical device, user-owned account, secret, external approval, or human-only judgment that was not declared, mark the package `blocked` with a precise recovery hint instead of improvising or claiming completion.
 
 Before calling `advance`, you must:
 - Set coordinator status to `completed` or `blocked`.
@@ -310,6 +337,7 @@ Implementation rules:
 - Do not silently grant elevated permission modes. Default to no explicit `--permission-mode`; `CLAUDE_PERMISSION_MODE=auto` requires `CLAUDE_AUTO_MODE_OPTED_IN=1` after an interactive opt-in, and `CLAUDE_PERMISSION_MODE=bypassPermissions` requires `CLAUDE_BYPASS_PERMISSIONS_APPROVED=1`.
 - Before launch, create or verify the recorded package worktree and branch.
 - If a graph row has `manual=1`, never auto-launch it. When its dependencies are satisfied, mark it `manual_required` and print the package id for manual execution.
+- Capability preflight is mandatory before graph creation. Auto-launched packages may contain only `autonomous` or `agent-verifiable substitute` work. `external-assist` checks must be predeclared in the INDEX and kept out of autonomous package execution unless the active environment truly provides that capability.
 - Maintain `status/events.jsonl` as an append-only audit log. Record at minimum: `launch_requested`, `launch_succeeded`, `state_changed`, `terminal_failure`, `retry_requested`, `retry_blocked`, and `scratch_path_requested` with timestamp, package id, state transition or session id, path, and error fingerprint where relevant.
 - On terminal package failures (`blocked`, `stale`, or `invalid` with `--error`), record recovery context in both `state.tsv` and `events.jsonl`: error, failed command, conflict files, log summary, and recovery hint. Sanitize tabs/newlines before writing TSV.
 - Treat `events.jsonl` as the source for retry loop accounting. If `terminal_failure` records show the same package and normalized error fingerprint three times, `retry` must stop before relaunching and print the package id, failure count, and fingerprint.
@@ -339,14 +367,15 @@ Generate a finalize package, not a passive audit-only prompt.
    - package commit hash exists
    - package changed files are within allowed paths
    - package worktree is clean, or dirty state is recorded as a blocker
-4. Decide whether merging is allowed.
-5. Create or update the integration branch.
-6. Merge functional package branches in Merge Strategy order.
-7. Stop and record conflicts without cleaning anything.
-8. Run integration verification.
-9. Merge integration branch back to mainline only after verification passes.
-10. Write `FINAL_REPORT.md` and `status/99-finalize.md` for both success and failure.
-11. Delete only local package branches/worktrees recorded by this orchestration after every prior step succeeds.
+4. Check the Capability Preflight section. If an external-assist gate is release-blocking and evidence is absent, stop with "ready for external QA" or "waiting for external gate"; do not claim overall PASS.
+5. Decide whether merging is allowed.
+6. Create or update the integration branch.
+7. Merge functional package branches in Merge Strategy order.
+8. Stop and record conflicts without cleaning anything.
+9. Run integration verification.
+10. Merge integration branch back to mainline only after verification passes and release-blocking external gates are satisfied or explicitly deferred by the user.
+11. Write `FINAL_REPORT.md` and `status/99-finalize.md` for both success and failure.
+12. Delete only local package branches/worktrees recorded by this orchestration after every prior step succeeds.
 
 Failure rules:
 - Any failure sets `99-finalize` to `blocked`.
@@ -375,6 +404,7 @@ Always include this information:
 - First wave packages.
 - Final package: `99-finalize`.
 - A statement that downstream dispatch is triggered by package tail calls to `advance`.
+- Any external-assist gates, their owners, whether they block release or only final confidence, and the exact evidence expected.
 
 For the **Manual** path, include a package table so the user can decide which prompts to copy first:
 
@@ -423,6 +453,8 @@ Do not present `/batch`, `dispatch-claude-agents.sh`, or a separate audit prompt
 - Do NOT let package agents edit INDEX.
 - Do NOT use worktree-local status as coordinator truth.
 - Do NOT launch downstream packages from a package agent directly.
+- Do NOT assign non-autonomous work such as real-device QA, external approvals, credential entry, or human-only visual judgment to auto-launched Claude packages.
+- Do NOT hide external-assist requirements inside acceptance criteria; predeclare them in the INDEX before launching agents.
 - Do NOT run `99-finalize` if any functional package is not `completed`.
 - Do NOT treat scratch files as scheduler truth, final evidence, or a place for secrets.
 - Do NOT clean up branches/worktrees unless finalize fully succeeds.

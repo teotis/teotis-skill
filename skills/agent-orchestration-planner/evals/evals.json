@@ -316,6 +316,32 @@
           "text": "99-finalize records merge or test failures in the coordinator ledger, not only in prose."
         }
       ]
+    },
+    {
+      "id": 15,
+      "prompt": "我要多 agent 做 Android 相机修复，最后需要真机验收。Claude Code 没有我的手机，不能自己点真机 UI。请生成不会在真机验收环节卡死的 orchestration kit。",
+      "expected_output": "Generates an orchestration kit that performs a capability preflight, keeps real-device validation out of autonomous Claude Code functional packages, provides external-assist instructions and evidence expectations up front, and avoids making non-autonomous validation a surprise dependency that blocks implementation waves.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "The INDEX includes a Capability Preflight or External Assistance section that identifies real-device QA as non-autonomous for Claude Code."
+        },
+        {
+          "text": "No auto-launched functional package is assigned to perform real-device tapping, visual inspection, external approvals, credentials entry, or other unavailable capabilities."
+        },
+        {
+          "text": "Implementation packages use agent-verifiable checks such as unit tests, build commands, APK generation, logs, or emulator checks where appropriate."
+        },
+        {
+          "text": "Real-device validation is represented as a predeclared external-assist checklist or manual release gate with owner, commands, expected evidence, and how results should be reported back."
+        },
+        {
+          "text": "The graph does not make downstream implementation waves depend on non-autonomous validation unless the user explicitly marks it as a mandatory release gate."
+        },
+        {
+          "text": "The final report is allowed to say ready for external QA rather than claiming PASS for unperformed real-device validation."
+        }
+      ]
     }
   ]
 }
