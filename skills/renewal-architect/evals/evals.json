@@ -106,6 +106,75 @@
           "text": "Separates observed evidence from inferred conclusions."
         }
       ]
+    },
+    {
+      "id": 6,
+      "prompt": "平台团队已经设计好统一鉴权 SDK，技术上没问题。问题是迁移成本全在业务团队，收益主要归平台团队，业务团队担心上线风险和 on-call 责任，所以一直拖。帮我做 renewal 诊断。",
+      "expected_output": "Flags adoption economics as a first-class constraint, distinguishes technical correctness from adoption feasibility, and proposes owner, budget, approval, risk ownership, and migration support changes before broad rollout.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Identifies the mismatch between beneficiaries and cost-bearing teams as a dominant or material constraint."
+        },
+        {
+          "text": "Does not treat the technically correct SDK as sufficient for adoption."
+        },
+        {
+          "text": "Names who benefits, who pays migration cost, who owns operational risk, and who can approve or block adoption."
+        },
+        {
+          "text": "Proposes an owner, budget/capacity, rollout support, or responsibility adjustment to make adoption feasible."
+        },
+        {
+          "text": "Defines a bounded pilot with success signals and rollback rather than mandating global migration."
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "团队卡在争论：有人说必须上微服务，有人说必须保留单体，还有人说稳定性第一什么都不能动。现在没有共识，但订单查询链路确实拖慢发布。请先给诊断方案。",
+      "expected_output": "Classifies protected floors, experimentable variables, and deferred architecture debates before choosing a pilot; rejects architecture labels as the decision basis; and proposes a bounded experiment for the order query bottleneck.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Separates what must not break from what can be safely experimented with."
+        },
+        {
+          "text": "Identifies architecture-label debate as something to defer until evidence exists."
+        },
+        {
+          "text": "Frames the order query chain as a capability bottleneck candidate with required evidence."
+        },
+        {
+          "text": "Proposes a controlled pilot or evidence-gathering step instead of choosing microservices or monolith by identity."
+        },
+        {
+          "text": "Includes stability floors and decision gates."
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "我们想试点把库存扣减逻辑抽出来，但现在只写了‘做一个库存服务试点，成功后扩大’，没有说明这个试点到底要验证什么。请改成可执行 Pilot Design。",
+      "expected_output": "Rewrites the vague pilot into a pilot-to-decision contract: states the missing fact, scope, metrics, timebox, success branch, failure branch, pause/rollback thresholds, and how the result changes the next step.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "States the concrete unknown the inventory pilot must resolve."
+        },
+        {
+          "text": "Defines scope, validation metrics, timebox, and rollback or stop conditions."
+        },
+        {
+          "text": "Includes explicit result branches such as expand, revise, pause, rollback, or stop."
+        },
+        {
+          "text": "Connects pilot results to the next migration decision instead of assuming success will scale."
+        },
+        {
+          "text": "Preserves data correctness and operational stability floors."
+        }
+      ]
     }
   ]
 }

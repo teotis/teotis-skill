@@ -18,6 +18,16 @@ The central question is:
 
 > **When the business cannot be paused, historical compatibility duties cannot be erased, and conceptual consensus cannot substitute for validation, what most limits system capability? Where can a verified breakthrough begin, how can local success become repeatable system capability, and how can the system remain stable throughout the transition?**
 
+### Core Decision Pattern
+
+Use these engineering primitives before recommending action:
+
+1. **Protect / Experiment / Defer:** separate what must not break, what can be tested safely, and what should not be settled by abstract debate yet.
+2. **Adoption Economics:** identify who benefits, who pays migration cost, who owns operational risk, who can approve the change, and what mismatch would block adoption.
+3. **Pilot-to-Decision Contract:** each pilot must produce a specific missing fact and define how results branch into expand, revise, pause, rollback, or stop.
+
+These are not slogans. They must appear as explicit boundaries, owners, signals, and decision gates in the report.
+
 ### Default Working Modes
 
 - **Diagnostic Mode (default):** Analyze only; do not modify code. Produce an interactive HTML engineering renewal decision report.
@@ -59,6 +69,7 @@ When this skill is invoked:
    - the dominant bottleneck truly constraining evolution and delivery capability;
    - the smallest sensible breakthrough boundary;
    - the stability floor that must not be crossed during change;
+   - the adoption economics required for the route to land;
    - the path by which a pilot becomes reusable system capability.
 6. In Diagnostic or Pilot Design Mode, generate the HTML report and open it when feasible. In Execution Mode, first present the pilot boundary and validation gates, then implement controlled changes and report outcomes.
 
@@ -75,6 +86,10 @@ The principles form a sequence rather than a checklist:
 For every significant finding, ask:
 
 > **Is this a real capability bottleneck, or merely a contest of architecture narratives? What controlled pilot would allow results to decide?**
+
+Also ask:
+
+> **What must be protected, what can be experimented with, who must adopt the result, and what fact will decide the next step?**
 
 ---
 
@@ -162,11 +177,12 @@ For every significant finding, ask:
 
 **Minimum experiment contract**
 - **Hypothesis:** Within a stated boundary, what will the new approach improve?
+- **Unknown:** Which missing fact will this pilot resolve?
 - **Scope:** One flow, tenant, module, read path, or task class.
 - **Signals:** What constitutes success or failure?
 - **Timebox:** When is the review point?
 - **Rollback:** How is the change quickly withdrawn if it fails?
-- **Decision:** Expand on success; revise or close on failure.
+- **Decision gates:** Expand, revise, pause, rollback, or stop according to the observed signal.
 
 **Critical limit**
 Validation does not mean skipping review for security, data consistency, compliance, privacy, or irreversible risk. Those are non-negotiable engineering facts.
@@ -217,6 +233,7 @@ Select a bounded module, flow, tenant, or traffic segment as the first optimizat
 - Representativeness: Can the result transfer to other domains?
 - Observability: Can improvement be proved?
 - Organizational feasibility: Are owner and collaborators available?
+- Adoption fit: Do the teams receiving benefit, paying migration cost, and owning operation have a workable agreement?
 - Business timing: Does it align with near-term demand or maintenance windows?
 
 **Typical candidates**
@@ -251,6 +268,7 @@ During a substantial migration, new and old architecture often must coexist. Exp
 - Pilot signals meet their thresholds over a sustained interval.
 - Major failure modes have surfaced and been corrected.
 - A second team that is not the original author team can apply the template.
+- The second team has clear benefit, budget or capacity, approval path, and operational ownership.
 - Expansion does not pierce the stability floor.
 
 ---
@@ -318,6 +336,8 @@ During a substantial migration, new and old architecture often must coexist. Exp
 **Must identify**
 - a single accountable owner for each pilot;
 - whether teams receiving benefit and teams bearing cost are aligned;
+- who pays migration, training, dual-run, and on-call costs;
+- who can approve adoption and who can block it;
 - how cross-team dependencies will be arbitrated;
 - maintenance ownership, on-call ownership, budget, and skill gaps;
 - how pilot knowledge transfers to a second team instead of remaining bound to heroes.
@@ -338,6 +358,7 @@ Before deep code inspection, record:
 - the business mission: what the system must protect today;
 - outcomes the user seeks to improve;
 - non-interruptible flows and compliance, security, or data floors;
+- protected floors that must not be crossed, experimentable variables that can be changed safely, and unresolved debates to defer until evidence exists;
 - analysis mode or execution authorization boundary;
 - available time, environments, testing, and deployment capability.
 
@@ -385,12 +406,13 @@ Classify findings as follows:
 | Capability-blocking debt | Directly blocks delivery, reliability, or new business capability | Find a breakthrough first |
 | Stability-contract debt | Looks poor but carries real compatibility or reliability duties | Identify contracts before moving it |
 | Scaling-obstacle debt | One team can solve it, but success cannot be replicated | Build templates, platform capability, or contracts |
+| Adoption-mismatch constraint | Benefits, migration cost, authority, or operational ownership are misaligned | Redesign owner, budget, approval, or rollout economics |
 | Tolerable legacy debt | Unattractive but barely interferes with capability | Do not invest now |
 | Knowledge gap | No telemetry, no tests, or no explanatory ownership | Establish fact-generating capability first |
 
 ### Dominant Constraint Statement Template
 
-> The constraint most worth relieving first is **[constraint]**, because evidence shows that it affects **[capabilities or flows]**, and its relief would open **[subsequent space]**. In contrast, **[tempting but lower-priority refactor]** has not yet shown comparable benefit. Confidence is **[high / medium / low]**, and the critical unknown is **[unknown]**.
+> The constraint most worth relieving first is **[constraint]**, because evidence shows that it affects **[capabilities or flows]**, and its relief would open **[subsequent space]**. Its primary cause appears to be **[technical / procedural / incentive / risk / capability / knowledge]**. In contrast, **[tempting but lower-priority refactor]** has not yet shown comparable benefit. Confidence is **[high / medium / low]**, and the critical unknown is **[unknown]**.
 
 ---
 
@@ -403,13 +425,16 @@ Every candidate recommendation must answer:
 3. **Why the debt persists:** Is the cause technical, procedural, incentive-related, risk-related, capability-related, or an outdated assumption?
 4. **Rejected empty argument:** Which plausible-sounding claim lacks proven value?
 5. **First breakthrough boundary:** What is the minimum verifiable slice?
-6. **Pilot contract:** Scope, signals, timebox, rollback, and stop conditions.
-7. **Stability floor:** Data, security, compatibility, SLO, and cost constraints.
-8. **Transition mechanism:** Should the pilot use a feature flag, canary, shadow execution, ACL, Facade, Strangler, or expand-contract approach, and why is it specifically applicable?
-9. **Escape hatch:** What threshold triggers which fallback action, by whom?
-10. **Scale route:** How will success be standardized and replicated?
-11. **Ownership and collaboration:** Who owns the work, who benefits, and who bears migration burden?
-12. **Evidence and confidence:** Which parts come from inspected evidence and which need measurement?
+6. **Protect / Experiment / Defer:** What must not break, what can be safely varied, and what debate should wait for facts?
+7. **Pilot-to-decision contract:** Which unknown will the pilot resolve, and what observed result leads to expand, revise, pause, rollback, or stop?
+8. **Pilot contract:** Scope, signals, timebox, rollback, and stop conditions.
+9. **Stability floor:** Data, security, compatibility, SLO, and cost constraints.
+10. **Transition mechanism:** Should the pilot use a feature flag, canary, shadow execution, ACL, Facade, Strangler, or expand-contract approach, and why is it specifically applicable?
+11. **Escape hatch:** What threshold triggers which fallback action, by whom?
+12. **Scale route:** How will success be standardized and replicated?
+13. **Adoption economics:** Who benefits, who pays migration and dual-run cost, who owns operational risk, who can approve, and what mismatch must be resolved?
+14. **Ownership and collaboration:** Who owns the work, who benefits, and who bears migration burden?
+15. **Evidence and confidence:** Which parts come from inspected evidence and which need measurement?
 
 ---
 
@@ -451,12 +476,14 @@ For each `Pilot Now` recommendation, provide a three-stage route.
 - limited scope, traffic, tenants, or functionality;
 - observe first, then switch behavior;
 - withdrawal possible through a single release or clearly defined steps;
+- explicit unknown, success branch, failure branch, and pause condition;
 - capture both success and failure facts.
 
 ### Stage Two: Standardized Replication
 
 - convert manual pilot knowledge into contracts, templates, tools, and automated tests;
 - enable a second team to reproduce success without excessive dependence on original authors;
+- confirm that the second team receives visible benefit and has capacity, approval, and operating responsibility;
 - account for the cost of dual running, compatibility layers, and temporary flags.
 
 ### Stage Three: Scale-Out and Old-Path Retirement
@@ -491,12 +518,14 @@ For the 3–7 highest-impact recommendations, complete at least the following cr
 | Capability Benefit | Who becomes faster, safer, or less costly, and how will it be observed? |
 | Outcomes Over Schools | Is a technology label causing overvaluation or undervaluation? |
 | Dominant Constraint | Why change this first instead of a more visually attractive refactor? |
+| Protect / Experiment / Defer | What must not break, what can be tested, and what should wait for evidence? |
 | Reversible Validation | How does the first small step validate rather than merely explore? |
 | Stability | What can fail, what will be damaged, and how is loss limited? |
 | Acceleration and Guardrails | Are acceleration and governance mechanisms being built together? |
 | Open Learning | Can mature external capability be reliably used? |
+| Pilot-to-Decision Contract | Which missing fact does the pilot produce, and how do results change the next step? |
 | Replication and Scale | Can success be reproduced without heroes? |
-| Ownership and Transfer | Who has authority, accountability, and capacity to finish it? |
+| Ownership and Transfer | Who has authority, accountability, capacity, benefit, and adoption cost? |
 
 ---
 
@@ -615,12 +644,14 @@ Each card must include:
 - **Evidence and impact:** paths, classes, functions, configuration, or metric evidence.
 - **Why it has persisted:** technical and organizational causes stated separately.
 - **Rejected empty proposal:** why a plausible broad idea cannot simply be adopted.
+- **Protect / Experiment / Defer:** protected floors, safe variables, and unresolved debates.
 - **Current vs Breakthrough** two-column comparison: red current state and green first breakthrough.
-- **Pilot contract:** scope, owner, metrics, timebox, first validation checkpoint, rollback, stop conditions.
+- **Pilot-to-decision contract:** unknown to resolve, scope, owner, metrics, timebox, first validation checkpoint, result branches, rollback, stop conditions.
 - **Selected transition mechanism:** for example `feature flag / canary / shadow / ACL / Facade / Strangler / expand-contract`, with explanation of why it applies.
 - **Escape hatch:** fallback threshold, executor, operational path, and acceptable loss.
 - **Stability floors.**
-- **Route from local to broad capability:** standardization assets, next expansion domains, and old-path retirement conditions.
+- **Adoption economics:** beneficiaries, cost bearers, approval authority, operational owner, blockers, and required resource or responsibility changes.
+- **Route from local to broad capability:** standardization assets, second-team adoption economics, next expansion domains, and old-path retirement conditions.
 - **Falsification and blind spots:** what evidence would reverse the recommendation.
 - Collapsible detail areas: evidence extracts, call chains, pseudocode, and migration steps.
 
