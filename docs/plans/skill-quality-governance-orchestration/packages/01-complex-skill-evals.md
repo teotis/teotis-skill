@@ -17,7 +17,7 @@ The evals should act as behavior contracts, not decorative examples.
 
 ## Context
 
-- Confirmed finding: only four skills currently have tracked evals: `agent-handoff-planner`, `android-career-interview-coach`, `math-tutor`, and `model-capability-cost-research`.
+- Confirmed finding: only three skills currently have tracked evals: `agent-handoff-planner`, `android-career-interview-coach`, and `math-tutor`.
 - Missing coverage is highest-risk for the long and rule-heavy skills.
 - Existing eval format uses a JSON object with `skill_name` and an `evals` array. Use the existing style in `skills/math-tutor/evals/evals.json` and `skills/agent-handoff-planner/evals/evals.json` as local precedent.
 

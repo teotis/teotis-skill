@@ -17,17 +17,6 @@
 
 ## 技能列表
 
-### `model-capability-cost-research` — 模型能力与成本研究
-
-用于为真实工作流选择 AI 模型、厂商或接入路径。它会基于最新证据比较模型能力、价格、缓存 token 计费、多模态支持、coding agent 适配度，以及性价比取舍。
-
-适合：
-
-- Codex、Claude Code、Gemini CLI、OpenCode 或 API 后端选择；
-- 比较 GPT、Claude、Gemini、Qwen、DeepSeek、Kimi、Mimo、千帆等模型；
-- 统一换算 token 价格、缓存输入价格、输出价格和二级市场套餐；
-- 多模态、中文 UI/文档、长上下文和大型代码工程 agent 场景决策。
-
 ### `android-career-interview-coach` — Android 求职面试教练
 
 用于准备 Android、移动端、相机 App、客户端、AI 应用或机器人 Android 岗位面试。它会把基础概念和项目经历转成可面试表达的一句话介绍、90 秒回答、技术拆解、模拟问答和岗位匹配策略。
@@ -98,7 +87,6 @@
 
 | 需求 | 优先使用 |
 |---|---|
-| 比较最新 AI 模型、价格和 agent 后端适配 | `model-capability-cost-research` |
 | 准备 Android/移动端/相机面试回答和求职策略 | `android-career-interview-coach` |
 | 学习数学概念、证明、公式或数学本质 | `math-tutor` |
 | 把需求变成可交给 agent 执行的方案 | `agent-handoff-planner` |

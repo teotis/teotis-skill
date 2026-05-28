@@ -23,17 +23,6 @@ repository at `public/teotis-skills/`.
 
 ## Skills
 
-### `model-capability-cost-research` — Model Capability And Cost Research
-
-Use when selecting AI models, vendors, or access routes for real workflows. It compares current model capability, pricing, cached-token behavior, multimodal support, coding-agent fit, and cost-performance trade-offs using fresh evidence and normalized assumptions.
-
-Best for:
-
-- Codex, Claude Code, Gemini CLI, OpenCode, or API backend choices;
-- comparing GPT, Claude, Gemini, Qwen, DeepSeek, Kimi, Mimo, Qianfan, and similar models;
-- token pricing, cached input pricing, output pricing, and reseller-package normalization;
-- multimodal, Chinese UI/document, long-context, and large-repo coding-agent decisions.
-
 ### `android-career-interview-coach` — Android Career Interview Coach
 
 Use when preparing for Android, mobile, camera-app, client-side, AI-app, or robotics Android interviews. It turns fundamentals and project experience into interview-ready explanations, 90-second answers, technical breakdowns, mock Q&A, and job-fit strategy.
@@ -104,7 +93,6 @@ Best for:
 
 | Need | Start With |
 |---|---|
-| Compare current AI models, prices, and agent backend fit | `model-capability-cost-research` |
 | Prepare Android/mobile/camera interview answers and job strategy | `android-career-interview-coach` |
 | Learn math concepts, proofs, formulas, or mathematical essence | `math-tutor` |
 | Turn a request into agent-executable plans | `agent-handoff-planner` |
