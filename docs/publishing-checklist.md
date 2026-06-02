@@ -6,6 +6,7 @@ public repository.
 ## Selection
 
 - The skill is intentionally selected for public release.
+- The skill is in the approved public release set.
 - The public behavior is defined independently from the private version.
 - The public name is stable.
 
@@ -20,7 +21,7 @@ public repository.
 ## Skill Quality
 
 - `SKILL.md` includes `name` and `description` frontmatter.
-- The visible introduction is Chinese-friendly.
+- The frontmatter `description` and primary operational text default to English.
 - The operational body is written in English.
 - Scripts and references are included only when necessary.
 - Examples are generic and reproducible.
@@ -30,4 +31,3 @@ public repository.
 - `README.md` lists the skill in English.
 - `README.zh-CN.md` lists the skill in Chinese.
 - Any behavior differences from the private version are intentional.
-

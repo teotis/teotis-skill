@@ -1,7 +1,7 @@
 # Teotis Skills
 
-A public Codex skill collection by Teotis, currently focused on architecture
-optimization, readable presentation of complex outputs, and reusable agent
+A public Codex skill collection by Teotis, currently focused on structural
+architecture analysis, reviewable technical reports, and reusable agent
 planning workflows.
 
 [中文版本](README.zh-CN.md)
@@ -17,23 +17,14 @@ complexity, then produces a reviewable HTML architecture report.
 conversion chains, caller-side API workarounds, collapsing boundaries, or
 growing central orchestration.
 
-### `renewal-architect`
+### `reviewable-html-report`
 
-**Effect:** Identifies the capability bottleneck most worth relieving in legacy
-systems and long-lived technical debt, then designs measurable, reversible, and
-scalable modernization pilots.  
-**Best fit:** Modernization work where the target direction is partly known but
-migration risk, compatibility duties, stability floors, team coordination, and
-ROI constraints dominate.
-
-### `html-response`
-
-**Effect:** Turns complex answers, architecture reports, plans, comparisons,
-reviews, and artifact previews into offline-first interactive HTML review
-pages.  
-**Best fit:** Tasks where content is dense, evidence-heavy, feedback-oriented,
-visually inspectable, or simply too large for chat to be the best reading
-surface.
+**Effect:** Provides the reusable HTML report mechanics for Mermaid diagrams,
+topology comparisons, review cards, local feedback persistence, and exportable
+review notes.  
+**Best fit:** Workflows that already own the analysis but need a browser-readable
+technical report that is easier to inspect, annotate, and hand back to another
+agent.
 
 ### `agent-handoff-planner`
 
@@ -58,23 +49,20 @@ a written control plane.
 | Skill | Specialist strength | Score | Note |
 |---|---:|---:|---|
 | `abstraction-architect` | Structural insight and complexity deletion | 94 / 100 | Strong at missing invariants and wrong boundaries; intentionally does not own rollout planning. |
-| `renewal-architect` | Legacy evolution and pilot design | 95 / 100 | Strong at constraints, stability, rollback, ownership, and gradual expansion. |
-| `html-response` | Readable presentation and feedback loop | 92 / 100 | Strong for reports, reviews, annotations, and feedback export; simple answers should stay in chat. |
+| `reviewable-html-report` | Interactive technical report infrastructure | 92 / 100 | Strong for Mermaid-safe reports, review cards, local feedback state, and exportable review notes. |
 | `agent-handoff-planner` | Small-package delegation and acceptance contracts | 91 / 100 | Strong for verified 1-3 agent handoffs; intentionally avoids batch dispatch and branch orchestration. |
 | `agent-orchestration-planner` | Multi-agent execution control and finalization | 93 / 100 | Strong for explicit orchestration kits; overkill when a single local edit or lightweight handoff is enough. |
 
 ## Design Philosophy
 
-The two architecture optimization skills are inspired by two kinds of peak
-human reasoning:
+The architecture and reporting skills are designed around evidence-first
+collaboration:
 
 - `abstraction-architect` draws from modern mathematics: the search for
 invariants, structures, and unifying representations, constrained here by
 engineering evidence so abstraction does not become elegance for its own sake.
-- `renewal-architect` draws from the practical wisdom of development at the
-scale of billions of people: under historical burden, stability constraints,
-and limited resources, find a verifiable breakthrough point first, then expand
-local success into system capability.
+- `reviewable-html-report` makes dense technical reasoning inspectable through
+stable review cards, readable diagrams, and exportable feedback.
 
 They do not imitate people, and metaphor is never treated as proof. The only
 standard is whether the skill makes engineering judgment more evidence-based,

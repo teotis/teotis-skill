@@ -1,6 +1,6 @@
 ---
 name: agent-orchestration-planner
-description: 用于用户明确要求的中大型多 agent 落地、Claude Code Agents View、claude --bg 自动派工、任务尾部推进、DAG 调度、worktree/分支管理、状态账本和自动收口合并。Use for explicit multi-agent orchestration requests, background dispatch, tail-driven advancement, status ledgers, branch/worktree control, and finalize workflows.
+description: Use for explicit medium-to-large multi-agent execution requests, Claude Code Agents View, claude --bg background dispatch, tail-driven advancement, DAG scheduling, worktree/branch management, status ledgers, and final merge workflows.
 ---
 
 # Agent Orchestration Planner

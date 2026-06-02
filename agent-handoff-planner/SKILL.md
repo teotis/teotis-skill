@@ -1,6 +1,6 @@
 ---
 name: agent-handoff-planner
-description: 用于小型任务方案、外部 agent 反馈核验、1-3 个 Claude Code 窗口可手动执行的 Markdown 分包、Codex 保留项划分和交付验收。Use for lightweight handoff plans, direct-execution packages, and acceptance checks.
+description: Use for lightweight task plans, verifying external-agent feedback, Markdown packages executable in 1-3 manual Claude Code windows, Codex-retained work boundaries, and final acceptance checks.
 ---
 
 # Agent Handoff Planner
