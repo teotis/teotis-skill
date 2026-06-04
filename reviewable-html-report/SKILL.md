@@ -1,11 +1,6 @@
 ---
 name: reviewable-html-report
-description: >
-  用于生成、改造或审查可交互评审的 HTML 报告基础设施。
-  Use whenever a skill or workflow needs a browser-readable technical report with Mermaid diagrams, topology comparisons, review cards, local feedback persistence, and exportable review notes.
-whenToUse: >
-  当任务需要构建或审查 HTML 报告基础设施、Mermaid 图、拓扑对比、评审卡、反馈持久化、导出评审笔记或可交互技术报告模板时使用。
-  不用于一次性普通 HTML 回答、简单报告排版、或只需要选择是否生成 HTML 的场景；这些应使用 html-response。
+description: Use to generate, migrate, or review interactive HTML report infrastructure whenever a skill or workflow needs a browser-readable technical report with Mermaid diagrams, topology comparisons, review cards, local feedback persistence, and exportable review notes.
 ---
 
 # Reviewable HTML Report

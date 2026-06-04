@@ -1,12 +1,6 @@
 ---
 name: agent-orchestration-planner
-description: >
-  用于用户明确要求的中大型多 agent 落地、Claude Code Agents View、claude --bg 自动派工、任务尾部推进、DAG 调度、worktree/分支管理、状态账本和自动收口合并。
-  Use for explicit multi-agent orchestration requests, background dispatch, tail-driven advancement, status ledgers, branch/worktree control, and finalize workflows.
-whenToUse: >
-  仅当用户明确要求多 agent 编排、Claude Agents View、claude agents、claude --bg、自动派工、十个线程/10+ agents、状态账本、DAG 调度、worktree/分支管理或自动收口时使用。
-  不要仅因为任务复杂就触发；轻量 1-3 个窗口的手动分包应使用 agent-handoff-planner，普通工程任务应直接完成。
-disableModelInvocation: true
+description: Use for explicit medium-to-large multi-agent execution requests, Claude Code Agents View, claude --bg background dispatch, tail-driven advancement, DAG scheduling, worktree/branch management, status ledgers, and final merge workflows.
 ---
 
 # Agent Orchestration Planner
@@ -34,9 +28,9 @@ Use this skill only when the user explicitly asks for this skill or clearly asks
 for medium/large orchestration, such as:
 - `agent-orchestration-planner`
 - `orchestration skill`
-- 多 agent 调度 / 自动派工 / 十个线程 / 10+ agents
+- Multi-agent orchestration / automatic dispatch / 10+ agents
 - Claude Code Agents View / `claude agents` / `claude --bg`
-- 状态账本 / DAG 调度 / worktree 管理 / 分支管理 / 自动收口
+- Status ledger / DAG scheduling / worktree management / branch management / final merge
 
 Do not infer this skill merely because a task is complex. If the user did not
 ask for orchestration or an equivalent multi-agent control plane, do normal work

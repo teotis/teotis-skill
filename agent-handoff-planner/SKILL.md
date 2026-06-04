@@ -1,11 +1,6 @@
 ---
 name: agent-handoff-planner
-description: >
-  用于小型任务方案、外部 agent 反馈核验、1-3 个 Claude Code 窗口可手动执行的 Markdown 分包、Codex 保留项划分和交付验收。
-  Use for lightweight handoff plans, direct-execution packages, and acceptance checks.
-whenToUse: >
-  当用户需要把一个请求拆成少量可手动执行的 agent 包、核验外部 agent 分析、规划 1-3 个窗口的协作、或做最终验收时使用。
-  不用于用户明确要求中大型自动编排、Claude Agents View、claude --bg 自动派工、状态账本推进或自动合并的场景；这些应使用 agent-orchestration-planner。
+description: Use for lightweight task plans, verifying external-agent feedback, Markdown packages executable in 1-3 manual Claude Code windows, Codex-retained work boundaries, and final acceptance checks.
 ---
 
 # Agent Handoff Planner
@@ -24,7 +19,7 @@ Use this skill for requests containing signals like:
 - "split this for one to three Claude Code windows"
 - "you handle the hardest 10% / multimodal-only part"
 - "after the other agent implements it, validate/acceptance test it"
-- Chinese variants such as "外部 agent 审查", "核验", "方案文档", "转给其他非多模态 agent", "并行处理", "实现落地", "你验收"
+- "external agent review", "verify findings", "handoff document", "delegate to non-multimodal agent", "parallel execution", "validate after implementation"
 
 Do not use it for a tiny single-edit request unless the user explicitly asks for handoff docs or validation.
 
@@ -205,8 +200,8 @@ Copy this exact message to start an external Claude Code agent:
 
 ```
 /using-superpowers
-执行授权：为每个包创建独立 worktree 和分支，读取方案，实施 scope 内修复，更新必要测试/文档，运行列出的验证命令，并继续修复 scope 内验证失败；完成后合并到主分支并推送/创建 PR。不要为这些常规步骤询问确认。禁止 force-push、hard reset、删除其他包的分支或 worktree。只有遇到 Stop Gates 才停下询问。
-核查现状，并恰当落地如下优化方案：<PLAN_PATH>
+Execution authorization: Create an independent worktree and branch for each package. Read the plan, implement the scoped changes, update necessary tests/docs, run the listed verification commands, and continue fixing in-scope verification failures. After completion, merge to the integration branch or mainline and push/create a PR. Do not ask for confirmation for these routine steps. Do NOT force-push, hard-reset, or delete branches/worktrees belonging to other packages. Only stop and ask at Stop Gates.
+Assess the current state and implement the following plan: <PLAN_PATH>
 ```
 ````
 

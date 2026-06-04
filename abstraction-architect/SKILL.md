@@ -1,11 +1,10 @@
 ---
 name: abstraction-architect
 description: >
-  用于结构性架构分析：当复杂度可能来自缺失不变量、重复领域表示、不稳定边界、转换胶水、平台/配置分支、中心编排瓶颈、流程状态散落、交互流程复杂或控制面膨胀时使用。
-  以工程证据、反例、迁移接缝和可证伪测试为基础，寻找能删除整类特殊情况的抽象机会，并产出交互式 HTML 架构报告。
-whenToUse: >
-  当用户要求架构审查、领域统一、API/边界重设计、平台/配置泛化、状态机或流程漂移分析、重复表示消除、控制面简化、非增量结构性简化时使用。
-  不作为普通 bug 修复、紧急事故处置、小性能调优或以交付风险排序为主的技术债治理的唯一方法。
+  Use for structural architecture analysis when complexity may come from missing invariants, duplicated domain representations, unstable boundaries, conversion glue, platform/configuration branching, or central orchestration bottlenecks.
+  Grounds abstraction proposals in engineering evidence, counterexamples, migration seams, and falsifiable tests; produces an interactive HTML architecture report.
+  Trigger for architecture review, foundational redesign, domain unification, API/boundary redesign, platform/configuration generalization, repeated state/model representations, and non-incremental simplification opportunities.
+  Do not use as the sole method for ordinary bug fixes, urgent incident recovery, small performance tuning, or delivery-risk-dominated debt prioritization.
 ---
 
 # Structural Abstraction Architect
