@@ -1,8 +1,8 @@
 # Teotis Skills
 
 A public Codex skill collection by Teotis, currently focused on structural
-architecture analysis, reviewable technical reports, and reusable agent
-planning workflows.
+architecture analysis, pragmatic legacy renewal, reviewable technical reports,
+and reusable agent planning workflows.
 
 [中文版本](README.zh-CN.md)
 
@@ -25,6 +25,15 @@ review notes.
 **Best fit:** Workflows that already own the analysis but need a browser-readable
 technical report that is easier to inspect, annotate, and hand back to another
 agent.
+
+### `renewal-architect`
+
+**Effect:** Diagnoses legacy-system renewal and technical-debt modernization by
+finding the dominant capability constraint, then designing reversible pilot
+paths with stability guardrails, adoption economics, and explicit ownership.  
+**Best fit:** Systems where modernization must preserve delivery, compatibility,
+operations, and organizational alignment instead of becoming a one-shot rewrite
+or architecture-camp debate.
 
 ### `agent-handoff-planner`
 
@@ -50,6 +59,7 @@ a written control plane.
 |---|---:|---:|---|
 | `abstraction-architect` | Structural insight and complexity deletion | 94 / 100 | Strong at missing invariants and wrong boundaries; intentionally does not own rollout planning. |
 | `reviewable-html-report` | Interactive technical report infrastructure | 92 / 100 | Strong for Mermaid-safe reports, review cards, local feedback state, and exportable review notes. |
+| `renewal-architect` | Legacy renewal and reversible modernization | 93 / 100 | Strong for dominant-constraint diagnosis, pilot-to-decision contracts, adoption economics, and stability-first evolution. |
 | `agent-handoff-planner` | Small-package delegation and acceptance contracts | 91 / 100 | Strong for verified 1-3 agent handoffs; intentionally avoids batch dispatch and branch orchestration. |
 | `agent-orchestration-planner` | Multi-agent execution control and finalization | 93 / 100 | Strong for explicit orchestration kits; overkill when a single local edit or lightweight handoff is enough. |
 
@@ -61,6 +71,9 @@ collaboration:
 - `abstraction-architect` draws from modern mathematics: the search for
 invariants, structures, and unifying representations, constrained here by
 engineering evidence so abstraction does not become elegance for its own sake.
+- `renewal-architect` focuses on legacy evolution under real constraints:
+protect what must not break, test what can be safely varied, and let reversible
+pilots turn debate into decision-quality evidence.
 - `reviewable-html-report` makes dense technical reasoning inspectable through
 stable review cards, readable diagrams, and exportable feedback.
 
