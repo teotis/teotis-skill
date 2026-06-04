@@ -1,19 +1,22 @@
 ---
 name: abstraction-architect
 description: >
-  Use for structural architecture analysis when complexity may come from missing invariants, duplicated domain representations, unstable boundaries, conversion glue, platform/configuration branching, or central orchestration bottlenecks.
-  Grounds abstraction proposals in engineering evidence, counterexamples, migration seams, and falsifiable tests; produces an interactive HTML architecture report.
-  Trigger for architecture review, foundational redesign, domain unification, API/boundary redesign, platform/configuration generalization, repeated state/model representations, and non-incremental simplification opportunities.
-  Do not use as the sole method for ordinary bug fixes, urgent incident recovery, small performance tuning, or delivery-risk-dominated debt prioritization.
+  用于结构性架构分析：当复杂度可能来自缺失不变量、重复领域表示、不稳定边界、转换胶水、平台/配置分支、中心编排瓶颈、流程状态散落、交互流程复杂或控制面膨胀时使用。
+  以工程证据、反例、迁移接缝和可证伪测试为基础，寻找能删除整类特殊情况的抽象机会，并产出交互式 HTML 架构报告。
+whenToUse: >
+  当用户要求架构审查、领域统一、API/边界重设计、平台/配置泛化、状态机或流程漂移分析、重复表示消除、控制面简化、非增量结构性简化时使用。
+  不作为普通 bug 修复、紧急事故处置、小性能调优或以交付风险排序为主的技术债治理的唯一方法。
 ---
 
 # Structural Abstraction Architect
 
 ## Purpose
 
-Analyze a software system for opportunities where a better structural model can eliminate entire families of special cases, adapters, branching logic, lifecycle inconsistencies, or artificial boundaries.
+Analyze a software system for opportunities where a better structural model can eliminate entire families of special cases, adapters, branching logic, lifecycle inconsistencies, artificial boundaries, scattered process state, or user-facing workflow burden.
 
 This skill is **inspired by structural and universal abstraction methods associated with Grothendieck**, but it is not a historical essay and does not imitate a personality. Mathematical metaphors are only useful when they yield verifiable engineering simplification.
+
+The central advanced move is **process spatialization**: when complexity appears as time, sequence, status drift, retries, approvals, orchestration, or environment-dependent behavior, ask whether those dynamics should instead be represented by one canonical structural object whose documents, logs, UI states, ledgers, prompts, and reports are consistent projections.
 
 The deliverable is an **interactive HTML architecture report**. By default, this skill performs analysis only. It MUST NOT modify production code, tests, configuration, migrations, or infrastructure unless the user separately gives explicit authorization after reviewing a transition plan.
 
@@ -29,8 +32,10 @@ Use this skill when the system exhibits one or more of these structural signals:
 - Repeated adapters, conversions, schema mappers, mode switches, or platform branches.
 - Boundaries that generate more glue than isolation value.
 - A central orchestrator or God object coordinating logic that ought to compose locally.
+- Workflow, orchestration, CI, approval, retry, or lifecycle state scattered across ledgers, logs, generated docs, dashboards, prompts, reports, or manual checklists.
 - API pain revealed by many callers compensating for a provider's design.
 - Similar workflows implemented separately across products, tenants, protocols, environments, or lifecycle stages.
+- User workflows that require many commands, modes, handoffs, confirmations, training rules, or recovery loops because the system exposes controls rather than a task-level interaction model.
 - A request for architecture review, domain unification, foundational refactoring, or non-incremental simplification.
 
 ### Weak fit or wrong first tool
@@ -69,429 +74,23 @@ Never silently jump from analysis to implementation.
 
 ---
 
-# Part 1 — Structural Abstraction Method
+## Core Workflow
 
-The aim is not to maximize abstraction. The aim is to find abstractions that **delete repeated complexity while preserving meaningful differences**.
+1. Establish the target repository, requested mode, and evidence limits.
+2. Inspect enough code, docs, tests, runtime paths, and user-supplied context to build an evidence ledger.
+3. Use the detailed structural method in `references/method_and_report_spec.md` when evaluating candidates, especially for process spatialization, admissibility, candidate competition, and report requirements.
+4. Produce an interactive HTML architecture report. Use `reviewable-html-report/references/report_base.md` for shared report mechanics instead of reimplementing HTML infrastructure.
+5. If the user wants implementation after the report, switch only after explicit authorization and keep changes inside the accepted transition boundary.
 
-For every candidate, ask:
+## Resource Map
 
-> What recurring engineering burden exists, what hidden invariant might unify it, and what proof would demonstrate that the proposed abstraction is simpler in practice rather than merely more elegant on paper?
+- `references/method_and_report_spec.md` — full structural method, admissibility gate, evidence rhythm, HTML report schema, anti-goals, and execution flow.
+- `references/discovery_patterns.md` — discovery prompts for unclear pressure maps or weak candidates.
+- `../reviewable-html-report/references/report_base.md` — shared HTML report mechanics when an interactive report is required.
 
-## A. Seeing Structural Pressure
+## Completion Standard
 
-### 1. Patch Pressure Reveals Missing Structure
-
-Repeated local patches, proliferating conditionals, parallel hot fixes, and recurring edge cases may indicate that the system is expressing an invariant indirectly.
-
-**Engineering question:** Which recurring exception family would disappear if a shared rule, state model, protocol, or boundary existed?
-
-**Do not assume:** An ugly module automatically needs a higher abstraction. It may be stable, low-value, or cheaper to leave alone.
-
-### 2. Discover the Latent Domain Kernel
-
-When many modules, schemas, DTOs, events, or workflows appear related, do not begin by extracting a superclass. Look for the smallest domain meaning or contract that explains why those variants exist.
-
-**Engineering question:** Are these genuinely projections of one concept, or do they only share vocabulary while differing in essential rules?
-
-**Required evidence:** Compare fields, invariants, lifecycle transitions, error semantics, callers, and tests before recommending unification.
-
-### 3. Locate Natural Boundaries
-
-A useful boundary reduces reasoning and change propagation. An artificial boundary produces adapters, synchronization, duplicated ownership, and contract translation without reducing risk.
-
-**Engineering question:** Where does the system spend effort crossing a boundary that does not correspond to an independent invariant, deployment need, security boundary, or ownership boundary?
-
-### 4. The Simplicity Outcome Test
-
-A structural improvement is valuable only when future work becomes easier to express, test, operate, and explain.
-
-**Engineering question:** After the redesign, which concrete feature paths, conversion layers, branching sites, or maintenance rituals disappear?
-
-**Reject the candidate** when it merely moves complexity into a more sophisticated framework.
-
-## B. Constructing Better Structures
-
-### 5. Context-Relative Analysis
-
-A component cannot be judged in isolation. Its meaning depends on dependencies, callers, deployment environment, persistence guarantees, security boundaries, and operational expectations.
-
-**Technique:** For a candidate component `X`, map `X relative to context S`: inputs, outputs, dependencies, callers, invariants, environmental variants, and failure modes.
-
-### 6. Contract and Invariant First
-
-Before proposing a new abstraction, state what it must preserve and what differences it must intentionally expose.
-
-**Technique:** Specify:
-
-- semantic invariants;
-- input/output contracts;
-- ownership and mutation rules;
-- compatibility expectations;
-- error and recovery semantics;
-- observability requirements.
-
-An abstraction without explicit invariants is only a naming exercise.
-
-### 7. Structure-Preserving Transformations
-
-Transformations such as mapping, validation, configuration resolution, lifecycle transitions, serialization, and protocol conversion should preserve named structure instead of being reimplemented per case.
-
-**Engineering question:** Which transformations are repeated because the system lacks a canonical intermediate representation or invariant-preserving operation?
-
-### 8. Local Composition into Global Behavior
-
-Prefer components that compose through stable local contracts over systems that require a central object to know every special case.
-
-**Engineering question:** Can adjacent modules establish sufficient compatibility rules so that the global pipeline emerges without an expanding orchestrator?
-
-**Caution:** Central coordination may still be necessary for transactions, security policy, rate limiting, or globally ordered workflows. State why decentralization is safe before recommending it.
-
-### 9. Generalization Must Delete Exceptions
-
-Generalization is legitimate only when it makes multiple existing implementations or branches unnecessary and does not erase meaningful domain distinctions.
-
-**Technique:** Count before and after:
-
-- number of representations;
-- adapters and conversions;
-- conditional branch families;
-- duplicated tests;
-- divergent configuration paths;
-- ownership boundaries affected.
-
-### 10. Parameterize Environmental Variation
-
-Differences across platforms, tenants, protocols, deployment environments, feature sets, or dependency versions often create branch explosion.
-
-**Engineering question:** Which environmental variation belongs in an explicit parameter, capability model, policy object, plugin boundary, or generated configuration rather than copied control flow?
-
-### 11. Derive APIs from Caller Reality
-
-An API is defined operationally by how consumers use, wrap, avoid, and compensate for it.
-
-**Technique:** Sample call sites and identify caller-side workarounds, ordering assumptions, repeated conversion, defensive handling, and impossible states. Use this evidence to infer the true contract and boundary.
-
----
-
-# Part 2 — The Abstraction Admissibility Gate
-
-No proposal qualifies as a recommended structural direction until it passes this gate. A sophisticated abstraction without this validation belongs in the rejected or unproven section of the report.
-
-## Mandatory proof obligations for each proposal
-
-| Obligation | What the report must show |
-|---|---|
-| Concrete symptom | Specific files, modules, call sites, schemas, tests, or dependency edges exhibiting the burden. |
-| Hidden invariant hypothesis | The exact common rule or domain meaning believed to unify the symptom family. |
-| Difference preservation | Cases that look similar but must remain distinct, and how the design preserves them. |
-| Complexity deletion | Named branches, adapters, duplicate models, coordinators, or workflow copies removed or made unnecessary. |
-| Contract safety | Invariants, compatibility, error behavior, and observability that must not regress. |
-| Transition seam | A feasible seam such as adapter boundary, façade, compatibility layer, staged API, dual-read comparison, or module replacement boundary. |
-| Disproof test | Evidence that would prove the abstraction wrong or premature. |
-| Transition burden | Expected migration scope, affected owners, test burden, compatibility cost, and operational risk if known. |
-
-## Classification
-
-Every candidate MUST be classified as one of:
-
-- **Validated structural opportunity** — strong evidence and a plausible transition seam.
-- **Promising but unproven hypothesis** — structural idea is credible but missing necessary evidence.
-- **False abstraction risk** — complexity would be moved, essential distinctions erased, or transition burden dominates benefit.
-- **Pragmatic sequencing problem** — target structure is already sufficiently understood; route to Pragmatic Renewal Architect for implementation planning.
-
-## Hard rejection rules
-
-Do not recommend an abstraction when:
-
-- It has no specific code evidence.
-- It unifies only names while ignoring divergent business rules or failure semantics.
-- It introduces a framework, DSL, meta-model, or generic layer without naming eliminated complexity.
-- It requires a broad rewrite without a transition seam or rollback mechanism.
-- It assumes runtime pain, business benefit, or developer friction not evidenced by available data.
-- It replaces a local inconvenience with distributed coupling or opaque indirection.
-
----
-
-# Part 3 — Evidence Collection Rhythm
-
-## Phase 1: System survey
-
-Gather enough structure to avoid analyzing isolated snippets:
-
-- directory and package/module layout;
-- dependency and import relationships;
-- public interfaces and caller clusters;
-- configuration, platform, protocol, tenant, or environment variation points;
-- data models, schemas, DTOs, events, or serialization boundaries;
-- workflow/state/lifecycle implementations;
-- tests describing invariants and edge cases.
-
-When available, also gather:
-
-- churn and repeated modifications;
-- issue/incident references;
-- performance profiles or SLO evidence;
-- deployment boundaries and ownership information.
-
-Do not claim telemetry-based findings when telemetry is unavailable.
-
-## Phase 2: Structural pressure map
-
-Identify recurring forms of pressure:
-
-| Pressure signal | Typical structural hypothesis | Minimum evidence |
-|---|---|---|
-| Many similar models | Latent canonical domain model | Side-by-side schema and invariant comparison |
-| Adapter/conversion explosion | Missing canonical representation or boundary | Multiple concrete conversion paths |
-| Mode/platform branching | Unparameterized environmental variation | Branch families and variant rules |
-| God coordinator | Local composition failure | Coordination responsibilities and callers |
-| Painful API | Boundary designed away from caller reality | Multiple caller workarounds |
-| Repeated lifecycle bugs | Missing explicit state machine/invariant | Transitions, tests, incident or bug evidence |
-
-## Phase 3: Candidate construction and falsification
-
-For every high-value structural hypothesis:
-
-1. Formulate the proposed invariant or canonical abstraction.
-2. Locate concrete affected paths.
-3. Find at least one near-counterexample or meaningful difference.
-4. Estimate what complexity disappears and what new complexity is introduced.
-5. Define a transition seam, even though this skill does not execute it.
-6. Classify confidence and state missing evidence.
-
-## Phase 4: Handoff boundary
-
-When a structural direction is accepted, produce a handoff brief for transition planning. It must contain:
-
-- accepted target structure;
-- unchanged invariants;
-- candidate pilot boundary;
-- required compatibility or adaptation seam;
-- evidence still needed before implementation;
-- explicit statement that code changes require user authorization.
-
----
-
-# Part 4 — Report Specification
-
-## Deliverable
-
-Generate an HTML report named `structural_abstraction_architect_report.html` containing analysis, not code modifications. If HTML generation or automatic browser launch is not feasible, provide the same content as Markdown and clearly state the limitation.
-
-## Required report sections
-
-1. **Executive Summary**
-   - Overall structural diagnosis.
-   - Highest-leverage validated opportunities.
-   - Most important rejected or unproven abstractions.
-   - Whether a pragmatic transition handoff is recommended.
-
-2. **Evidence Ledger**
-   - Files, symbols, interfaces, schemas, tests, and observed patterns used as evidence.
-   - Separate observed facts from inference and unknowns.
-
-3. **Structural Leverage Matrix**
-   - Plot proposals by `Structural Simplification Potential` versus `Transition Burden`.
-   - Use confidence as marker annotation or badge.
-   - Do not disguise unknown transition cost as low cost.
-
-4. **Structural Pressure Map**
-   - Representation duplication, conversion glue, boundary friction, transformation branching, orchestration hotspots, and caller pain.
-
-5. **Detailed Proposal Cards**
-   - One card for each validated or promising candidate.
-
-6. **Rejected or Deferred Abstractions**
-   - Document candidates that fail the admissibility gate or require more evidence.
-   - This section is mandatory; it prevents the report from rewarding abstraction for its own sake.
-
-7. **Transition Handoff Brief**
-   - Include only for user-relevant accepted candidates.
-   - Frame work for later pragmatic planning, not automatic implementation.
-
-8. **Uncertainties and Missing Evidence**
-   - Explicit limitations and what further inspection would change confidence.
-
-## Proposal card schema
-
-Every proposal card MUST contain:
-
-- Title and classification.
-- Quantized badges: `Structural Leverage`, `Transition Burden`, `Risk`, `Confidence`.
-- Lens traceability: which structural lens or lenses support the proposal.
-- Concrete evidence with file/symbol references.
-- Current symptom versus proposed structure.
-- Hidden invariant hypothesis.
-- Meaningful differences preserved.
-- Measurable complexity deletion claim.
-- Proof obligations and disproof signals.
-- Transition seam and authorization boundary.
-- Optional code sketches in `<details>` sections; sketches are explanatory only.
-
-## Topology diagrams
-
-Generate topology comparisons only for proposals whose value depends on a changed dependency, boundary, data-flow, or composition shape. Do not require diagrams for textual contract clarifications or evidence gaps.
-
-For applicable cards, render two full-width Mermaid diagrams beneath the comparison block:
-
-- `Current Topology`: observed structural pressure.
-- `Proposed Structural Topology`: candidate invariant, boundary, canonical model, or composition path.
-
-### Mermaid compatibility requirements
-
-- Include Mermaid 10 via a module import and initialize globally with a dark theme.
-- Use `flowchart TB`, `flowchart TD`, or `flowchart LR`; never use `graph` syntax.
-- Use ASCII-only node and edge labels inside Mermaid blocks.
-- Do not use emoji or `linkStyle` directives inside Mermaid code.
-- Use `subgraph id["Label"]` form.
-- Sanitize labels and avoid markdown/path punctuation likely to break parsing.
-- Each `.topology-diagram .mermaid` container must have `min-height: 380px` and `width: 100%`.
-- Do not add per-diagram Mermaid initialization blocks.
-- Clicking a diagram must open a full-screen lightbox; clicking the backdrop or pressing Escape closes it.
-- If Mermaid cannot load in the target environment, retain readable Mermaid source and disclose that rendering is unavailable; do not claim that diagrams rendered successfully.
-
-### Mermaid global initialization
-
-```html
-<script type="module">
-  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-  mermaid.initialize({
-    startOnLoad: true,
-    theme: 'dark',
-    themeVariables: {
-      fontSize: '16px',
-      primaryColor: '#243447',
-      primaryTextColor: '#e6edf3',
-      primaryBorderColor: '#6e7681',
-      lineColor: '#8b949e',
-      secondaryColor: '#161b22',
-      tertiaryColor: '#21262d',
-      clusterBkg: '#161b22',
-      clusterBorder: '#30363d',
-      edgeLabelBackground: '#161b22'
-    }
-  });
-</script>
-```
-
-### Minimum CSS for topology comparison and lightbox
-
-```css
-:root {
-  --topo-bg: #151922;
-  --topo-current-label-bg: rgba(248,81,73,0.14);
-  --topo-current-label-color: #ff7b72;
-  --topo-current-border: rgba(248,81,73,0.32);
-  --topo-proposed-label-bg: rgba(88,166,255,0.15);
-  --topo-proposed-label-color: #79c0ff;
-  --topo-proposed-border: rgba(88,166,255,0.32);
-  --lb-backdrop: rgba(0,0,0,0.88);
-  --lb-content-bg: #151922;
-}
-.topology-compare { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 24px; }
-.topology-diagram { flex: 1; min-width: 340px; cursor: pointer; }
-.topology-diagram .mermaid { min-height: 380px; width: 100%; background: var(--topo-bg); }
-.topology-diagram .label { font-size: 14px; font-weight: 600; margin-bottom: 8px; padding: 4px 12px; border-radius: 4px; display: inline-block; }
-.topology-diagram.current .label { background: var(--topo-current-label-bg); color: var(--topo-current-label-color); }
-.topology-diagram.current .mermaid { border: 2px solid var(--topo-current-border); border-radius: 8px; padding: 16px; }
-.topology-diagram.proposed .label { background: var(--topo-proposed-label-bg); color: var(--topo-proposed-label-color); }
-.topology-diagram.proposed .mermaid { border: 2px solid var(--topo-proposed-border); border-radius: 8px; padding: 16px; }
-.lightbox { display: none; position: fixed; inset: 0; z-index: 9999; background: var(--lb-backdrop); cursor: pointer; }
-.lightbox.active { display: flex; align-items: center; justify-content: center; }
-.lightbox .diagram-wrapper { min-width: 700px; min-height: 500px; max-width: 92vw; max-height: 92vh; overflow: auto; background: var(--lb-content-bg); border-radius: 8px; padding: 24px; }
-```
-
-### Lightbox JavaScript
-
-```javascript
-document.querySelectorAll('.topology-diagram').forEach(diagram => {
-  diagram.addEventListener('click', () => {
-    const rendered = diagram.querySelector('.mermaid svg');
-    if (!rendered) return;
-    const lb = document.createElement('div');
-    lb.className = 'lightbox active';
-    const wrapper = document.createElement('div');
-    wrapper.className = 'diagram-wrapper';
-    wrapper.addEventListener('click', event => event.stopPropagation());
-    wrapper.appendChild(rendered.cloneNode(true));
-    lb.appendChild(wrapper);
-    document.body.appendChild(lb);
-    const close = () => lb.remove();
-    lb.addEventListener('click', close);
-    document.addEventListener('keydown', function onEsc(event) {
-      if (event.key === 'Escape') {
-        close();
-        document.removeEventListener('keydown', onEsc);
-      }
-    });
-  });
-});
-```
-
-## Interactive review system
-
-Implement in vanilla JavaScript and persist data with `localStorage`.
-
-At the bottom of every proposal card, include:
-
-- review textarea;
-- 1–5 star confidence/acceptance rating;
-- status selector with: `[Structurally Sound] [Needs More Evidence] [Too Abstract] [Send to Transition Planning] [Reject]`;
-- optional reviewer note about a missing counterexample or operational constraint.
-
-## Feedback export
-
-Add a fixed bottom-right button titled `Export Review`.
-
-When clicked, export reviewed card titles, classification, rating, status, and review text as Markdown, then append this exact directive:
-
-```text
-[Next Action Directive] Treat the structural recommendations above as hypotheses that must be translated into safe engineering work. For items marked "Send to Transition Planning", evaluate transition burden, business relevance, compatibility boundaries, rollout controls, rollback strategy, ownership, and short, medium, and long-term ROI using the Pragmatic Renewal Architect approach. Do not modify code unless I explicitly authorize implementation after reviewing the proposed transition plan.
-```
-
-Copy the result to the clipboard and display a friendly success notification.
-
----
-
-# Part 5 — Relationship to Pragmatic Renewal Architect
-
-The two skills address different failure modes:
-
-| Skill | Primary question | Prevents |
-|---|---|---|
-| Structural Abstraction Architect | What deeper structure can eliminate recurring complexity? | Endless patches, duplicated representations, artificial boundaries, abstraction blindness |
-| Pragmatic Renewal Architect | What safe, worthwhile step can move the system forward now? | Grand rewrites, rollout failure, ROI blindness, unmanaged transition debt |
-
-## Required handoff rule
-
-A structural proposal that affects production architecture, persistence, public APIs, deployment topology, or multiple team boundaries should be sent through pragmatic transition evaluation before any implementation request is made.
-
-A pragmatic analysis may also hand work back to this skill when repeated tactical fixes expose a missing invariant or an architecture-level unification opportunity.
-
----
-
-# Part 6 — Anti-Goals
-
-Do NOT produce:
-
-- praise for abstraction without concrete deleted complexity;
-- a general-purpose framework merely because patterns repeat superficially;
-- recommendations unsupported by paths, symbols, contracts, tests, or dependency evidence;
-- architecture diagrams that imply observed facts not supported by inspection;
-- a full rewrite recommendation without a transition seam;
-- direct code modification instructions presented as already approved work;
-- historical or philosophical exposition unrelated to the engineering decision.
-
----
-
-# Execution Flow
-
-1. Confirm the target codebase or inspect the supplied project context.
-2. Determine whether this skill is the right first lens or whether the task should be routed to pragmatic transition analysis.
-3. Survey structure, interfaces, representations, variations, transformations, tests, and available operational evidence.
-4. Build the structural pressure map and evidence ledger.
-5. Construct candidate abstractions and aggressively test them against counterexamples and the admissibility gate.
-6. Classify validated opportunities, unproven hypotheses, false abstractions, and pragmatic sequencing problems.
-7. Generate `structural_abstraction_architect_report.html` with interactive review support.
-8. Open the report in a browser only when supported; otherwise provide its saved path or Markdown fallback.
-9. After user feedback, produce a transition handoff brief. Do not execute code changes without explicit authorization.
+- Separate observed evidence, inference, and unknowns.
+- Classify each proposal through the admissibility gate.
+- Include rejected or deferred abstractions when relevant.
+- Do not modify production code, tests, configuration, migrations, or infrastructure unless the user explicitly authorizes implementation after reviewing a transition plan.
