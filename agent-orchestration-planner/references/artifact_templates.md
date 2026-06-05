@@ -134,6 +134,32 @@ Copy this prompt into an agent, or let `orchestrate.sh start/advance` launch it 
 **Scratch path**: run `bash <absolute-plan-dir>/launchers/orchestrate.sh scratch-path <package-id>`
 **Orchestrator**: <absolute-plan-dir>/launchers/orchestrate.sh
 
+## Package Execution Authorization
+
+The INDEX authorizes this package to perform the routine operations needed to complete its assigned scope. Do not pause for confirmation before these in-scope actions:
+- Read the INDEX, package doc, assigned status file, package graph, state ledger, events log, and relevant repository files.
+- Create or reuse only this package's assigned worktree and branch.
+- Edit only the allowed paths named by this package.
+- Run the package's listed verification commands and focused follow-up commands needed to diagnose in-scope failures.
+- Continue fixing verification failures that remain inside this package's allowed scope.
+- Commit local package changes to this package's branch.
+- Write evidence and blocker diagnosis only to this package's coordinator status file.
+- Use the orchestrator commands listed in this prompt: `scratch-path`, `mark-state`, and the final `advance --from <package-id>` tail call.
+
+Do not wait for an interactive approval inside background execution. If the runner, sandbox, subscription, permission mode, credential boundary, network policy, or missing external capability prevents an in-scope command from running, record a blocker instead of hanging, retrying blindly, or claiming completion. Use `mark-state blocked` with:
+- `--error`: the concrete authorization or capability blocker.
+- `--failed-command`: the command or operation that was refused.
+- `--log-summary`: the decisive refusal message, such as an approval-policy, subscription, sandbox, credential, or permission-mode error.
+- `--recovery-hint`: the exact user or coordinator action needed, such as "rerun with approved permission mode", "provide manual external evidence", "mark package manual=1", or "retry after fixing runner authentication".
+
+Forbidden without explicit user approval from the INDEX or chat:
+- force-push, hard reset, or destructive git cleanup
+- deleting branches/worktrees not assigned to this package
+- editing outside allowed paths
+- adding secrets, credentials, or private tokens
+- accessing external accounts, paid services, physical devices, or human-only review gates
+- changing global orchestration policy, dependency graph, or another package's status
+
 You may edit only the allowed paths in the package doc. Do not edit INDEX.md or another package status file. If you create/use an implementation worktree, do not rely on status files inside that worktree; write the coordinator status path above.
 
 Use scratch only for temporary shared notes, inventories, command transcripts, draft diffs, or intermediate artifacts that help another package or finalizer inspect the work. Do not put credentials, tokens, private keys, `.env` files, hidden prompts, proprietary raw data, or authoritative completion evidence in scratch. Anything required for scheduling, completion, or final acceptance must be summarized into coordinator status through `mark-state` and the package status file.
