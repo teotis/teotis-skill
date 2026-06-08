@@ -484,7 +484,7 @@ The final deliverable is an offline-browsable HTML report that allows project de
 - Which stability floors must never be crossed?
 - How should review feedback feed the next implementation round?
 
-Default filename: `pragmatic_renewal_architect_report.html`.
+Default filename: `pragmatic_renewal_architect_report_{YYYYMMDD}_{HHMM}.html` (e.g. `pragmatic_renewal_architect_report_20260608_1432.html`). Include timestamp to prevent overwrites across multiple runs.
 
 Where browser launching is possible, automatically open the report after generation:
 

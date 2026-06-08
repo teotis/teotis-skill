@@ -50,6 +50,11 @@ docs/plans/<plan-name>/
 └── FINAL_REPORT.md (created by 99-finalize)
 ```
 
+`status/package-status-template.md` must be generated as a concrete template file using the
+format defined in `artifact_templates.md` section 5. The `## State` value must be
+backtick-wrapped (e.g. `` `pending` ``); the coordinator script's `markdown_status()`
+only parses backtick-wrapped state lines, and bare values resolve to `unknown`.
+
 `dispatch-claude-agents.sh` is no longer a primary generated entrypoint. If backward compatibility is useful, generate it only as a thin wrapper that calls `orchestrate.sh start`. Both scripts must compute `REPO_ROOT` with `git rev-parse --show-toplevel`, not hardcoded relative paths.
 
 `launchers/orchestrate.sh` must be copied from `scripts/orchestrate-template.sh` (resolved relative to this SKILL.md file), then syntax-checked with `bash -n`. Do not recreate this script from memory or prose. The template is the tested runtime contract for launch handshakes, state mutation, repair, and retry behavior.

@@ -204,6 +204,76 @@ bash <absolute-plan-dir>/launchers/orchestrate.sh advance
 ---
 ````
 
+### 5. status/package-status-template.md
+
+`status/<package-id>.md` is the human-readable package evidence file. The coordinator
+script reads and writes `## State` via `markdown_status()` and `sync_markdown_state()`;
+both functions require the state value to be wrapped in backticks on its own line
+immediately after `## State`.
+
+**CRITICAL**: The state value after `## State` MUST be wrapped in backticks. A bare
+`pending` or `completed` line without backticks will be parsed as `unknown`, causing
+`status_consistency_ok()` to fail and `repair-state` to reset the package to `pending`.
+
+Valid states (from `valid_state()` in `orchestrate-template.sh`):
+
+| State | Meaning |
+|---|---|
+| `pending` | Not yet dispatched |
+| `ready` | Dependencies satisfied, eligible for launch |
+| `manual_required` | Needs human intervention before dispatch |
+| `launched` | Agent session started |
+| `in_progress` | Agent is executing |
+| `completed` | Finished successfully (aliases: `done`, `complete` recognized by `markdown_status()`) |
+| `blocked` | Cannot proceed; needs investigation or recovery |
+| `stale` | Agent session unreadable or lost |
+| `invalid` | Precondition violated (missing commit, broken dependency) |
+| `finalizing` | `99-finalize` is in progress |
+| `finalized` | `99-finalize` has finished |
+
+Template:
+
+```markdown
+# <Package Title> - Status
+
+## State
+
+`pending`
+
+## Evidence
+
+- **Worktree**: <absolute path or "not yet created">
+- **Branch**: <branch name or "not yet created">
+- **Base commit**: <sha or "pending">
+- **Commit hash**: <sha or "pending">
+- **Changed files**:
+  - <path> — <summary of change>
+
+## Verification
+
+- `<command>`: `<result or "not yet run">`
+
+## Risks
+
+- <known risk or "none identified">
+
+## Blocker Diagnosis
+
+Fill only when state is `blocked`, `stale`, or `invalid`.
+
+- **Failure category**: capability-gap | invalid-requirement | external-dependency | verification-failure | merge-conflict | design-invalid | cost-out-of-scope | unknown-needs-investigation
+- **Last error**: <concrete error message>
+- **Failed command**: <command that failed, or "n/a">
+- **Conflict files**: <comma-separated paths, or "none">
+- **Log summary**: <decisive log excerpt>
+- **Recovery hint**: <specific next action for user or coordinator>
+```
+
+`sync_markdown_state()` keeps the `## State` value in sync with `state.tsv` on every
+`mark-state` write. If an existing status file uses the legacy `**Status**:` format, it is
+updated in place; if neither backtick nor `**Status**:` is found, a new `## State` section
+is appended at the end of the file.
+
 ### 8. packages/99-finalize.md
 
 Generate a finalize package, not a passive audit-only prompt.

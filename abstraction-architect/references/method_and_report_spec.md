@@ -22,6 +22,8 @@ Many structural problems begin not with wrong code but with wrong language — D
 
 This diagnostic is not a finding. It is a **lens calibration step**: suspend trust in the inherited names long enough to see whether they faithfully represent the underlying structure. If the language is the cage, no amount of local refactoring inside it will suffice.
 
+The Constraint Reality Filter (Part 3, Phase 1.5) is the parallel calibration for constraints: separating real contractual constraints from inertial ones. Together, these two steps ensure the analysis neither inherits false distinctions from vocabulary nor preserves false constraints from habit.
+
 ### Discovery Passes Before Commitment
 
 Before committing to a high-leverage abstraction, probe the system from multiple directions:
@@ -265,6 +267,56 @@ When available, also gather:
 
 Do not claim telemetry-based findings when telemetry is unavailable.
 
+## Phase 1.5: Constraint Reality Filter
+
+Before mapping structural pressure, separate real constraints from inertia. This prevents the analysis from over-respecting constraints that do not actually exist, and from dismissing constraints that are genuine and must be honored by any viable proposal.
+
+### Purpose
+
+Every system has constraints it *feels* bound by. Some are real — backed by contracts, data, users, or compliance. Others are inertia — backed by habit, fear of large diffs, or the weight of existing implementation shape. A structural proposal that treats inertia as immutable will be too conservative to solve the problem. A proposal that ignores real constraints will be unimplementable.
+
+This filter runs after the system survey and before the structural pressure map. It is not a finding — it is a **lens calibration step**, parallel to the Entry Diagnostic (which questions inherited vocabulary). The Entry Diagnostic asks "are the names lying to us?"; this filter asks "are the constraints real or are we just afraid?"
+
+### Filter taxonomy
+
+| Constraint source | Nature | Judgment criteria |
+|---------|------|---------|
+| Public API / SDK contract | **Real constraint** | External callers depend on this behavior; breaking it causes production incidents |
+| Persistent data format / schema | **Real constraint** | Production data depends on this structure; requires migration strategy, not dismissal |
+| Documented integration interface | **Real constraint** | External systems depend on this protocol; changes require coordination |
+| User-visible behavior commitment | **Real constraint** | User workflows depend on this interaction model; changes require migration guidance |
+| Deployment / operations constraint | **Real constraint** | Hard requirements: CI pipeline, infra, SLO, etc. |
+| Compliance / security requirement | **Real constraint** | Mandated by legal or security policy; non-negotiable |
+| Internal callers (same repo) | **Inertia constraint** | Can be updated in a single refactoring pass; should not constrain the target model |
+| Legacy naming / package structure | **Inertia constraint** | Should not dictate the shape of the target architecture |
+| Existing partial implementation | **Inertia constraint** | Sunk cost; should not distort the target model to preserve partial work |
+| "The diff will be too large" | **Inertia constraint** | Migration cost should be assessed separately; must not pollute the target model |
+| Organizational habit / "we've always done it this way" | **Inertia constraint** | Not an architecture constraint; belongs to the domain of change management |
+
+### Application rule
+
+Each candidate abstraction, before entering the Admissibility Gate, must answer:
+
+1. **Which real constraints does it respect?** Name the specific contract, data dependency, user promise, or compliance requirement, and how the proposal honors it.
+2. **Which inertia constraints is it ignoring?** State explicitly which internal names, package layouts, partial implementations, or diff-size concerns the proposal deliberately overrides.
+3. **If the proposal preserves a compatibility shim for an inertia constraint**, it must name the concrete reason (e.g., staged rollout to reduce risk, not "compatibility is good").
+
+A proposal that respects all real constraints while ignoring inertia is not reckless — it is correctly calibrated. A proposal that preserves shims for inertia without naming a concrete reason is over-fitted to the current implementation.
+
+### Interaction with the Admissibility Gate
+
+The constraint reality classification feeds directly into the Admissibility Gate's Hard Rejection Rules:
+
+- A proposal that violates a **real constraint** without a transition seam is **inadmissible** (fails "It requires a broad rewrite without a transition seam or rollback mechanism").
+- A proposal that preserves complexity solely to satisfy an **inertia constraint** is a **False Abstraction Risk** (fails "It has no specific code evidence" when the kept complexity has no named contract).
+
+### Output note
+
+The constraint classification is an internal analysis artifact, not a standalone report section. Its results surface in:
+- The Structural Pressure Map (pressure signals are filtered: only pressure against real constraints plus pressure from missing invariants)
+- The Proposal Card's evidence section (which constraints does this proposal navigate?)
+- The Admissibility Gate classification (is a proposal rejected because it ignores a real constraint, or because it preserves inertia?)
+
 ## Phase 2: Structural pressure map
 
 Identify recurring forms of pressure:
@@ -317,7 +369,7 @@ When a structural direction is accepted, produce a handoff brief for transition 
 
 ## Deliverable
 
-Generate an HTML report named `structural_abstraction_architect_report.html` containing analysis, not code modifications. If HTML generation or automatic browser launch is not feasible, provide the same content as Markdown and clearly state the limitation.
+Generate an HTML report named `structural_abstraction_architect_report_{YYYYMMDD}_{HHMM}.html` (e.g. `structural_abstraction_architect_report_20260608_1432.html`). Include timestamp to prevent overwrites across multiple runs. The report contains analysis, not code modifications. If HTML generation or automatic browser launch is not feasible, provide the same content as Markdown and clearly state the limitation.
 
 ## Required report sections
 
@@ -545,11 +597,12 @@ Do NOT produce:
 1. Confirm the target codebase or inspect the supplied project context.
 2. Determine whether this skill is the right first lens or whether the task should be routed to pragmatic transition analysis.
 3. Survey structure, interfaces, representations, variations, transformations, tests, process projection surfaces, user/task flows when relevant, and available operational evidence. Question whether the current domain vocabulary, type system, process vocabulary, boundary naming, or interaction vocabulary distorts the underlying structure.
-4. Build the structural pressure map and evidence ledger.
-5. For open-ended or non-obvious pressure sites, use `references/discovery_patterns.md` to run discovery passes and candidate competition before selecting a direction.
-6. For dynamic workflow or orchestration pressure, run process spatialization before proposing a decomposition: identify base contexts, local instances, projection artifacts, gluing conditions, and deformation tests.
-7. Construct candidate abstractions and aggressively test them against counterexamples and the admissibility gate.
-8. Classify validated opportunities, unproven hypotheses, false abstractions, and pragmatic sequencing problems.
-9. Generate `structural_abstraction_architect_report.html` with interactive review support only after the structural conclusions are formed.
-10. Open the report in a browser only when supported; otherwise provide its saved path or Markdown fallback.
-11. After user feedback, produce a transition handoff brief. Do not execute code changes without explicit authorization.
+4. Run the Constraint Reality Filter (Phase 1.5): list the constraints the system appears bound by, classify each as real or inertia, and carry only real constraints into the pressure map.
+5. Build the structural pressure map and evidence ledger.
+6. For open-ended or non-obvious pressure sites, use `references/discovery_patterns.md` to run discovery passes and candidate competition before selecting a direction.
+7. For dynamic workflow or orchestration pressure, run process spatialization before proposing a decomposition: identify base contexts, local instances, projection artifacts, gluing conditions, and deformation tests.
+8. Construct candidate abstractions and aggressively test them against counterexamples and the admissibility gate. Ensure each candidate's constraint classification (which real constraints it respects, which inertia constraints it ignores) is explicit before classification.
+9. Classify validated opportunities, unproven hypotheses, false abstractions, and pragmatic sequencing problems.
+10. Generate `structural_abstraction_architect_report_{YYYYMMDD}_{HHMM}.html` with interactive review support only after the structural conclusions are formed.
+11. Open the report in a browser only when supported; otherwise provide its saved path or Markdown fallback.
+12. After user feedback, produce a transition handoff brief. Do not execute code changes without explicit authorization.
