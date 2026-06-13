@@ -162,7 +162,8 @@ You (the external agent) are authorized to do the following WITHOUT asking for c
 - Run the listed verification commands.
 - Continue fixing verification failures that remain inside the package scope.
 - Commit locally after completing each logical unit of work.
-- After all packages complete: merge to integration branch or mainline, push, and create a PR if applicable.
+- Merge package branches only into a local integration branch when the INDEX explicitly names that branch and merge order.
+- Only push, create a PR, or merge to mainline when the user's request, chat authorization, or repository instructions explicitly authorize that remote or mainline action.
 
 ## Stop Gates — Must Ask
 
@@ -170,6 +171,7 @@ STOP and ask the user before:
 - Crossing Stage boundaries or making architectural decisions beyond scope.
 - Product-level decisions where requirements are genuinely ambiguous.
 - Destructive git operations: force-push, hard reset, deleting branches/worktrees not created by this package.
+- Mainline merge, remote push, or PR creation unless explicitly authorized by the user or repository instructions.
 - Network access, external API calls, or adding secrets/credentials.
 - Overwriting unrelated dirty changes outside this package.
 - Fixing verification failures when the fix expands scope beyond this package.
@@ -177,8 +179,8 @@ STOP and ask the user before:
 ## Completion Policy
 
 After completing all packages:
-- Merge package branches to the integration branch or mainline.
-- Push to remote and create a PR if the project uses PR workflow.
+- Merge package branches to the local integration branch only when the INDEX explicitly authorizes that merge path.
+- Do not push, create a PR, or merge to mainline unless explicit user or repository authorization is recorded in the INDEX.
 - Report: what changed, verification results, merge/PR status, remaining risks.
 - Do NOT delete branches or worktrees (the user may want to inspect them).
 
@@ -200,12 +202,12 @@ Copy this exact message to start an external Claude Code agent:
 
 ```
 /using-superpowers
-Execution authorization: Create an independent worktree and branch for each package. Read the plan, implement the scoped changes, update necessary tests/docs, run the listed verification commands, and continue fixing in-scope verification failures. After completion, merge to the integration branch or mainline and push/create a PR. Do not ask for confirmation for these routine steps. Do NOT force-push, hard-reset, or delete branches/worktrees belonging to other packages. Only stop and ask at Stop Gates.
+Execution authorization: Create an independent worktree and branch for each package. Read the plan, implement the scoped changes, update necessary tests/docs, run the listed verification commands, and continue fixing in-scope verification failures. After completion, merge to a local integration branch only when the INDEX explicitly authorizes that path. Do not ask for confirmation for these routine steps. Do NOT force-push, hard-reset, delete branches/worktrees belonging to other packages, push remotely, create a PR, or merge to mainline unless the user or repository instructions explicitly authorize that action. Only stop and ask at Stop Gates.
 Assess the current state and implement the following plan: <PLAN_PATH>
 ```
 ````
 
-The authorization sections eliminate unnecessary confirmation prompts for normal direct execution while keeping branch, worktree, merge, push, and cleanup operations behind explicit authorization.
+The authorization sections eliminate unnecessary confirmation prompts for normal direct execution while keeping destructive Git operations, remote publication, mainline merges, and cleanup operations behind explicit authorization.
 
 **Boundary**: agent-handoff-planner produces lightweight design packages and a basic INDEX for one to three Claude Code windows, each in its own worktree. It does NOT generate batch launch scripts, Agent View prompt lists, Claude Code agent launchers, status ledgers, or automated concurrency plans. Use `agent-orchestration-planner` directly for medium/large multi-agent orchestration.
 

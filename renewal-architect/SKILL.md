@@ -29,7 +29,7 @@ These are not slogans. They must appear as explicit boundaries, owners, signals,
 
 ### Default Working Modes
 
-- **Diagnostic Mode (default):** Analyze only; do not modify code. Produce an interactive HTML engineering renewal decision report.
+- **Diagnostic Mode (default):** Analyze only; do not modify code. Produce a Markdown source report and an interactive HTML engineering renewal decision report.
 - **Pilot Design Mode:** Based on the diagnosis, define one or more measurable, implementable, rollback-safe minimum pilot packages. Do not modify code.
 - **Execution Mode:** Activate only when the user explicitly asks to implement or modify code. Execute only within the defined pilot boundary, establish validation and rollback paths first, then modify code.
 
@@ -70,7 +70,7 @@ When this skill is invoked:
    - the stability floor that must not be crossed during change;
    - the adoption economics required for the route to land;
    - the path by which a pilot becomes reusable system capability.
-6. In Diagnostic or Pilot Design Mode, generate the HTML report and open it when feasible. In Execution Mode, first present the pilot boundary and validation gates, then implement controlled changes and report outcomes.
+6. In Diagnostic or Pilot Design Mode, generate paired Markdown/HTML reports and open the HTML report when feasible. In Execution Mode, first present the pilot boundary and validation gates, then implement controlled changes and report outcomes.
 
 ---
 
@@ -78,9 +78,16 @@ When this skill is invoked:
 
 1. Determine whether the request is Diagnostic, Pilot Design, or explicitly authorized Execution Mode.
 2. Build a fact ledger from code, docs, tests, operational evidence, business constraints supplied by the user, and known unknowns.
-3. Use `references/method_and_report_spec.md` for the twelve lenses, analysis rhythm, pilot design rules, HTML report schema, and final delivery checklist.
-4. Produce an interactive HTML engineering renewal decision report by default. Use `reviewable-html-report/references/report_base.md` for reusable report mechanics.
+3. Use `references/method_and_report_spec.md` for the twelve lenses, analysis rhythm, pilot design rules, Markdown/HTML report schema, and final delivery checklist.
+4. Produce `pragmatic_renewal_architect_report_{YYYYMMDD}_{HHMM}.md` first, then derive the same-basename `.html` interactive engineering renewal decision report. Use `reviewable-html-report/references/report_base.md` for reusable report mechanics.
 5. In Execution Mode, first restate the pilot boundary, validation gates, rollback path, and owner assumptions; then implement only within that boundary.
+
+## Report Delivery Contract
+
+- **Markdown is for agents:** it is the source of truth and must include the Fact Ledger, Dominant Constraint, Protect / Experiment / Defer split, Pilot-to-Decision Contract, Adoption Economics, decision gates, unknowns, verification notes, and task-package hooks.
+- **HTML is for users:** derive it from the same Markdown conclusions, adding decision maps, pilot cards, stability guardrails, feedback/export controls, and visual paths. It must not add judgments absent from Markdown.
+- **Same basename:** formal diagnostics and pilot designs deliver both `.md` and `.html` files with the same timestamp basename. If HTML cannot be generated or opened, Markdown remains mandatory and the limitation must be stated.
+- **Final response:** list both report paths, state whether HTML opened, summarize the dominant constraint and first breakthrough point in one sentence, and state that no code was modified.
 
 ## Required Outputs
 
@@ -92,9 +99,9 @@ When this skill is invoked:
 
 ## Resource Map
 
-- `references/method_and_report_spec.md` — detailed lenses, analysis rhythm, report specification, anti-patterns, and final checklist.
+- `references/method_and_report_spec.md` — detailed lenses, analysis rhythm, Markdown/HTML report specification, anti-patterns, and final checklist.
 - `../reviewable-html-report/references/report_base.md` — shared HTML report mechanics when an interactive report is required.
 
 ## Completion Standard
 
-A renewal diagnosis is complete only when recommendations are tied to evidence, capability benefit, stability risk, adoption economics, a reversible pilot path, and explicit validation gates. Do not quietly convert a local experiment into a global migration.
+A renewal diagnosis is complete only when recommendations are tied to evidence, capability benefit, stability risk, adoption economics, a reversible pilot path, explicit validation gates, and paired Markdown/HTML delivery. Do not quietly convert a local experiment into a global migration.

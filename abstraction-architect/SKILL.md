@@ -2,7 +2,7 @@
 name: abstraction-architect
 description: >
   Use for structural architecture analysis when complexity may come from missing invariants, duplicated domain representations, unstable boundaries, conversion glue, platform/configuration branching, or central orchestration bottlenecks.
-  Grounds abstraction proposals in engineering evidence, counterexamples, migration seams, and falsifiable tests; produces an interactive HTML architecture report.
+  Grounds abstraction proposals in engineering evidence, counterexamples, migration seams, and falsifiable tests; produces paired Markdown and interactive HTML architecture reports.
   Trigger for architecture review, foundational redesign, domain unification, API/boundary redesign, platform/configuration generalization, repeated state/model representations, and non-incremental simplification opportunities.
   Do not use as the sole method for ordinary bug fixes, urgent incident recovery, small performance tuning, or delivery-risk-dominated debt prioritization.
 ---
@@ -17,7 +17,7 @@ This skill is **inspired by structural and universal abstraction methods associa
 
 The central advanced move is **process spatialization**: when complexity appears as time, sequence, status drift, retries, approvals, orchestration, or environment-dependent behavior, ask whether those dynamics should instead be represented by one canonical structural object whose documents, logs, UI states, ledgers, prompts, and reports are consistent projections.
 
-The deliverable is an **interactive HTML architecture report**. By default, this skill performs analysis only. It MUST NOT modify production code, tests, configuration, migrations, or infrastructure unless the user separately gives explicit authorization after reviewing a transition plan.
+The deliverable is a paired report set: a **Markdown source report** for efficient agent handoff and an **interactive HTML architecture report** for user review, comparison, and feedback. By default, this skill performs analysis only. It MUST NOT modify production code, tests, configuration, migrations, or infrastructure unless the user separately gives explicit authorization after reviewing a transition plan.
 
 ---
 
@@ -65,7 +65,7 @@ When invoked:
 | Mode | Default trigger | Deliverable | Modification permission |
 |---|---|---|---|
 | Structural Scan | Broad architecture review, incomplete evidence | Candidate map and missing-evidence list | No code changes |
-| Full Architecture Analysis | Repository available and structural issues evidenced | Interactive HTML report | No code changes |
+| Full Architecture Analysis | Repository available and structural issues evidenced | Markdown source report + interactive HTML report | No code changes |
 | Transition Handoff | User accepts one or more structural directions | Migration hypotheses for pragmatic evaluation | No code changes |
 | Authorized Implementation | User explicitly approves implementation after reviewing a plan | Scoped code changes with verification | Only within explicit authorization |
 
@@ -78,12 +78,19 @@ Never silently jump from analysis to implementation.
 1. Establish the target repository, requested mode, and evidence limits.
 2. Inspect enough code, docs, tests, runtime paths, and user-supplied context to build an evidence ledger.
 3. Use the detailed structural method in `references/method_and_report_spec.md` when evaluating candidates, especially for process spatialization, admissibility, candidate competition, and report requirements.
-4. Produce an interactive HTML architecture report. Use `reviewable-html-report/references/report_base.md` for shared report mechanics instead of reimplementing HTML infrastructure.
+4. Produce paired reports: first write `structural_abstraction_architect_report_{YYYYMMDD}_{HHMM}.md` as the agent-readable source of truth, then derive `structural_abstraction_architect_report_{YYYYMMDD}_{HHMM}.html` from the same evidence ledger, proposal IDs, and conclusions as the user-facing interactive review surface. Use `reviewable-html-report/references/report_base.md` for shared report mechanics instead of reimplementing HTML infrastructure.
 5. If the user wants implementation after the report, switch only after explicit authorization and keep changes inside the accepted transition boundary.
+
+## Report Delivery Contract
+
+- **Markdown is the source report:** include the executive summary, evidence ledger, pressure map, candidate/proposal IDs, admissibility results, rejected/deferred abstractions, transition handoff, unknowns, and verification notes in a compact structure that another agent can reuse.
+- **HTML is the interaction layer:** do not introduce conclusions absent from Markdown; use it for topology/process visuals, proposal cards, filters, expandable evidence, review/export controls, and user feedback.
+- **Consistent naming:** formal reports use the same timestamp basename and deliver both `.md` and `.html`. If HTML cannot be generated or opened, still deliver Markdown and state the limitation.
+- **Final response:** list both report paths, state whether HTML opened, summarize the highest-leverage structural opportunity in one sentence, and state that no code was modified.
 
 ## Resource Map
 
-- `references/method_and_report_spec.md` — full structural method, admissibility gate, evidence rhythm, HTML report schema, anti-goals, and execution flow.
+- `references/method_and_report_spec.md` — full structural method, admissibility gate, evidence rhythm, Markdown/HTML report schema, anti-goals, and execution flow.
 - `references/discovery_patterns.md` — discovery prompts for unclear pressure maps or weak candidates.
 - `../reviewable-html-report/references/report_base.md` — shared HTML report mechanics when an interactive report is required.
 
@@ -92,4 +99,5 @@ Never silently jump from analysis to implementation.
 - Separate observed evidence, inference, and unknowns.
 - Classify each proposal through the admissibility gate.
 - Include rejected or deferred abstractions when relevant.
+- Keep the Markdown source report and HTML interaction report aligned on the same evidence ledger, proposal IDs, and conclusions.
 - Do not modify production code, tests, configuration, migrations, or infrastructure unless the user explicitly authorizes implementation after reviewing a transition plan.

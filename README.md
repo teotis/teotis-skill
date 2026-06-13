@@ -1,91 +1,29 @@
 # Teotis Skills
 
-A public Codex skill collection by Teotis, currently focused on structural
-architecture analysis, pragmatic legacy renewal, reviewable technical reports,
-and reusable agent planning workflows.
+A focused collection of public Codex skills for architecture analysis,
+engineering renewal, reviewable reports, and agent execution planning.
 
 [中文版本](README.zh-CN.md)
 
 ## Skills
 
-### `abstraction-architect`
+| Skill | Use it for |
+|---|---|
+| [`abstraction-architect`](abstraction-architect/) | Finding evidence-backed abstractions that remove duplicated models, conversion chains, boundary friction, and branching complexity. Delivers aligned Markdown and interactive HTML reports. |
+| [`renewal-architect`](renewal-architect/) | Designing reversible legacy-system renewal around the dominant constraint, stability guardrails, adoption economics, and measurable pilots. Delivers aligned Markdown and interactive HTML reports. |
+| [`reviewable-html-report`](reviewable-html-report/) | Adding Mermaid diagrams, review cards, local feedback, and exportable notes to browser-readable technical reports. |
+| [`agent-handoff-planner`](agent-handoff-planner/) | Preparing verified Markdown work packages for lightweight delegation across one to three manually controlled agent windows. |
+| [`agent-orchestration-planner`](agent-orchestration-planner/) | Building explicit multi-agent execution kits with dependency-aware dispatch, status tracking, branch or worktree isolation, and final integration. |
 
-**Effect:** Finds structural abstraction opportunities that can remove whole
-families of duplicated models, adapters, boundary friction, and branching
-complexity, then produces a reviewable HTML architecture report.  
-**Best fit:** Systems with repeated domain representations, excessive
-conversion chains, caller-side API workarounds, collapsing boundaries, or
-growing central orchestration.
+The architecture skills default to analysis, not code changes. The two planner
+skills serve different scales: use handoff planning for small, human-controlled
+delegation and orchestration planning when concurrency and integration require
+their own control plane.
 
-### `reviewable-html-report`
+## Install
 
-**Effect:** Provides the reusable HTML report mechanics for Mermaid diagrams,
-topology comparisons, review cards, local feedback persistence, and exportable
-review notes.  
-**Best fit:** Workflows that already own the analysis but need a browser-readable
-technical report that is easier to inspect, annotate, and hand back to another
-agent.
-
-### `renewal-architect`
-
-**Effect:** Diagnoses legacy-system renewal and technical-debt modernization by
-finding the dominant capability constraint, then designing reversible pilot
-paths with stability guardrails, adoption economics, and explicit ownership.  
-**Best fit:** Systems where modernization must preserve delivery, compatibility,
-operations, and organizational alignment instead of becoming a one-shot rewrite
-or architecture-camp debate.
-
-### `agent-handoff-planner`
-
-**Effect:** Turns small implementation ideas, external-agent findings, and
-validation requests into concrete Markdown handoff packages for one to three
-manual agent windows.  
-**Best fit:** Lightweight delegation where the important work is verifying
-claims, separating Codex-retained judgment from local implementation, and
-making acceptance criteria executable.
-
-### `agent-orchestration-planner`
-
-**Effect:** Builds a complete multi-agent orchestration kit with package docs,
-prompts, dependency graph, status ledger, and Claude Code background-agent
-launcher workflow.  
-**Best fit:** Explicit medium or large agent execution where branch/worktree
-isolation, DAG scheduling, tail-driven advancement, and final integration need
-a written control plane.
-
-## Self Assessment
-
-| Skill | Specialist strength | Score | Note |
-|---|---:|---:|---|
-| `abstraction-architect` | Structural insight and complexity deletion | 94 / 100 | Strong at missing invariants and wrong boundaries; intentionally does not own rollout planning. |
-| `reviewable-html-report` | Interactive technical report infrastructure | 92 / 100 | Strong for Mermaid-safe reports, review cards, local feedback state, and exportable review notes. |
-| `renewal-architect` | Legacy renewal and reversible modernization | 93 / 100 | Strong for dominant-constraint diagnosis, pilot-to-decision contracts, adoption economics, and stability-first evolution. |
-| `agent-handoff-planner` | Small-package delegation and acceptance contracts | 91 / 100 | Strong for verified 1-3 agent handoffs; intentionally avoids batch dispatch and branch orchestration. |
-| `agent-orchestration-planner` | Multi-agent execution control and finalization | 93 / 100 | Strong for explicit orchestration kits; overkill when a single local edit or lightweight handoff is enough. |
-
-## Design Philosophy
-
-The architecture and reporting skills are designed around evidence-first
-collaboration:
-
-- `abstraction-architect` draws from modern mathematics: the search for
-invariants, structures, and unifying representations, constrained here by
-engineering evidence so abstraction does not become elegance for its own sake.
-- `renewal-architect` focuses on legacy evolution under real constraints:
-protect what must not break, test what can be safely varied, and let reversible
-pilots turn debate into decision-quality evidence.
-- `reviewable-html-report` makes dense technical reasoning inspectable through
-stable review cards, readable diagrams, and exportable feedback.
-
-They do not imitate people, and metaphor is never treated as proof. The only
-standard is whether the skill makes engineering judgment more evidence-based,
-more reviewable, and safer to turn into action.
-
-The two planner skills apply the same standard to collaboration: they make
-agent work explicit, bounded, verifiable, and easier to resume. The lightweight
-planner is optimized for human-controlled handoff; the orchestration planner is
-reserved for cases where concurrency, dependencies, and integration deserve
-their own execution contract.
+Copy the desired skill directory into your Codex skills directory, or install
+the repository with your preferred Codex skill installer.
 
 ## License
 

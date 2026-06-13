@@ -151,6 +151,7 @@ advance [--from <package-id>]
 status
 retry <package-id>
 finalize
+cleanup --mainline <branch>
 mark-state <package-id> <state> [fields...]
 repair-state
 doctor [--environment]
@@ -165,7 +166,7 @@ Core behavior:
 - Package agents mutate `state.tsv` only through `mark-state`.
 - `retry` accepts only `blocked`, `stale`, or `invalid`, preserves prior recovery context, and obeys the three-strike fingerprint breaker.
 - `doctor` checks consistency and runner/session health without launching work.
-- `99-finalize` runs only when all functional packages are `completed`, then verifies evidence, merges conservatively, reports outcome, and cleans up only after success.
+- `99-finalize` runs only when all functional packages are `completed`, then verifies evidence, merges conservatively, reports outcome, and calls `cleanup --mainline <branch>` only after success. Cleanup must finish before `99-finalize` may be marked `finalized`.
 
 ### 4. Output To User
 
@@ -175,7 +176,7 @@ After generating the kit, show only immediately actionable entry paths:
 - First wave packages and final package `99-finalize`.
 - Manual path: copy prompts from `launchers/agent-prompts.md`.
 - Script path: absolute `cd` and `bash <plan>/launchers/orchestrate.sh start` commands.
-- Status/recovery commands: `status`, `advance`, `retry <package-id>`, `finalize`, `doctor --environment`, `collect-logs`, `verify-finalize`, `scratch-path`.
+- Status/recovery commands: `status`, `advance`, `retry <package-id>`, `finalize`, `cleanup --mainline <branch>`, `doctor --environment`, `collect-logs`, `verify-finalize`, `scratch-path`.
 - External-assist gates, owners, whether they block release, and exact evidence expected.
 - Landing strategy summary.
 
