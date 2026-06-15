@@ -78,7 +78,7 @@ Never silently jump from analysis to implementation.
 1. Establish the target repository, requested mode, and evidence limits.
 2. Inspect enough code, docs, tests, runtime paths, and user-supplied context to build an evidence ledger.
 3. Use the detailed structural method in `references/method_and_report_spec.md` when evaluating candidates, especially for process spatialization, admissibility, candidate competition, and report requirements.
-4. Produce paired reports: first write `structural_abstraction_architect_report_{YYYYMMDD}_{HHMM}.md` as the agent-readable source of truth, then derive `structural_abstraction_architect_report_{YYYYMMDD}_{HHMM}.html` from the same evidence ledger, proposal IDs, and conclusions as the user-facing interactive review surface. Use `reviewable-html-report/references/report_base.md` for shared report mechanics instead of reimplementing HTML infrastructure.
+4. Produce paired reports: first write `structural_abstraction_architect_report_{YYYYMMDD}_{HHMM}.md` as the agent-readable source of truth, then derive `structural_abstraction_architect_report_{YYYYMMDD}_{HHMM}.html` from the same evidence ledger, proposal IDs, and conclusions as the user-facing interactive review surface. Use `reviewable-html-report/references/report_base.md` for shared report mechanics instead of reimplementing HTML infrastructure. If that reference is unavailable, degrade to a self-contained static HTML report that preserves the core conclusion, TOC, stable section IDs, evidence appendix, and Mermaid source fallback.
 5. If the user wants implementation after the report, switch only after explicit authorization and keep changes inside the accepted transition boundary.
 
 ## Report Delivery Contract
@@ -92,7 +92,7 @@ Never silently jump from analysis to implementation.
 
 - `references/method_and_report_spec.md` — full structural method, admissibility gate, evidence rhythm, Markdown/HTML report schema, anti-goals, and execution flow.
 - `references/discovery_patterns.md` — discovery prompts for unclear pressure maps or weak candidates.
-- `../reviewable-html-report/references/report_base.md` — shared HTML report mechanics when an interactive report is required.
+- `../reviewable-html-report/references/report_base.md` — shared HTML report mechanics when an interactive report is required; if unavailable, use the static HTML fallback and do not block report delivery.
 
 ## Completion Standard
 

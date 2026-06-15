@@ -79,7 +79,7 @@ When this skill is invoked:
 1. Determine whether the request is Diagnostic, Pilot Design, or explicitly authorized Execution Mode.
 2. Build a fact ledger from code, docs, tests, operational evidence, business constraints supplied by the user, and known unknowns.
 3. Use `references/method_and_report_spec.md` for the twelve lenses, analysis rhythm, pilot design rules, Markdown/HTML report schema, and final delivery checklist.
-4. Produce `pragmatic_renewal_architect_report_{YYYYMMDD}_{HHMM}.md` first, then derive the same-basename `.html` interactive engineering renewal decision report. Use `reviewable-html-report/references/report_base.md` for reusable report mechanics.
+4. Produce `pragmatic_renewal_architect_report_{YYYYMMDD}_{HHMM}.md` first, then derive the same-basename `.html` interactive engineering renewal decision report. Use `reviewable-html-report/references/report_base.md` for reusable report mechanics. If that reference is unavailable, degrade to a self-contained static HTML report that preserves the core conclusion, TOC, stable section IDs, evidence appendix, and Mermaid source fallback.
 5. In Execution Mode, first restate the pilot boundary, validation gates, rollback path, and owner assumptions; then implement only within that boundary.
 
 ## Report Delivery Contract
@@ -100,7 +100,7 @@ When this skill is invoked:
 ## Resource Map
 
 - `references/method_and_report_spec.md` — detailed lenses, analysis rhythm, Markdown/HTML report specification, anti-patterns, and final checklist.
-- `../reviewable-html-report/references/report_base.md` — shared HTML report mechanics when an interactive report is required.
+- `../reviewable-html-report/references/report_base.md` — shared HTML report mechanics when an interactive report is required; if unavailable, use the static HTML fallback and do not block report delivery.
 
 ## Completion Standard
 

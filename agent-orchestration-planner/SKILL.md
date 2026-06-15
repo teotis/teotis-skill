@@ -35,7 +35,8 @@ for medium/large orchestration, such as:
 Do not infer this skill merely because a task is complex. If the user did not
 ask for orchestration or an equivalent multi-agent control plane, do normal work
 or use another explicitly requested skill. For lightweight one-to-three-window
-handoff plans, use `agent-handoff-planner` only when requested.
+manual execution, write packages directly against `docs/contracts/task-package-contract.md`
+instead of generating a full orchestration kit.
 
 ## Core Contract
 
@@ -203,9 +204,11 @@ Claude Agents View.
 - Do NOT clean up branches/worktrees unless finalize fully succeeds.
 - Do NOT delete resources not recorded as created by this orchestration.
 
-## Relationship With agent-handoff-planner
+## Relationship With Lightweight Manual Packages
 
-Use `agent-handoff-planner` only when the user asks for small handoff plans that
-they will run manually in one to three windows. Use
-`agent-orchestration-planner` only when the user asks for a multi-agent
-orchestration control plane. Chaining the two skills is optional, not required.
+When the user only needs one to three manually executed packages, do not generate
+the full orchestration kit. Use the shared Task Package Contract to capture
+scope, acceptance criteria, and verification commands. Use
+`agent-orchestration-planner` when the user asks for a multi-agent orchestration
+control plane with durable state, dependency scheduling, recovery, and finalize
+behavior.

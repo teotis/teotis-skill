@@ -1,7 +1,8 @@
 # Teotis Skills
 
 A focused collection of public Codex skills for architecture analysis,
-engineering renewal, reviewable reports, and agent execution planning.
+engineering renewal, quality sweeps, reviewable reports, and agent execution
+planning.
 
 [中文版本](README.zh-CN.md)
 
@@ -11,13 +12,13 @@ engineering renewal, reviewable reports, and agent execution planning.
 |---|---|
 | [`abstraction-architect`](abstraction-architect/) | Finding evidence-backed abstractions that remove duplicated models, conversion chains, boundary friction, and branching complexity. Delivers aligned Markdown and interactive HTML reports. |
 | [`renewal-architect`](renewal-architect/) | Designing reversible legacy-system renewal around the dominant constraint, stability guardrails, adoption economics, and measurable pilots. Delivers aligned Markdown and interactive HTML reports. |
+| [`deep-flow-sweep`](deep-flow-sweep/) | Running high-budget, analysis-only quality sweeps across main flows, reliability, performance, tests, observability, security, governance, recent changes, and follow-up task packaging. |
 | [`reviewable-html-report`](reviewable-html-report/) | Adding Mermaid diagrams, review cards, local feedback, and exportable notes to browser-readable technical reports. |
-| [`agent-handoff-planner`](agent-handoff-planner/) | Preparing verified Markdown work packages for lightweight delegation across one to three manually controlled agent windows. |
 | [`agent-orchestration-planner`](agent-orchestration-planner/) | Building explicit multi-agent execution kits with dependency-aware dispatch, status tracking, branch or worktree isolation, and final integration. |
 
-The architecture skills default to analysis, not code changes. The two planner
-skills serve different scales: use handoff planning for small, human-controlled
-delegation and orchestration planning when concurrency and integration require
+The architecture and sweep skills default to analysis, not code changes.
+Lightweight manual packages should use the repository's shared Task Package
+Contract. Use orchestration planning when concurrency and integration require
 their own control plane.
 
 ## Install
