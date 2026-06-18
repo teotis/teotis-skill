@@ -35,8 +35,10 @@ for medium/large orchestration, such as:
 Do not infer this skill merely because a task is complex. If the user did not
 ask for orchestration or an equivalent multi-agent control plane, do normal work
 or use another explicitly requested skill. For lightweight one-to-three-window
-manual execution, write packages directly against `docs/contracts/task-package-contract.md`
-instead of generating a full orchestration kit.
+manual execution, write compact packages containing the goal, owned and
+forbidden paths, dependencies, acceptance criteria, verification commands,
+expected evidence, and final status handoff instead of generating a full
+orchestration kit.
 
 ## Core Contract
 
