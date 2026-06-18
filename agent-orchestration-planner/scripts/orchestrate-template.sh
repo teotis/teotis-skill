@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# orchestrate-template v1.1.0 — see skills/agent-orchestration-planner/scripts/orchestrate-template.sh
+# orchestrate-template v1.1.1 — see skills/agent-orchestration-planner/scripts/orchestrate-template.sh
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -1422,14 +1422,14 @@ launch_ready_or_finalize() {
   fi
 
   launched=0
-  while IFS= read -r id; do
+  while IFS= read -r id <&3; do
     [ -n "$id" ] || continue
     if [ "$(running_count)" -ge "$MAX_PARALLEL" ]; then
       break
     fi
     launch_package "$id"
     launched=$((launched + 1))
-  done < <(ready_packages)
+  done 3< <(ready_packages)
 
   if [ "$launched" -eq 0 ]; then
     active="$(awk -F '\t' 'FNR > 1 && ($2 == "launched" || $2 == "in_progress" || $2 == "finalizing") { print $1 ":" $2 }' "$STATE")"

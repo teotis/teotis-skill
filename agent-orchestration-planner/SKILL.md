@@ -17,6 +17,9 @@ The script is not a long-running watcher. It is a
 first ready wave. Each package prompt ends by calling
 `orchestrate.sh advance --from <package-id>`, and `advance` is the only place
 that decides whether to launch downstream packages or `99-finalize`.
+After the tail call returns, the package/finalize session must terminate immediately.
+It must not emit another summary, ask for input, suggest a reply, or wait at an
+interactive prompt; blocker and recovery details belong only in coordinator artifacts.
 
 The generated template supports runner variation through `ORCHESTRATION_RUNNER`:
 - `claude` (default): launches Claude Code background sessions with `claude --bg --name` and points users to `claude agents`.
@@ -166,6 +169,7 @@ scratch-path <package-id>
 
 Core behavior:
 - `start` and `advance` acquire a lock, validate graph/state, compute readiness, and launch only eligible packages.
+- The ready-package queue must use a dedicated file descriptor, not the dispatch loop's stdin; runner launch, log postflight, or health-check subprocesses must not be able to consume later package IDs from the same wave.
 - Package agents mutate `state.tsv` only through `mark-state`.
 - `retry` accepts only `blocked`, `stale`, or `invalid`, preserves prior recovery context, and obeys the three-strike fingerprint breaker.
 - `doctor` checks consistency and runner/session health without launching work.

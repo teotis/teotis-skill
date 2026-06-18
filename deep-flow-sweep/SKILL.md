@@ -15,6 +15,16 @@ The central question is:
 
 > Where can the project fail in real use, what evidence supports that risk, and what should be verified or packaged next?
 
+## Default Execution Intensity And Question Gate
+
+This skill is **user-invoked only**: it must only be launched after an explicit user request (the user names this skill, asks for a deep flow sweep / wide-coverage quality audit, or uses a synonym trigger). Other agents and skills MUST NOT auto-launch this skill; they may surface a recommendation and wait for the user to authorize a full sweep. There is no "partial sweep" or lightweight active-launch entry.
+
+Once explicitly launched, invocation authorizes the skill's full native execution mode within its existing safety and mutation boundaries. Default to full-strength **Exhaustive** coverage with the `balanced` focus, all applicable risk families, and concurrent or long-running analysis when useful. Only downgrade, narrow, or focus the run when the user explicitly requests it.
+
+Infer the target, envelope, focus, and evidence plan from the current workspace and supplied context; do not ask the user when a reasonable inference is possible. Continue useful analysis despite gaps and record them as `assumptions, unknowns, or coverage debt`.
+
+Interrupt only when the target cannot be identified at all or when the next action requires separate authorization for implementation, irreversible changes, account actions, publication, or pushing. Missing tools, credentials, devices, telemetry, or external access should become coverage debt rather than a blocking questionnaire.
+
 ## When To Use
 
 Use this skill when the user asks for:
@@ -45,15 +55,15 @@ Invoking this skill latches the run into analysis-only mode.
 
 ## Budget Envelopes
 
-Use the user's wording and available context to choose the lightest useful envelope.
+Use **Exhaustive** by default. Choose a lighter envelope only when the user explicitly requests a quick, focused, narrower, or lower-cost sweep.
 
 | Envelope | Trigger | Minimum coverage |
 |---|---|---|
-| Normal | quick or focused sweep | main flow map, highest-risk scenarios, focused evidence, residual coverage debt |
+| Normal | user explicitly requests a quick or focused sweep | main flow map, highest-risk scenarios, focused evidence, residual coverage debt |
 | Deep | deep, broad, high-confidence analysis | Normal plus recent-change archaeology, root-cause evidence, cross-surface checks |
 | Exhaustive | exhaustive, maximum coverage, long-running sweep | Deep plus long-term trends, cross-session intelligence, optional parallel sub-sweeps, and explicit stop ledger |
 
-Default to Deep for broad requests and Exhaustive when the user explicitly asks for maximum coverage or a long-running analysis. Budget buys optionality, not permission to run every possible tool.
+Default to Exhaustive. Deep and Normal are explicit downgrades. Budget buys optionality, not permission to run every possible tool.
 
 ## Focus Profiles
 
@@ -73,6 +83,22 @@ Default to `balanced`. If the user names a focus, prioritize one or two profiles
 
 Focus changes allocation and report ordering; it never permits skipping release-critical flows, evidence quality, recovery, or unverified-claim labeling.
 
+## Project Archetype Routing
+
+Before selecting detailed checks, build a short Project Risk Profile. Archetype signals are priors, not conclusions: they route attention and method choice, but every finding still needs evidence from a reachable project surface.
+
+Record an applicability disposition for important risk families:
+
+| Disposition | Meaning |
+|---|---|
+| `applicable` | A concrete project surface exists. |
+| `possibly applicable` | Signals exist, but more context is needed. |
+| `not applicable` | The surface is absent, with a recorded reason. |
+| `deferred` | The surface exists, but credentials, devices, data, or authorization are unavailable. |
+| `untriaged` | Scope or budget prevented a confident decision. |
+
+Common archetypes include Web / SaaS / API, Mobile / Android / Device, Agent / Tooling / Automation, Library / Framework, and Public release / split repository. Compose archetypes when multiple signals apply, and do not let a familiar archetype suppress unusual flows discovered in the actual code.
+
 ## Workflow
 
 ### 1. Establish Scope And Manifest
@@ -81,6 +107,7 @@ Record:
 
 - target repository, branch, current dirty state, and nested repositories;
 - budget envelope and selected focus profiles;
+- project risk profile: archetypes, triggered risk families, and important applicability dispositions;
 - main user or release goals;
 - available commands, environments, browsers, devices, credentials, and external blockers;
 - artifact root for the sweep report.

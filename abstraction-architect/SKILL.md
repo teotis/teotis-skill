@@ -2,7 +2,7 @@
 name: abstraction-architect
 description: >
   Use for structural architecture analysis when complexity may come from missing invariants, duplicated domain representations, unstable boundaries, conversion glue, platform/configuration branching, or central orchestration bottlenecks.
-  Grounds abstraction proposals in engineering evidence, counterexamples, migration seams, and falsifiable tests; produces paired Markdown and interactive HTML architecture reports.
+  Grounds abstraction proposals in engineering evidence, counterexamples, migration seams, and falsifiable tests; produces an interactive HTML architecture report by default, with an optional Markdown source report on explicit request.
   Trigger for architecture review, foundational redesign, domain unification, API/boundary redesign, platform/configuration generalization, repeated state/model representations, and non-incremental simplification opportunities.
   Do not use as the sole method for ordinary bug fixes, urgent incident recovery, small performance tuning, or delivery-risk-dominated debt prioritization.
 ---
@@ -17,7 +17,23 @@ This skill is **inspired by structural and universal abstraction methods associa
 
 The central advanced move is **process spatialization**: when complexity appears as time, sequence, status drift, retries, approvals, orchestration, or environment-dependent behavior, ask whether those dynamics should instead be represented by one canonical structural object whose documents, logs, UI states, ledgers, prompts, and reports are consistent projections.
 
-The deliverable is a paired report set: a **Markdown source report** for efficient agent handoff and an **interactive HTML architecture report** for user review, comparison, and feedback. By default, this skill performs analysis only. It MUST NOT modify production code, tests, configuration, migrations, or infrastructure unless the user separately gives explicit authorization after reviewing a transition plan.
+This move is not the default conclusion. Before searching for a canonical object, first run the **no new abstraction / local deletion wins** baseline: ask whether the work only needs delete obsolete branches, merge local duplication, improve interaction copy, or preserve the status quo with evidence. Escalate to a canonical model or process spatialization only when these lower-abstraction candidates cannot explain the same exception family, projection drift, or workflow burden, and the evidence points to a named invariant.
+
+The default formal deliverable is an **interactive HTML architecture report** for user review, comparison, and feedback. A **Markdown source report** is an upgrade artifact and is produced only when the user explicitly requests an agent handoff or source-file delivery, or when HTML generation is infeasible. By default, this skill performs analysis only. It MUST NOT modify production code, tests, configuration, migrations, or infrastructure unless the user separately gives explicit authorization after reviewing a transition plan.
+
+## Default Execution Intensity And Question Gate
+
+This skill supports both **user-invoked** entry and **agent-active** auto-launch. The default depth is set by the entry source:
+
+- **User-invoked** (the user names this skill, asks for an architecture review or abstraction analysis, or uses a synonym trigger): default to **Deep** depth. Run the full structural investigation, admissibility gate, candidate competition, and the formal HTML report.
+- **Agent-active** (another agent or skill detects structural pressure and auto-launches this skill without an explicit user request): default to **Standard** depth. Cover the core pressure map, the highest-leverage candidate, and baseline competition; do not run Exhaustive-tier history archaeology, cross-repository variants, or long parallel investigations. Surface a hint that "upgrading to Deep requires user confirmation".
+- **Exhaustive**: only when the user explicitly requests "exhaustive / full coverage / maximum effort" or equivalent; never the default.
+
+Regardless of entry source, invocation authorizes the skill's full native execution mode for the chosen depth within its existing safety and mutation boundaries. Within that depth's envelope, **execute at full strength**: cover all core evidence faces, mandatory workflow steps, and the formal HTML report. Only downgrade, narrow, or focus the run when the user explicitly requests it.
+
+Infer the target, scope, and evidence plan from the current workspace and supplied context; do not ask the user when a reasonable inference is possible. Continue useful analysis despite gaps and record them as `assumptions, unknowns, or coverage debt`.
+
+Interrupt only when the target cannot be identified at all or when the next action requires separate authorization for implementation, migration, irreversible changes, account actions, publication, or pushing. Missing telemetry or partial context should reduce claim permission, not create a blocking questionnaire.
 
 ---
 
@@ -54,7 +70,7 @@ For these, use or hand off to **Pragmatic Renewal Architect**. The two skills ar
 
 When invoked:
 
-1. Determine the target repository or directory if it is not already available.
+1. Infer the target repository or directory from the current workspace; ask one minimal question only if no target can be identified.
 2. Identify whether the request requires structural analysis, transition planning, or both.
 3. Inspect the project only as deeply as evidence permits; clearly mark unavailable telemetry, history, runtime behavior, or business context.
 4. Apply the Structural Abstraction method below.
@@ -64,8 +80,9 @@ When invoked:
 
 | Mode | Default trigger | Deliverable | Modification permission |
 |---|---|---|---|
-| Structural Scan | Broad architecture review, incomplete evidence | Candidate map and missing-evidence list | No code changes |
-| Full Architecture Analysis | Repository available and structural issues evidenced | Markdown source report + interactive HTML report | No code changes |
+| Structural Scan (Standard) | Agent-active default; or user explicitly requests a lighter scan; or evidence cannot support full analysis | Interactive HTML report with candidate map and missing-evidence list | No code changes |
+| Full Architecture Analysis (Deep) | User-invoked default | Interactive HTML architecture report | No code changes |
+| Exhaustive Architecture Analysis | User explicitly requests exhaustive / full-coverage / maximum-effort keywords | Interactive HTML report + multi-evidence cross-checks, history/cross-repository variants, parallel investigation | No code changes |
 | Transition Handoff | User accepts one or more structural directions | Migration hypotheses for pragmatic evaluation | No code changes |
 | Authorized Implementation | User explicitly approves implementation after reviewing a plan | Scoped code changes with verification | Only within explicit authorization |
 
@@ -78,15 +95,15 @@ Never silently jump from analysis to implementation.
 1. Establish the target repository, requested mode, and evidence limits.
 2. Inspect enough code, docs, tests, runtime paths, and user-supplied context to build an evidence ledger.
 3. Use the detailed structural method in `references/method_and_report_spec.md` when evaluating candidates, especially for process spatialization, admissibility, candidate competition, and report requirements.
-4. Produce paired reports: first write `structural_abstraction_architect_report_{YYYYMMDD}_{HHMM}.md` as the agent-readable source of truth, then derive `structural_abstraction_architect_report_{YYYYMMDD}_{HHMM}.html` from the same evidence ledger, proposal IDs, and conclusions as the user-facing interactive review surface. Use `reviewable-html-report/references/report_base.md` for shared report mechanics instead of reimplementing HTML infrastructure. If that reference is unavailable, degrade to a self-contained static HTML report that preserves the core conclusion, TOC, stable section IDs, evidence appendix, and Mermaid source fallback.
+4. Produce the formal deliverable: write `structural_abstraction_architect_report_{YYYYMMDD}_{HHMM}.html` as the user-facing interactive review surface. Use `reviewable-html-report/references/report_base.md` for shared report mechanics instead of reimplementing HTML infrastructure. If that reference is unavailable, degrade to a self-contained static HTML report that preserves the core conclusion, TOC, stable section IDs, evidence appendix, and Mermaid source fallback. Only when the user explicitly requests a Markdown source for agent handoff / source-file delivery, or when HTML generation is infeasible, also write the same-basename `structural_abstraction_architect_report_{YYYYMMDD}_{HHMM}.md` sharing the same evidence ledger, proposal IDs, and conclusions.
 5. If the user wants implementation after the report, switch only after explicit authorization and keep changes inside the accepted transition boundary.
 
 ## Report Delivery Contract
 
-- **Markdown is the source report:** include the executive summary, evidence ledger, pressure map, candidate/proposal IDs, admissibility results, rejected/deferred abstractions, transition handoff, unknowns, and verification notes in a compact structure that another agent can reuse.
-- **HTML is the interaction layer:** do not introduce conclusions absent from Markdown; use it for topology/process visuals, proposal cards, filters, expandable evidence, review/export controls, and user feedback.
-- **Consistent naming:** formal reports use the same timestamp basename and deliver both `.md` and `.html`. If HTML cannot be generated or opened, still deliver Markdown and state the limitation.
-- **Final response:** list both report paths, state whether HTML opened, summarize the highest-leverage structural opportunity in one sentence, and state that no code was modified.
+- **HTML is the default formal deliverable:** include the executive summary, evidence ledger, pressure map, candidate/proposal IDs, admissibility results, rejected/deferred abstractions, transition handoff, unknowns, verification notes, topology/process visuals, proposal cards, filters, expandable evidence, review/export controls, section index, and user feedback path.
+- **Markdown is an upgrade artifact:** not produced by default; only when the user explicitly requests an agent handoff / source-file delivery, or when HTML generation is infeasible. When produced, it shares the same timestamp basename and the same evidence ledger, proposal IDs, and conclusions as the HTML.
+- **Consistent naming:** when both are produced, formal reports use the same timestamp basename. If HTML cannot be generated or opened, deliver Markdown as the fallback and state the HTML limitation.
+- **Final response:** list the report path(s), state whether HTML opened, summarize the highest-leverage structural opportunity in one sentence, and state that no code was modified.
 
 ## Resource Map
 
@@ -99,5 +116,5 @@ Never silently jump from analysis to implementation.
 - Separate observed evidence, inference, and unknowns.
 - Classify each proposal through the admissibility gate.
 - Include rejected or deferred abstractions when relevant.
-- Keep the Markdown source report and HTML interaction report aligned on the same evidence ledger, proposal IDs, and conclusions.
+- When a Markdown source report is produced, keep it aligned with the HTML on the same evidence ledger, proposal IDs, and conclusions.
 - Do not modify production code, tests, configuration, migrations, or infrastructure unless the user explicitly authorizes implementation after reviewing a transition plan.
