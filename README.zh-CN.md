@@ -30,6 +30,14 @@ Coding agents 做局部修改很快，这很有用，但也会放大几类失败
 | 报告难审阅 | 结论困在长聊天记录或扁平 Markdown 里。 | `reviewable-html-report` 提供浏览器可读报告机制：目录、图示、卡片、反馈和导出。 |
 | 多 agent 工作失控 | 后台 agent 各说各的完成，没有一个 artifact 拥有真实状态。 | `agent-orchestration-planner` 生成任务包、DAG 状态、事件 ledger 和最终集成契约。 |
 
+## 报告界面示例
+
+这些 skills 追求的不是把 chat 变长，而是把分析变成更容易检查的 artifact：开头给出判断摘要，正文有可导航结构、证据表格、风险标签和评审区，让人能快速决定下一步该信什么、查什么、做什么。
+
+![Deep Flow Sweep 报告示例：包含导航、运行元数据和风险总览](assets/readme/deep-flow-sweep-report.png)
+
+![OpenCamera 诊断报告示例：包含首屏摘要、方法标签和评审目录](assets/readme/open-camera-diagnostic-report.png)
+
 ## 技能组合
 
 ### [`abstraction-architect`](abstraction-architect/)

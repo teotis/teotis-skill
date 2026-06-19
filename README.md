@@ -36,6 +36,16 @@ makes certain failures more expensive:
 | The report is hard to review | The conclusion is trapped in a long chat transcript or a flat Markdown dump. | `reviewable-html-report` provides browser-readable HTML mechanics: TOC, diagrams, cards, feedback, and export. |
 | Multi-agent work loses the plot | Background agents finish in different states and no artifact owns the truth. | `agent-orchestration-planner` creates package prompts, DAG state, event ledgers, and final integration contracts. |
 
+## Report Surfaces
+
+The skills are designed to produce artifacts that are easier to inspect than raw
+chat: a clear opening verdict, navigable structure, evidence tables, risk
+labels, and review sections that help a human decide what to trust next.
+
+![Deep Flow Sweep report with navigation, run metadata, and risk summary](assets/readme/deep-flow-sweep-report.png)
+
+![OpenCamera diagnostic report with hero summary, method chips, and review table of contents](assets/readme/open-camera-diagnostic-report.png)
+
 ## Skill Portfolio
 
 ### [`abstraction-architect`](abstraction-architect/)
