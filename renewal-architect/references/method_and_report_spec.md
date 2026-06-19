@@ -471,11 +471,11 @@ This skill must not output any of the following unless it also supplies facts, b
 
 ---
 
-# Part V — HTML Report Specification: Pragmatic Engineering Renewal Decision Map
+# Part V — Markdown/HTML Report Specification: Pragmatic Engineering Renewal Decision Map
 
 ## 1. Report Objective
 
-The final deliverable is an offline-browsable HTML report that allows project decision makers and frontline engineers to answer together:
+The default final deliverable is a single offline-browsable HTML report that allows project decision makers and frontline engineers to answer together:
 
 - What is the actual capability bottleneck?
 - Which point is most worth breaking through first?
@@ -484,15 +484,18 @@ The final deliverable is an offline-browsable HTML report that allows project de
 - Which stability floors must never be crossed?
 - How should review feedback feed the next implementation round?
 
-Default filename: `pragmatic_renewal_architect_report_{YYYYMMDD}_{HHMM}.html` (e.g. `pragmatic_renewal_architect_report_20260608_1432.html`). Include timestamp to prevent overwrites across multiple runs.
+A Markdown source report is an upgrade artifact for follow-up agent handoff or source-file delivery. It is produced only when the user explicitly requests it, or when HTML generation is infeasible.
 
-Where browser launching is possible, automatically open the report after generation:
+Default filenames:
 
-- macOS: `open -a "Google Chrome" <path>`
-- Linux: `google-chrome <path>`
-- Windows: `start chrome <path>`
+- `pragmatic_renewal_architect_report_{YYYYMMDD}_{HHMM}.html` (default formal deliverable)
+- `pragmatic_renewal_architect_report_{YYYYMMDD}_{HHMM}.md` (upgrade artifact; generated on explicit request or as HTML fallback)
 
-If automatic opening fails, provide the absolute generated file path and state why opening could not be completed.
+Include timestamp to prevent overwrites across multiple runs. When a Markdown source report is produced, HTML and Markdown must share the same Fact Ledger, candidate IDs, pilot IDs, decision gates, and conclusions. HTML may add visual navigation, review controls, and feedback export, but it must not introduce judgments absent from the underlying analysis or Markdown source.
+
+Provide the saved report path and a clickable `file://` URL. Open the report only
+when the user requests a preview or the environment explicitly supports
+interactive preview without CI, SSH, or headless side effects.
 
 ---
 
@@ -624,7 +627,7 @@ Each recommendation card can be scored, assigned a review status, and commented 
 
 ### Mermaid Import — Must Be Included in `<head>`
 
-Use the Mermaid initialization pattern from `../reviewable-html-report/references/report_base.md` (resolved relative to this SKILL.md). This skill's theme uses:
+Use the Mermaid initialization pattern provided by the `reviewable-html-report` capability. In this repository, `skills/reviewable-html-report/references/report_base.md` is an optional reference, not a standalone dependency. This skill's theme uses:
 
 ```html
 <script type="module">
@@ -650,7 +653,7 @@ mermaid.initialize({
 </script>
 ```
 
-Mermaid compatibility rules are in `../reviewable-html-report/references/report_base.md`.
+Follow the Mermaid compatibility rules from the `reviewable-html-report` capability when available; otherwise preserve readable Mermaid source and disclose the rendering limitation.
 
 ### Topology Comparison for Each Key Recommendation
 
@@ -728,7 +731,7 @@ Required HTML structure:
 
 ### Required Lightbox JavaScript
 
-Use the lightbox JavaScript from `../reviewable-html-report/references/report_base.md` (resolved relative to this SKILL.md). The code is identical across all report skills.
+Use the lightbox behavior from the `reviewable-html-report` capability when available. Otherwise provide a self-contained static fallback without making browser-only behavior a completion requirement.
 
 ---
 
@@ -794,8 +797,8 @@ Use `IntersectionObserver` to highlight the active left-side TOC section during 
 
 In Diagnostic Mode or Pilot Design Mode, the final response must include:
 
-1. The HTML report file path or clickable link.
-2. Whether the report was successfully opened automatically in Chrome; if it failed, state this honestly.
+1. The HTML report file path or clickable link (default formal deliverable).
+2. The Markdown source report path or clickable link, only when produced (user explicitly requested an agent handoff / source-file delivery, or HTML generation was infeasible).
 3. A one-sentence summary of the dominant constraint and preferred first breakthrough point.
 4. The largest unknown or risk in the current analysis.
 5. A statement that no code has been modified.
@@ -819,6 +822,6 @@ In Execution Mode, the final response must additionally include:
 4. Compare candidate routes using outcome standards rather than technology identity.
 5. Choose a controllable, observable, reversible, replicable first `Pilot Cell`.
 6. Design applicable transition mechanisms, such as flags, canaries, shadows, ACLs, or Strangler seams, together with escape hatches, stability floors, ownership, and replication paths.
-7. Generate the interactive HTML engineering renewal decision report.
+7. Generate the interactive HTML engineering renewal decision report as the default formal deliverable. Generate a Markdown source report only when the user explicitly requests an agent handoff or source-file delivery, or when HTML generation is infeasible; when both exist, they share the same facts and decisions.
 8. Modify code only after the user explicitly authorizes execution within the pilot boundary.
 9. Let pilot facts determine correction, scaling, or termination rather than defending an existing idea.

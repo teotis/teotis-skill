@@ -3,8 +3,10 @@
 Common report mechanics for skills that generate interactive HTML analysis reports.
 
 Resolve this file relative to the `reviewable-html-report` skill directory:
-`references/report_base.md`. Calling skills can reference it from a sibling skill
-directory as `../reviewable-html-report/references/report_base.md`.
+`references/report_base.md`. Calling skills should reference the
+`reviewable-html-report` capability first. Any sibling-relative lookup used
+inside this repository is a local convenience, not a standalone portability
+requirement.
 
 ---
 
@@ -259,7 +261,57 @@ for the next round without granting unapproved implementation authority.
 
 ---
 
-## 6. TOC Scroll Linkage
+## 6. Required Section Index
+
+Every interactive HTML report must include a clickable section index. Use stable,
+human-readable IDs so links survive copy/paste and exported review notes.
+
+```html
+<nav class="toc" aria-label="Section index">
+  <a href="#executive-summary">Executive Summary</a>
+  <a href="#evidence-ledger">Evidence Ledger</a>
+  <a href="#recommendations">Recommendations</a>
+  <a href="#review-notes">Review Notes</a>
+</nav>
+
+<main>
+  <section id="executive-summary">
+    <h2>Executive Summary</h2>
+  </section>
+  <section id="evidence-ledger">
+    <h2>Evidence Ledger</h2>
+  </section>
+</main>
+```
+
+```css
+.toc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--toc-bg, #0f172a);
+  padding: 10px 0;
+}
+.toc a {
+  border-radius: 4px;
+  padding: 6px 10px;
+  color: var(--toc-link, #cbd5e1);
+  text-decoration: none;
+}
+.toc a:hover,
+.toc a.active {
+  background: var(--toc-active-bg, #1e293b);
+  color: var(--toc-active, #ffffff);
+}
+section[id] {
+  scroll-margin-top: 72px;
+}
+```
+
+### TOC Scroll Linkage
 
 ```javascript
 const observer = new IntersectionObserver(entries => {
@@ -274,4 +326,3 @@ const observer = new IntersectionObserver(entries => {
 
 document.querySelectorAll('section[id]').forEach(s => observer.observe(s));
 ```
-

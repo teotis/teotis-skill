@@ -74,7 +74,7 @@ When invoked:
 2. Identify whether the request requires structural analysis, transition planning, or both.
 3. Inspect the project only as deeply as evidence permits; clearly mark unavailable telemetry, history, runtime behavior, or business context.
 4. Apply the Structural Abstraction method below.
-5. Produce the report and optionally open it in a browser when the environment supports doing so.
+5. Produce the report and provide its path plus a clickable `file://` URL. Open it only when the user requests a preview.
 
 ### Operating modes
 
@@ -90,26 +90,48 @@ Never silently jump from analysis to implementation.
 
 ---
 
+## Investigation Kernel Adaptation
+
+This skill follows the project Investigation Kernel, but this section is a standalone local adaptation: even when the single skill is copied out, it must still be able to perform structural investigation.
+
+- **Concept version:** `investigation-kernel@v1`.
+- **Derived from:** maintainer contract `investigation-kernel@v1`; this local section is self-contained and does not require the source contract at runtime.
+- **Sync reference for maintainers:** the `abstraction-architect` registry row and `references/method_and_report_spec.md`.
+- **Local projection:** Pressure Map, candidate competition, admissibility gate, and constraint reality filter.
+- **Intentional differences:** this skill additionally requires the no-new-abstraction / local-deletion-wins baseline, process-spatialization counterexample competition, and the structural rewrite claim gate.
+- **Fallback:** if the `reviewable-html-report` capability or repo-local report base is unavailable, use bundled `references/fallback.html` to deliver self-contained static HTML that preserves the core conclusion, TOC, stable section IDs, evidence appendix, Mermaid source fallback, and non-persistent feedback.
+
+- **Analysis artifact root:** write formal analysis under `reports/abstraction-architect/` or an existing paired report directory; only write Markdown/HTML reports, evidence ledgers, candidate notes, transition handoffs, and review exports.
+- **Analysis-only boundary:** by default do not modify production code, tests, configuration, migrations, dependency locks, or Git history. Implementation, migration, rewrite, or Git operations require new explicit user authorization after the report.
+- **Evidence map:** build the structural pressure map first, covering key runtime paths, domain representations, workflow state, boundary glue, constraint evidence, and user-facing workflow burden before competing candidates.
+- **Baseline before abstraction:** candidate competition must include the no-new-abstraction / local-deletion-wins baseline. If deleting obsolete branches, merging local duplication, or clarifying copy/interaction removes the pain, report that before escalating to a canonical object.
+- **Coverage debt:** missing telemetry, history, runtime behavior, user context, external constraints, or migration evidence must be recorded as unknowns / coverage debt instead of being filled by structural intuition.
+- **Claim permission:** without observed evidence, constraint reality filtering, admissibility gate results, and counterexample competition, do not claim that a structural rewrite, canonical model, 3x simplification, or whole category of complexity removal is established.
+- **Budget-aware stop review:** a low-information wave triggers a stop review. Normal mode converges quickly, Deep mode rechecks the core pressure map, and Exhaustive mode stops only when marginal information gain for the remaining key unknowns becomes low.
+
+---
+
 ## Core Workflow
 
 1. Establish the target repository, requested mode, and evidence limits.
 2. Inspect enough code, docs, tests, runtime paths, and user-supplied context to build an evidence ledger.
 3. Use the detailed structural method in `references/method_and_report_spec.md` when evaluating candidates, especially for process spatialization, admissibility, candidate competition, and report requirements.
-4. Produce the formal deliverable: write `structural_abstraction_architect_report_{YYYYMMDD}_{HHMM}.html` as the user-facing interactive review surface. Use `reviewable-html-report/references/report_base.md` for shared report mechanics instead of reimplementing HTML infrastructure. If that reference is unavailable, degrade to a self-contained static HTML report that preserves the core conclusion, TOC, stable section IDs, evidence appendix, and Mermaid source fallback. Only when the user explicitly requests a Markdown source for agent handoff / source-file delivery, or when HTML generation is infeasible, also write the same-basename `structural_abstraction_architect_report_{YYYYMMDD}_{HHMM}.md` sharing the same evidence ledger, proposal IDs, and conclusions.
+4. Produce the formal deliverable: write `structural_abstraction_architect_report_{YYYYMMDD}_{HHMM}.html` as the user-facing interactive review surface. Use the `reviewable-html-report` capability for shared report mechanics instead of reimplementing HTML infrastructure; repo-local `skills/reviewable-html-report/references/report_base.md` is an optional enhancement, not a standalone dependency. If that capability is unavailable, use bundled `references/fallback.html`. Only when the user explicitly requests a Markdown source for agent handoff / source-file delivery, or when HTML generation is infeasible, also write the same-basename `structural_abstraction_architect_report_{YYYYMMDD}_{HHMM}.md` sharing the same evidence ledger, proposal IDs, and conclusions.
 5. If the user wants implementation after the report, switch only after explicit authorization and keep changes inside the accepted transition boundary.
 
 ## Report Delivery Contract
 
 - **HTML is the default formal deliverable:** include the executive summary, evidence ledger, pressure map, candidate/proposal IDs, admissibility results, rejected/deferred abstractions, transition handoff, unknowns, verification notes, topology/process visuals, proposal cards, filters, expandable evidence, review/export controls, section index, and user feedback path.
 - **Markdown is an upgrade artifact:** not produced by default; only when the user explicitly requests an agent handoff / source-file delivery, or when HTML generation is infeasible. When produced, it shares the same timestamp basename and the same evidence ledger, proposal IDs, and conclusions as the HTML.
-- **Consistent naming:** when both are produced, formal reports use the same timestamp basename. If HTML cannot be generated or opened, deliver Markdown as the fallback and state the HTML limitation.
-- **Final response:** list the report path(s), state whether HTML opened, summarize the highest-leverage structural opportunity in one sentence, and state that no code was modified.
+- **Consistent naming:** when both are produced, formal reports use the same timestamp basename. If HTML cannot be generated, deliver Markdown as the fallback and state the HTML limitation.
+- **Final response:** list the report path(s), provide a clickable `file://` URL for HTML, summarize the highest-leverage structural opportunity in one sentence, and state that no code was modified. Active browser opening is optional preview behavior.
 
 ## Resource Map
 
 - `references/method_and_report_spec.md` — full structural method, admissibility gate, evidence rhythm, Markdown/HTML report schema, anti-goals, and execution flow.
 - `references/discovery_patterns.md` — discovery prompts for unclear pressure maps or weak candidates.
-- `../reviewable-html-report/references/report_base.md` — shared HTML report mechanics when an interactive report is required; if unavailable, use the static HTML fallback and do not block report delivery.
+- `references/fallback.html` — bundled self-contained HTML fallback.
+- `reviewable-html-report` capability — shared HTML report mechanics when an interactive report is required; repo-local `skills/reviewable-html-report/references/report_base.md` is optional.
 
 ## Completion Standard
 

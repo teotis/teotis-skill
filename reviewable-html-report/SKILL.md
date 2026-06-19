@@ -70,6 +70,8 @@ The calling skill owns meaning. This skill owns report mechanics.
 - For Mermaid diagrams, follow the compatibility rules in `references/report_base.md`.
 - Provide readable Mermaid source or explanatory fallback text when remote CDN loading is unavailable.
 - If this skill or `report_base.md` is unavailable, the caller must still deliver a static HTML fallback and report that review persistence, lightbox behavior, clipboard export, or similar enhancements were omitted.
+- HTML delivery should provide the local path and a clickable `file://` URL by default. Opening a browser is optional preview behavior, not a completion standard.
+- The calling skill owns its formal delivery policy. This skill only provides reviewable HTML mechanics. Current architect / renewal skills default to HTML and add a same-basename Markdown source report only when the user explicitly requests agent handoff / source-file delivery, or when HTML generation is infeasible.
 
 ## Resource Map
 
@@ -82,6 +84,7 @@ All paths below are relative to this SKILL.md file's directory.
 When migrating an existing analysis skill:
 
 1. Keep the skill's domain method and report schema in that skill.
-2. Replace inline report infrastructure prose with: "Use `reviewable-html-report/references/report_base.md` for shared report mechanics."
-3. Keep skill-specific colors, terminology, statuses, and export directives local to the calling skill.
-4. Do not merge analysis skills merely because they share this report layer.
+2. Replace inline report infrastructure prose with: "Use the `reviewable-html-report` capability for shared report mechanics; repo-local `references/report_base.md` is an optional enhancement."
+3. Let the calling skill define whether HTML-only, Markdown-as-upgrade, or paired Markdown+HTML is the default. When both are produced, use the same timestamp basename and shared conclusions.
+4. Keep skill-specific colors, terminology, statuses, and export directives local to the calling skill.
+5. Do not merge analysis skills merely because they share this report layer.

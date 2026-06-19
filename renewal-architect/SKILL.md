@@ -84,7 +84,27 @@ When this skill is invoked:
    - the stability floor that must not be crossed during change;
    - the adoption economics required for the route to land;
    - the path by which a pilot becomes reusable system capability.
-6. In Diagnostic or Pilot Design Mode, generate the interactive HTML engineering renewal decision report as the default formal deliverable and open it when feasible; produce a same-basename Markdown source report only on explicit user request or when HTML generation is infeasible. In Execution Mode, first present the pilot boundary and validation gates, then implement controlled changes and report outcomes.
+6. In Diagnostic or Pilot Design Mode, generate the interactive HTML engineering renewal decision report as the default formal deliverable and provide the report path plus a clickable `file://` URL; produce a same-basename Markdown source report only on explicit user request or when HTML generation is infeasible. In Execution Mode, first present the pilot boundary and validation gates, then implement controlled changes and report outcomes.
+
+---
+
+## Investigation Kernel Adaptation
+
+This skill follows the project Investigation Kernel, but this section is a standalone local adaptation: even when the single skill is copied out, it must still be able to perform renewal diagnosis.
+
+- **Concept version:** `investigation-kernel@v1`.
+- **Derived from:** maintainer contract `investigation-kernel@v1`; this local section is self-contained and does not require the source contract at runtime.
+- **Sync reference for maintainers:** the `renewal-architect` registry row and `references/method_and_report_spec.md`.
+- **Local projection:** Renewal Field Map, Fact Ledger, Dominant Constraint, Protect / Experiment / Defer, and Pilot-to-Decision Contract.
+- **Intentional differences:** this skill projects the shared investigation kernel into legacy modernization, adoption economics, stability floor, rollback path, and owner assumptions. It does not make structural rewrite claims; structural abstraction questions should route to `abstraction-architect`.
+- **Fallback:** if the `reviewable-html-report` capability or repo-local report base is unavailable, use bundled `references/fallback.html` to deliver self-contained static HTML that preserves the core conclusion, TOC, stable section IDs, evidence appendix, Mermaid source fallback, and non-persistent feedback.
+
+- **Analysis artifact root:** write formal analysis under `reports/renewal-architect/` or an existing paired report directory; only write Markdown/HTML reports, fact ledgers, pilot notes, decision handoffs, and review exports.
+- **Analysis-only boundary:** Diagnostic Mode and Pilot Design Mode must not modify production code, tests, configuration, migrations, dependency locks, or Git history. Execution Mode activates only when the user explicitly asks for implementation, and must first restate the pilot boundary, validation gates, rollback path, and owner assumptions.
+- **Evidence map:** build the Renewal Field Map / Fact Ledger first, covering current state, critical flows, stability floor, adoption economics, owner/risk assumptions, and pilot/rollback signals before proposing a migration or modernization route.
+- **Coverage debt:** missing operational evidence, business constraints, compatibility data, owner confirmation, rollout history, or rollback evidence must be recorded as assumptions / unknowns / coverage debt instead of being filled by modernization instinct.
+- **Claim permission:** without current-state evidence, capability benefit, stability risk, adoption economics, reversible pilot path, and validation gates, do not claim that a migration route, modernization recommendation, safe rollout, or category shift is established.
+- **Budget-aware stop review:** a low-information wave triggers a stop review. Standard mode focuses on the dominant constraint and pilot-to-decision draft, Deep mode rechecks adoption economics, rollback path, and stability floor, and Exhaustive mode stops only when marginal information gain for remaining key unknowns becomes low.
 
 ---
 
@@ -93,15 +113,15 @@ When this skill is invoked:
 1. Determine whether the request is Diagnostic, Pilot Design, or explicitly authorized Execution Mode.
 2. Build a fact ledger from code, docs, tests, operational evidence, business constraints supplied by the user, and known unknowns.
 3. Use `references/method_and_report_spec.md` for the twelve lenses, analysis rhythm, pilot design rules, Markdown/HTML report schema, and final delivery checklist.
-4. Produce `pragmatic_renewal_architect_report_{YYYYMMDD}_{HHMM}.html` as the default formal deliverable interactive engineering renewal decision report. Use `reviewable-html-report/references/report_base.md` for reusable report mechanics. If that reference is unavailable, degrade to a self-contained static HTML report that preserves the core conclusion, TOC, stable section IDs, evidence appendix, and Mermaid source fallback. Only when the user explicitly requests a Markdown source for agent handoff / source-file delivery, or when HTML generation is infeasible, also write the same-basename `.md` sharing the same fact ledger and conclusions.
+4. Produce `pragmatic_renewal_architect_report_{YYYYMMDD}_{HHMM}.html` as the default formal deliverable interactive engineering renewal decision report. Use the `reviewable-html-report` capability for reusable report mechanics; repo-local `skills/reviewable-html-report/references/report_base.md` is an optional enhancement, not a standalone dependency. If that capability is unavailable, use bundled `references/fallback.html`. Only when the user explicitly requests a Markdown source for agent handoff / source-file delivery, or when HTML generation is infeasible, also write the same-basename `.md` sharing the same fact ledger and conclusions.
 5. In Execution Mode, first restate the pilot boundary, validation gates, rollback path, and owner assumptions; then implement only within that boundary.
 
 ## Report Delivery Contract
 
 - **HTML is the default formal deliverable for users:** include the Fact Ledger, Dominant Constraint, Protect / Experiment / Defer split, Pilot-to-Decision Contract, Adoption Economics, decision gates, unknowns, verification notes, decision maps, pilot cards, stability guardrails, feedback/export controls, and visual paths.
 - **Markdown is an upgrade artifact:** not produced by default; only when the user explicitly requests an agent handoff / source-file delivery, or when HTML generation is infeasible. When produced, it shares the same fact ledger and conclusions as the HTML and serves as the agent source of truth; it must not introduce judgments absent from the HTML.
-- **Same basename:** when both are produced, formal diagnostics and pilot designs use the same timestamp basename. If HTML cannot be generated or opened, deliver Markdown as the fallback and state the HTML limitation.
-- **Final response:** list the report path(s), state whether HTML opened, summarize the dominant constraint and first breakthrough point in one sentence, and state that no code was modified.
+- **Same basename:** when both are produced, formal diagnostics and pilot designs use the same timestamp basename. If HTML cannot be generated, deliver Markdown as the fallback and state the HTML limitation.
+- **Final response:** list the report path(s), provide a clickable `file://` URL for HTML, summarize the dominant constraint and first breakthrough point in one sentence, and state that no code was modified. Active browser opening is optional preview behavior.
 
 ## Required Outputs
 
@@ -114,7 +134,8 @@ When this skill is invoked:
 ## Resource Map
 
 - `references/method_and_report_spec.md` — detailed lenses, analysis rhythm, Markdown/HTML report specification, anti-patterns, and final checklist.
-- `../reviewable-html-report/references/report_base.md` — shared HTML report mechanics when an interactive report is required; if unavailable, use the static HTML fallback and do not block report delivery.
+- `references/fallback.html` — bundled self-contained HTML fallback.
+- `reviewable-html-report` capability — shared HTML report mechanics when an interactive report is required; repo-local `skills/reviewable-html-report/references/report_base.md` is optional.
 
 ## Completion Standard
 

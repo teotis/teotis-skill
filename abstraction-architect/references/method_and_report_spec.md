@@ -32,6 +32,7 @@ Before committing to a high-leverage abstraction, probe the system from multiple
 - **Caller reality** — how consumers wrap, compensate for, or avoid the current API or boundary.
 - **Failure and recovery** — what retries, incidents, repair scripts, manual steps, and status mismatches reveal.
 - **Environmental variation** — how tenants, platforms, protocols, runners, permissions, and deployments deform the same behavior.
+- **Observational probes** — whether callers, tests, queries, telemetry, reports, policy checks, and recovery paths can distinguish rival structural explanations.
 
 These passes are a candidate generator. They prevent the analysis from mistaking the first repeated code shape for the real invariant.
 
@@ -40,6 +41,19 @@ These passes are a candidate generator. They prevent the analysis from mistaking
 For high-value pressure sites, generate at least two plausible structural explanations before recommending one. Compare them by evidence fit, complexity deletion, meaningful differences preserved, deformation power, transition seam, and disproof signal.
 
 If candidates explain different burdens, report them separately. If one candidate is weaker, say why it is rejected, deferred, or scoped down. Do not present one elegant abstraction as inevitable merely because it is available.
+
+### Baseline Before Abstraction
+
+Every pressure site must first compete against the **no new abstraction / local deletion wins** baseline. Before searching for a canonical object, ask whether the observed burden can be removed by a smaller action:
+
+- delete obsolete branches, dead modes, stale compatibility paths, or abandoned workflow steps;
+- merge local duplication without creating a new cross-system concept;
+- improve interaction copy, labels, empty states, confirmations, or recovery text when the burden is user confusion rather than structural workflow state;
+- keep the status quo with evidence when the code is ugly but stable, low-value, or protected by real constraints.
+
+Local deletion wins when it removes the concrete symptom without introducing a new invariant, projection registry, framework, DSL, coordination layer, or migration surface. A canonical model is only admissible after this baseline fails to explain the recurring exception family, projection drift, caller compensation, lifecycle inconsistency, or workflow burden.
+
+Report the baseline explicitly: classify it as accepted, rejected, or insufficient, and name the evidence that decides the outcome. This prevents the method from rewarding abstraction merely because a structural lens is available.
 
 ## A. Seeing Structural Pressure
 
@@ -111,6 +125,18 @@ A component cannot be judged in isolation. Its meaning depends on dependencies, 
 
 **Technique:** For a candidate component `X`, map `X relative to context S`: inputs, outputs, dependencies, callers, invariants, environmental variants, and failure modes.
 
+When a proposal claims that two representations are equivalent, make that
+claim relative to an explicit observer, operation, or context. Record which
+differences are intentionally ignored, which must remain visible, what
+information a transformation loses, and whether that loss is allowed,
+traceable, or recoverable.
+
+Do not infer domain identity from matching fields, serialization, or current
+tests alone. Identify a **separating probe** capable of exposing differences in
+lifecycle, ownership, ordering, failure, security, or recovery semantics. If
+the available probes cannot distinguish rival candidates, preserve the
+uncertainty and classify the conclusion as unproven.
+
 ### 8. Contract and Invariant First
 
 Before proposing a new abstraction, state what it must preserve and what differences it must intentionally expose.
@@ -141,6 +167,37 @@ Prefer components that compose through stable local contracts over systems that 
 **Engineering question:** Can adjacent modules establish sufficient compatibility rules so that the global pipeline emerges without an expanding orchestrator?
 
 **Caution:** Central coordination may still be necessary for transactions, security policy, rate limiting, or globally ordered workflows. State why decentralization is safe before recommending it.
+
+For any proposal that relies on local facts composing into a global fact,
+provide a **Local-to-Global Certificate**:
+
+- name the local units and their overlap domains;
+- define the compatibility predicate on each overlap;
+- state which component owns truth at the boundary;
+- explain how conflicts are detected and arbitrated;
+- check whether compatible local states produce an existing global state;
+- check whether that global state is unique for the claimed invariant;
+- identify ordering, transaction, security, quota, or policy constraints that
+  are invisible to pairwise checks.
+
+Pairwise compatibility is not sufficient evidence of global composition.
+
+When local checks close but the global claim remains doubtful, run a
+**Residual Obstruction Test**:
+
+1. Define the allowed operations, such as transitions, approvals,
+   compensations, projection updates, adapter conversions, and recovery steps.
+2. Define the obligations those operations are expected to discharge, such as
+   dependencies, evidence, ownership, consistency, and pending responsibility.
+3. Check whether the observed global state can be legally generated,
+   explained, eliminated, and recovered using those operations.
+4. Trace complete cycles and round trips, not only adjacent pairs.
+5. Classify any residual as evidence of a missing canonical object, incomplete
+   state space, wrong boundary, hidden global coordination requirement, or a
+   meaningful difference that must remain.
+
+Do not introduce homology terminology or require a mathematical chain complex.
+This is an engineering falsification test for claims of natural composition.
 
 ### 11. Generalization Must Delete Exceptions
 
@@ -205,6 +262,9 @@ No proposal qualifies as a recommended structural direction until it passes this
 | Hidden invariant hypothesis | The exact common rule or domain meaning believed to unify the symptom family. |
 | Process-to-space map | For workflow, lifecycle, orchestration, or stateful interaction candidates: the canonical process object, its base contexts, local instances, projections, and gluing conditions. |
 | Projection consistency | For projection-based candidates: which artifacts are projections of the same object, which invariant each projection owns or reflects, and how drift between them is detected or eliminated. |
+| Observational adequacy | Which callers, tests, queries, telemetry, reports, policy checks, or recovery paths support the candidate; which observation blind spots remain; and which separating probe distinguishes it from the nearest rival. |
+| Local-to-global certificate | For composition claims: local units, overlap domains, compatibility predicates, truth ownership, conflict handling, existence and uniqueness of the global state, and global constraints invisible to pairwise checks. |
+| Residual obstruction | When local checks appear valid: whether the claimed global state can be legally generated, explained, eliminated, and recovered through allowed operations, including full-cycle and round-trip behavior. |
 | Base-change behavior | When variation exists: which environmental, platform, tenant, permission, runner, or capability differences are explicit base parameters, and which core rules remain invariant across bases. |
 | Difference preservation | Cases that look similar but must remain distinct, and how the design preserves them. |
 | Exception classification | Which exception families would be absorbed by the new structure, which must remain as real differences, and which are false alarms unrelated to this pressure. |
@@ -236,6 +296,8 @@ Do not recommend an abstraction when:
 - It merely collects process artifacts under a new name without specifying projection consistency, gluing rules, and drift detection.
 - It requires a broad rewrite without a transition seam or rollback mechanism.
 - It assumes runtime pain, business benefit, or developer friction not evidenced by available data.
+- It chooses between rival candidates when current observations cannot distinguish them and names no separating probe.
+- It treats pairwise compatibility as proof of a valid global state without checking global constraints or full-cycle residuals.
 - It turns cosmetic UI polish into an architecture proposal without evidence of workflow burden, control-surface sprawl, or interaction-state complexity.
 - It replaces a local inconvenience with distributed coupling or opaque indirection.
 
@@ -285,13 +347,13 @@ This filter runs after the system survey and before the structural pressure map.
 | Persistent data format / schema | **Real constraint** | Production data depends on this structure; requires migration strategy, not dismissal |
 | Documented integration interface | **Real constraint** | External systems depend on this protocol; changes require coordination |
 | User-visible behavior commitment | **Real constraint** | User workflows depend on this interaction model; changes require migration guidance |
-| Deployment / operations constraint | **Real constraint** | Hard requirements: CI pipeline, infra, SLO, etc. |
+| Deployment / operations constraint | **Real constraint** | Hard requirements: CI pipeline, infrastructure, SLO, and similar constraints |
 | Compliance / security requirement | **Real constraint** | Mandated by legal or security policy; non-negotiable |
-| Internal callers (same repo) | **Inertia constraint** | Can be updated in a single refactoring pass; should not constrain the target model |
+| Internal callers in the same repository | **Inertia constraint** | Can be updated in a single refactoring pass; should not constrain the target model |
 | Legacy naming / package structure | **Inertia constraint** | Should not dictate the shape of the target architecture |
 | Existing partial implementation | **Inertia constraint** | Sunk cost; should not distort the target model to preserve partial work |
-| "The diff will be too large" | **Inertia constraint** | Migration cost should be assessed separately; must not pollute the target model |
-| Organizational habit / "we've always done it this way" | **Inertia constraint** | Not an architecture constraint; belongs to the domain of change management |
+| "The diff will be too large" | **Inertia constraint** | Migration cost should be assessed separately; it must not pollute the target model |
+| Organizational habit / "we've always done it this way" | **Inertia constraint** | Not an architecture constraint; belongs to change management |
 
 ### Application rule
 
@@ -341,16 +403,18 @@ Identify recurring forms of pressure:
 
 For every high-value structural hypothesis:
 
-1. Formulate the proposed invariant or canonical abstraction.
-2. Run discovery passes when the invariant is not obvious: data lifecycle, caller reality, failure/recovery, and environmental variation.
+1. Formulate the no new abstraction / local deletion wins baseline before any proposed invariant or canonical abstraction.
+2. Run discovery passes when the invariant is not obvious: data lifecycle, caller reality, failure/recovery, environmental variation, and observational probes.
 3. Generate competing structural explanations for high-leverage pressure sites and compare them before choosing one.
-4. For dynamic workflow, lifecycle, orchestration, or interaction-state pressure, run the process spatialization pass: name the base, local instances, projections, gluing rules, and deformation tests.
-5. Locate concrete affected paths.
-6. Find at least one near-counterexample or meaningful difference.
-7. Estimate what complexity disappears and what new complexity is introduced.
-8. Define a transition seam, even though this skill does not execute it.
-9. For interaction-flow candidates, estimate deleted user steps, modes, decisions, training rules, and recovery paths as well as introduced discoverability or accessibility risks.
-10. Classify confidence and state missing evidence.
+4. Test whether current probes can distinguish the nearest candidates; if not, name a separating probe and keep the conclusion unproven.
+5. For dynamic workflow, lifecycle, orchestration, or interaction-state pressure, run the process spatialization pass: name the base, local instances, projections, gluing rules, and deformation tests.
+6. For local-composition claims, require a Local-to-Global Certificate and run the Residual Obstruction Test when pairwise checks may hide cycle-level or global contradictions.
+7. Locate concrete affected paths.
+8. Find at least one near-counterexample or meaningful difference.
+9. Estimate what complexity disappears and what new complexity is introduced.
+10. Define a transition seam, even though this skill does not execute it.
+11. For interaction-flow candidates, estimate deleted user steps, modes, decisions, training rules, and recovery paths as well as introduced discoverability or accessibility risks.
+12. Classify confidence and state missing evidence.
 
 ## Phase 4: Handoff boundary
 
@@ -369,7 +433,17 @@ When a structural direction is accepted, produce a handoff brief for transition 
 
 ## Deliverable
 
-Generate an HTML report named `structural_abstraction_architect_report_{YYYYMMDD}_{HHMM}.html` (e.g. `structural_abstraction_architect_report_20260608_1432.html`). Include timestamp to prevent overwrites across multiple runs. The report contains analysis, not code modifications. If HTML generation or automatic browser launch is not feasible, provide the same content as Markdown and clearly state the limitation.
+The default formal deliverable is a single interactive HTML report:
+
+- `structural_abstraction_architect_report_{YYYYMMDD}_{HHMM}.html`
+
+Markdown source is an upgrade artifact and is generated only when the user explicitly requests an agent handoff or source-file delivery, or when HTML generation is infeasible:
+
+- `structural_abstraction_architect_report_{YYYYMMDD}_{HHMM}.md`
+
+When both are produced, they share the same timestamp basename. Include timestamp to prevent overwrites across multiple runs. The reports contain analysis, not code modifications. If HTML generation is infeasible, fall back to Markdown and clearly state the HTML limitation.
+
+When a Markdown source report is produced, HTML and Markdown must share the same evidence ledger, proposal IDs, admissibility classifications, and conclusions. HTML may add visualizations, filters, and review controls; it must not introduce conclusions absent from the underlying analysis or Markdown source.
 
 ## Required report sections
 
@@ -476,7 +550,7 @@ For interaction-flow proposals, these diagrams may instead be labeled `Current I
 
 ### Mermaid global initialization
 
-Use the Mermaid initialization pattern from `../reviewable-html-report/references/report_base.md` (resolved relative to this SKILL.md). This skill's theme uses:
+Use the Mermaid initialization pattern provided by the `reviewable-html-report` capability. In this repository, `skills/reviewable-html-report/references/report_base.md` is an optional reference, not a standalone dependency. This skill's theme uses:
 
 ```html
 <script type="module">
@@ -500,7 +574,7 @@ Use the Mermaid initialization pattern from `../reviewable-html-report/reference
 </script>
 ```
 
-Mermaid compatibility rules are in `../reviewable-html-report/references/report_base.md`.
+Follow the Mermaid compatibility rules from the `reviewable-html-report` capability when available; otherwise preserve readable Mermaid source and disclose the rendering limitation.
 
 ### Minimum CSS for topology comparison and lightbox
 
@@ -531,7 +605,7 @@ Mermaid compatibility rules are in `../reviewable-html-report/references/report_
 
 ### Lightbox JavaScript
 
-Use the lightbox JavaScript from `../reviewable-html-report/references/report_base.md` (resolved relative to this SKILL.md). The code is identical across all report skills.
+Use the lightbox behavior from the `reviewable-html-report` capability when available. Otherwise provide a self-contained static fallback without making browser-only behavior a completion requirement.
 
 ## Interactive review system
 
@@ -599,10 +673,11 @@ Do NOT produce:
 3. Survey structure, interfaces, representations, variations, transformations, tests, process projection surfaces, user/task flows when relevant, and available operational evidence. Question whether the current domain vocabulary, type system, process vocabulary, boundary naming, or interaction vocabulary distorts the underlying structure.
 4. Run the Constraint Reality Filter (Phase 1.5): list the constraints the system appears bound by, classify each as real or inertia, and carry only real constraints into the pressure map.
 5. Build the structural pressure map and evidence ledger.
-6. For open-ended or non-obvious pressure sites, use `references/discovery_patterns.md` to run discovery passes and candidate competition before selecting a direction.
+6. For open-ended or non-obvious pressure sites, use `references/discovery_patterns.md` to run discovery passes, observational probe analysis, and candidate competition before selecting a direction.
 7. For dynamic workflow or orchestration pressure, run process spatialization before proposing a decomposition: identify base contexts, local instances, projection artifacts, gluing conditions, and deformation tests.
-8. Construct candidate abstractions and aggressively test them against counterexamples and the admissibility gate. Ensure each candidate's constraint classification (which real constraints it respects, which inertia constraints it ignores) is explicit before classification.
-9. Classify validated opportunities, unproven hypotheses, false abstractions, and pragmatic sequencing problems.
-10. Generate `structural_abstraction_architect_report_{YYYYMMDD}_{HHMM}.html` with interactive review support only after the structural conclusions are formed.
-11. Open the report in a browser only when supported; otherwise provide its saved path or Markdown fallback.
-12. After user feedback, produce a transition handoff brief. Do not execute code changes without explicit authorization.
+8. For equivalence claims, state the observer or context, observation blind spots, information-loss policy, and separating probe. For local-composition claims, require a Local-to-Global Certificate and inspect full-cycle residuals.
+9. Construct candidate abstractions and aggressively test them against counterexamples and the admissibility gate. Ensure each candidate's constraint classification (which real constraints it respects, which inertia constraints it ignores) is explicit before classification.
+10. Classify validated opportunities, unproven hypotheses, false abstractions, and pragmatic sequencing problems.
+11. Generate `structural_abstraction_architect_report_{YYYYMMDD}_{HHMM}.html` as the default formal deliverable only after the structural conclusions are formed. Generate the same-basename `.md` only when the user explicitly requests an agent handoff or source-file delivery, or when HTML generation is infeasible.
+12. Provide the saved report path and a clickable `file://` URL. Open the report only when the user requests a preview or the environment explicitly supports interactive preview without CI, SSH, or headless side effects.
+13. After user feedback, produce a transition handoff brief. Do not execute code changes without explicit authorization.

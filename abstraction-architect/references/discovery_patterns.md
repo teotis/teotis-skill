@@ -107,6 +107,52 @@ Disproof signals:
 - the abstraction hides security, ownership, or compliance distinctions;
 - the shared core becomes weaker than the variants it replaces.
 
+### 5. Observational Probe Pass
+
+Before treating two representations as one concept, or choosing between rival
+structural explanations, check whether the available evidence can actually
+distinguish them.
+
+List the relevant probes:
+- callers and call ordering;
+- tests and failure injection;
+- queries, serializers, reports, and UI projections;
+- telemetry and operational alerts;
+- authorization and policy checks;
+- repair scripts, retries, compensation, and recovery paths.
+
+For each candidate, ask:
+- Relative to which observer, operation, or context do the objects appear
+  equivalent?
+- Which meaningful differences are visible to current probes, and which remain
+  unobserved?
+- What information is lost during projection or conversion, and is that loss
+  allowed, traceable, or recoverable?
+- Which important invariant has no probe capable of validating it?
+- What separating probe would expose a difference in lifecycle, ownership,
+  ordering, failure, security, or recovery semantics?
+
+A compact `Candidate × Probe` matrix is often enough:
+
+| Probe | Candidate A | Candidate B | Distinguishing power |
+|---|---|---|---|
+| Caller ordering | Precondition owned by caller | Ordering enforced internally | Strong |
+| Recovery script | Shared repair rule | Context-specific repair rule | Strong |
+| Serialization | Same fields | Same fields | Weak |
+| UI status | Both show complete | Both show complete | None |
+
+Candidate structures often found:
+- observation-relative equivalence contract;
+- missing lifecycle or failure dimension;
+- bounded contexts that only look identical through low-resolution projections;
+- a separating test, runtime probe, or recovery scenario needed before unification.
+
+Disproof signals:
+- the proposed probe cannot observe the claimed invariant;
+- all available probes are derived from the same lossy projection;
+- the analyst selects a candidate by elegance when current evidence cannot
+  distinguish the rivals.
+
 ## Candidate Competition
 
 For high-value pressure sites, generate at least two plausible structural
@@ -122,6 +168,8 @@ Compare candidates on:
 - deformation power: what future change becomes cheap;
 - transition seam: how it can be piloted without a broad rewrite;
 - disproof signal: what would prove it wrong.
+- observational adequacy: which probes distinguish the candidates, which
+  blind spots remain, and whether a separating probe is still required.
 
 Common competing explanations:
 
@@ -137,6 +185,9 @@ Common competing explanations:
 Recommend a candidate only after explaining why the nearest rival is weaker,
 too risky, or missing evidence. If the candidates delete different complexity,
 report them as separate proposals instead of forcing one winner.
+When current probes cannot distinguish the nearest rivals, classify the result
+as unproven and name the separating evidence required instead of choosing by
+preference.
 
 ## Definition Quality Checks
 
@@ -150,6 +201,8 @@ Ask:
 - What branch, adapter, status, or manual step disappears?
 - What future variant becomes a trivial projection?
 - What counterexample would force us to split the object again?
+- Which observer or probe can distinguish this definition from its nearest
+  rival, and which invariant remains in an observation blind spot?
 
 If the answers are vague, the proposal is not ready for recommendation. Put it
 in `Promising but unproven hypothesis` or `False abstraction risk`.

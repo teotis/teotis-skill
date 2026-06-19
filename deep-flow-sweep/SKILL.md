@@ -216,12 +216,14 @@ Broad findings become escalation briefs:
 
 ## Output Contract
 
-For formal sweeps, produce paired reports:
+For formal sweeps, produce paired reports by default. An explicit user request for chat-only or no files may downgrade delivery, with unpersisted evidence and coverage debt stated in the response:
 
 - Markdown source report: `deep_flow_sweep_report_{YYYYMMDD}_{HHMM}.md`
 - HTML review surface: `deep_flow_sweep_report_{YYYYMMDD}_{HHMM}.html`
 
 The Markdown report is the source of truth. The HTML report may visualize, filter, or collapse sections, but it must not introduce conclusions missing from the Markdown.
+
+Use the `reviewable-html-report` capability when available. Otherwise use bundled `references/fallback.html` to produce self-contained HTML with a TOC, stable section IDs, evidence appendix, Mermaid source fallback, and non-persistent feedback. Provide the path and a clickable `file://` URL; do not actively open a browser unless the user requests a preview.
 
 Required sections:
 
