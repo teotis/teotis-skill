@@ -62,6 +62,12 @@ Context is loaded progressively by role and state:
   artifacts.
 - The runtime keeps its full recovery surface, but user-facing chat exposes only
   the smallest command set needed for the current state.
+- User-visible behavior, layout, copy, workflow, and visual-output packages use
+  a **User-Visible Delta Ledger**: agents have bounded discretion for necessary
+  small adjacent changes, but visible drift outside the target surface must be
+  recorded. Changes to protected primary workflows, first-screen composition,
+  navigation models, release promises, or explicit non-goals are
+  `decision-required`, not hidden inside a routine bugfix.
 
 Treat an orchestration as one execution contract with multiple projections:
 - `INDEX.md` owns static human intent, authorization, policy, landing strategy, and capability gates.
@@ -122,6 +128,7 @@ Before generating artifacts:
 - Inspect enough local context to split work into concrete packages.
 - Check current git status.
 - Ensure every functional package has package id, allowed/forbidden paths, dependencies, acceptance criteria, verification commands, expected evidence, branch/worktree policy, and unlock conditions.
+- Add a User-Visible Delta Ledger for packages that change user-facing behavior, layout, copy, workflow, or visual output; do not force that burden onto purely internal packages.
 - Run capability preflight: classify each package or gate as `autonomous`, `agent-verifiable substitute`, or `external-assist`.
 - Default to task packages that agents can complete by themselves. If real-device QA, human visual acceptance, external approval, credential entry, or another `external-assist` item is essential, cannot be ignored, and has no agent-verifiable substitute, stop before generating the kit and ask the user to approve the gate, change scope, or abort the orchestration.
 - Define landing strategy before launch: primary path, preapproved fallbacks, explicit non-goals, abort conditions, and independent merge candidates.
