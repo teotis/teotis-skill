@@ -50,6 +50,19 @@ the work, update their coordinator status, then call one shared advancement
 command. They do not implement scheduling logic themselves, and they do not
 decide what downstream work to start.
 
+Context is loaded progressively by role and state:
+- Functional package prompts use package-local context first: package doc,
+  assigned status, graph/state rows, and relevant repository files.
+- Read full INDEX, events, or failure-recovery details only when retry, policy
+  conflict, fallback judgment, or capability uncertainty requires them.
+- Functional package prompts do not copy global merge, fallback selection,
+  cleanup, or task-level outcome logic; `99-finalize` owns those decisions.
+- Background executors should not emit progress narration, task restatement, or
+  intermediate summaries. They write durable evidence once to coordinator
+  artifacts.
+- The runtime keeps its full recovery surface, but user-facing chat exposes only
+  the smallest command set needed for the current state.
+
 Treat an orchestration as one execution contract with multiple projections:
 - `INDEX.md` owns static human intent, authorization, policy, landing strategy, and capability gates.
 - `launchers/package-graph.tsv` owns machine-readable package topology.
@@ -110,6 +123,7 @@ Before generating artifacts:
 - Check current git status.
 - Ensure every functional package has package id, allowed/forbidden paths, dependencies, acceptance criteria, verification commands, expected evidence, branch/worktree policy, and unlock conditions.
 - Run capability preflight: classify each package or gate as `autonomous`, `agent-verifiable substitute`, or `external-assist`.
+- Default to task packages that agents can complete by themselves. If real-device QA, human visual acceptance, external approval, credential entry, or another `external-assist` item is essential, cannot be ignored, and has no agent-verifiable substitute, stop before generating the kit and ask the user to approve the gate, change scope, or abort the orchestration.
 - Define landing strategy before launch: primary path, preapproved fallbacks, explicit non-goals, abort conditions, and independent merge candidates.
 
 Use `references/planning_contract.md` for the detailed projection, capability,
@@ -182,8 +196,15 @@ After generating the kit, show only immediately actionable entry paths:
 - Mainline branch, integration branch, max parallel agents.
 - First wave packages and final package `99-finalize`.
 - Manual path: copy prompts from `launchers/agent-prompts.md`.
-- Script path: absolute `cd` and `bash <plan>/launchers/orchestrate.sh start` commands.
-- Status/recovery commands: `status`, `advance`, `retry <package-id>`, `finalize`, `cleanup --mainline <branch>`, `doctor --environment`, `collect-logs`, `verify-finalize`, `scratch-path`.
+- Script path: absolute `cd`, `bash <plan>/launchers/orchestrate.sh start`,
+  `bash <plan>/launchers/orchestrate.sh status`, and `claude agents --cwd
+  <repo-root>` commands.
+- Default user chat shows only `start`, `status`, and `claude agents`.
+- Recovery commands are shown only when the current state requires them:
+  `retry <package-id>` for `blocked`/`stale`/`invalid`, `doctor --environment`
+  for runner setup, `collect-logs <package-id>` for diagnosis, `advance` for a
+  shell-less manual tail-call gap, `verify-finalize`/`finalize` for finalize
+  recovery, and `scratch-path <package-id>` only for declared exchange needs.
 - External-assist gates, owners, whether they block release, and exact evidence expected.
 - Landing strategy summary.
 
@@ -201,6 +222,7 @@ Claude Agents View.
 - Do NOT launch downstream packages from a package agent directly.
 - Do NOT assign non-autonomous work such as real-device QA, external approvals, credential entry, or human-only visual judgment to auto-launched packages.
 - Do NOT hide external-assist requirements inside acceptance criteria.
+- Do NOT output a full kit with a blocking external-assist gate before the user has approved that gate, owner, expected evidence, and blocking scope.
 - Do NOT invent fallback paths during failure handling unless the INDEX preapproved them or the user explicitly approves them.
 - Do NOT merge anything after the main plan fails unless it is a predeclared independent merge candidate with standalone verification.
 - Do NOT add `state.tsv` columns for narrative evidence, retry history, QA links, release tickets, or reviewer comments.

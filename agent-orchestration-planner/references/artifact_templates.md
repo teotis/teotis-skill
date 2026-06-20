@@ -25,7 +25,7 @@ or the final chat instructions after creating an orchestration kit.
 
 ## User Entry Points
 - Manual: copy prompts from `launchers/agent-prompts.md` into any agent platform.
-- Script: run `bash launchers/orchestrate.sh start`; by default view Claude Code agents with `claude agents`. For Codex, run with `ORCHESTRATION_RUNNER=codex` and inspect `status/launch-<package-id>.log`.
+- Script: unless the user explicitly selects another runner, run `bash launchers/orchestrate.sh start` to launch Claude Code background sessions and view them with `claude agents`. Do not present Codex as a peer default option.
 - Status: run `bash launchers/orchestrate.sh status`.
 - Retry: run `bash launchers/orchestrate.sh retry <package-id>`.
 - Manual advancement fallback: run `bash launchers/orchestrate.sh advance`.
@@ -49,6 +49,7 @@ Package agents are authorized to:
 - Update the state ledger only through `bash <plan-root>/launchers/orchestrate.sh mark-state ...`; do not edit `state.tsv` manually.
 - Write temporary, non-sensitive shared working notes or intermediate artifacts only under their assigned scratch path from `bash <plan-root>/launchers/orchestrate.sh scratch-path <package-id>`.
 - Call `bash <plan-root>/launchers/orchestrate.sh advance --from <package-id>` after recording final status.
+- The launcher persists the selected runner in `status/runner`, so this plain tail call must continue with the runner chosen by the initial `start`; do not rely on environment inheritance.
 
 `99-finalize` is authorized by default to perform incremental orchestration operations for this plan:
 - Inspect package docs, status files, state, branches, commits, and diffs.
@@ -110,78 +111,81 @@ Allowed task-level outcomes:
 | Package Or Gate | Class | Owner | Why Not Fully Autonomous | Autonomous Substitute | External Evidence Required | Blocks |
 |---|---|---|---|---|---|---|
 | 01-implementation | autonomous | Claude Code | n/a | tests/build | none | normal graph |
-| real-device-qa | external-assist | user/Codex/device owner | requires physical device or human visual judgment | APK path, install command, logs, focused tests | checklist result, screenshot/video/log if available | release only, unless user says otherwise |
+| real-device-qa | external-assist | user/Codex/device owner | requires physical device or human visual judgment | APK path, install command, logs, focused tests | checklist result, screenshot/video/log if available | release only after explicit user approval; otherwise stop before generating this kit |
 ```
 
 ### 4. launchers/agent-prompts.md
 
-Generate one self-contained prompt per package. Each prompt must end with the shared tail call.
+Generate one compact bootstrap prompt per package. The package doc owns local
+scope, acceptance, and verification detail; the prompt carries only the
+execution invariants needed before those files are read. Each prompt must end
+with the shared tail call.
+
+The heading is a machine-readable runtime key, not presentation-only Markdown.
+For every row in `package-graph.tsv`, generate exactly one heading in this exact
+shape. Do not shorten it to `## <package-id>`, and do not duplicate package
+headings:
+
+### Compact Functional Package Prompt
+
+Use this compact form for normal functional packages. Expand it only for a
+package-specific manual gate, external-assist boundary, retry context, or other
+declared exception. Do not paste the full INDEX authorization, Landing Strategy,
+projection catalog, recovery taxonomy, or finalize workflow into every package.
 
 ````markdown
 # Agent Prompts
 
 ## Package: <package-id> - <title>
 
-Copy this prompt into an agent, or let `orchestrate.sh start/advance` launch it for Claude Code.
-
----
-
-**Mode**: package executor
+**Mode**: functional package executor
 **INDEX**: <absolute-plan-dir>/INDEX.md
 **Package doc**: <absolute-plan-dir>/packages/<package-id>.md
 **Coordinator status**: <absolute-plan-dir>/status/<package-id>.md
 **Coordinator state**: <absolute-plan-dir>/status/state.tsv
-**Scratch path**: run `bash <absolute-plan-dir>/launchers/orchestrate.sh scratch-path <package-id>`
+**Package graph**: <absolute-plan-dir>/launchers/package-graph.tsv
 **Orchestrator**: <absolute-plan-dir>/launchers/orchestrate.sh
 
 ## Package Execution Authorization
 
-The INDEX authorizes this package to perform the routine operations needed to complete its assigned scope. Do not pause for confirmation before these in-scope actions:
-- Read the INDEX, package doc, assigned status file, package graph, state ledger, events log, and relevant repository files.
-- Create or reuse only this package's assigned worktree and branch.
-- Edit only the allowed paths named by this package.
-- Run the package's listed verification commands and focused follow-up commands needed to diagnose in-scope failures.
-- Continue fixing verification failures that remain inside this package's allowed scope.
-- Commit local package changes to this package's branch.
-- Write evidence and blocker diagnosis only to this package's coordinator status file.
-- Use the orchestrator commands listed in this prompt: `scratch-path`, `mark-state`, and the final `advance --from <package-id>` tail call.
+The INDEX authorizes routine in-scope work without another confirmation: use only
+this package's branch/worktree, edit only package-doc allowed paths, run focused
+verification, commit local changes, and write only this package's coordinator
+status. Never edit `state.tsv` manually; scheduler state changes only through
+`mark-state`.
 
-Do not wait for an interactive approval inside background execution. If the runner, sandbox, subscription, permission mode, credential boundary, network policy, or missing external capability prevents an in-scope command from running, record a blocker instead of hanging, retrying blindly, or claiming completion. Use `mark-state blocked` with:
-- `--error`: the concrete authorization or capability blocker.
-- `--failed-command`: the command or operation that was refused.
-- `--log-summary`: the decisive refusal message, such as an approval-policy, subscription, sandbox, credential, or permission-mode error.
-- `--recovery-hint`: the exact user or coordinator action needed, such as "rerun with approved permission mode", "provide manual external evidence", "mark package manual=1", or "retry after fixing runner authentication".
+Normal-path context:
+1. Read the package doc, assigned coordinator status, this package's graph/state
+   rows, and relevant repository files.
+2. Read `INDEX.md` only when authorization, capability boundaries, dependency
+   policy, or an approved fallback cannot be resolved from the package doc.
+3. Read `status/events.jsonl` only when this package is retried, was previously
+   blocked, or needs prior failure context.
+4. Request `scratch-path <package-id>` only when the package declares a real
+   temporary exchange need. Scratch is non-authoritative and must not contain
+   secrets or completion evidence.
 
-Forbidden without explicit user approval from the INDEX or chat:
-- force-push, hard reset, or destructive git cleanup
-- deleting branches/worktrees not assigned to this package
-- editing outside allowed paths
-- adding secrets, credentials, or private tokens
-- accessing external accounts, paid services, physical devices, or human-only review gates
-- changing global orchestration policy, dependency graph, or another package's status
+Do not emit progress narration, restate the task, or produce intermediate chat
+summaries. Use tools, then write durable evidence once to the assigned status
+file. Global merge, fallback selection, cleanup, and task-level outcome decisions belong to `99-finalize`.
 
-You may edit only the allowed paths in the package doc. Do not edit INDEX.md or another package status file. If you create/use an implementation worktree, do not rely on status files inside that worktree; write the coordinator status path above.
+Forbidden without explicit approval: destructive git operations, unassigned
+branch/worktree deletion, edits outside allowed paths, secrets or credentials,
+undeclared external accounts/devices/human gates, graph/policy changes, or edits
+to another package's status.
 
-Use scratch only for temporary shared notes, inventories, command transcripts, draft diffs, or intermediate artifacts that help another package or finalizer inspect the work. Do not put credentials, tokens, private keys, `.env` files, hidden prompts, proprietary raw data, or authoritative completion evidence in scratch. Anything required for scheduling, completion, or final acceptance must be summarized into coordinator status through `mark-state` and the package status file.
+If an in-scope operation is prevented by runner, sandbox, permission,
+subscription, credential, network, or external capability limits, do not wait
+interactively or retry blindly. Record a precise blocker.
 
-Respect projection ownership: write scheduler state only through `mark-state`, write human-readable evidence and risks in your package status file, leave static policy in INDEX, and never treat scratch or chat text as dependency-unlock evidence.
-
-Do not attempt external-assist work inside a Claude package. If you discover a package requires a physical device, user-owned account, secret, external approval, or human-only judgment that was not declared, mark the package `blocked` with a precise recovery hint instead of improvising or claiming completion.
-
-Do not invent an unapproved fallback. If the primary package path cannot land, classify why, identify whether an INDEX-declared fallback applies, and record whether the situation should retry, investigate, ask the user, switch to a named fallback, or abort the orchestration. If your package might be an independent merge candidate, state why it is independent and provide standalone verification; otherwise say it should be discarded if the main plan fails.
-
-Before calling `advance`, you must:
-- Set coordinator status to `completed` or `blocked`.
-- Fill evidence: worktree, branch, base commit, commit hash, changed files, verification commands/results, risks.
-- For blockers, classify the failure as one of: `capability-gap`, `invalid-requirement`, `external-dependency`, `verification-failure`, `merge-conflict`, `design-invalid`, `cost-out-of-scope`, or `unknown-needs-investigation`.
-- If this package was retried or previously blocked, inspect `state.tsv`, the package status file, and `status/events.jsonl` before editing. Carry forward the recorded `last_error`, `failed_command`, `conflict_files`, `log_summary`, and `recovery_hint` into your diagnosis.
-- Update the machine-readable state row only through the orchestrator; do not edit `state.tsv` manually:
+Before the tail call:
+- Write worktree, branch, base/commit SHA, changed files, verification results,
+  risks, and blocker diagnosis when applicable to the coordinator status file.
+- Mark machine state through one of these commands:
 
 ```bash
 bash <absolute-plan-dir>/launchers/orchestrate.sh mark-state <package-id> completed --commit <commit-sha> --verification "<command: result>"
 ```
-
-For a blocker:
 
 ```bash
 bash <absolute-plan-dir>/launchers/orchestrate.sh mark-state <package-id> blocked \
@@ -192,17 +196,27 @@ bash <absolute-plan-dir>/launchers/orchestrate.sh mark-state <package-id> blocke
   --recovery-hint "<specific next action>"
 ```
 
-Tail step:
+Tail call:
 ```bash
 bash <absolute-plan-dir>/launchers/orchestrate.sh advance --from <package-id>
 ```
 
-If your agent platform cannot run local shell commands, report: "completed but advance not run", and tell the user to run:
-```bash
-bash <absolute-plan-dir>/launchers/orchestrate.sh advance
-```
----
+After the tail call returns, terminate the package session immediately. Do not ask for input, emit another summary, suggest a reply, or wait at an interactive prompt. Completion, blocker, and recovery details already belong in the coordinator artifacts.
+
+If the platform cannot run shell commands, record `completed but advance not
+run`; the coordinator may then expose the manual `advance` command to the user.
 ````
+
+After generating all artifacts, run:
+
+```bash
+bash -n <absolute-plan-dir>/launchers/orchestrate.sh
+bash <absolute-plan-dir>/launchers/orchestrate.sh status
+```
+
+Do not present `start` to the user until both commands pass. The `status`
+preflight must reject missing, duplicate, unknown, or malformed package prompt
+headings before any worktree or state mutation.
 
 ### 5. status/package-status-template.md
 
@@ -301,7 +315,8 @@ Generate a finalize package, not a passive audit-only prompt.
 11. Run integration verification.
 12. Merge integration branch back to mainline only after verification passes and release-blocking external gates are satisfied or explicitly deferred by the user.
 13. Write `FINAL_REPORT.md` and `status/99-finalize.md` for both success and failure.
-14. Delete only local package branches/worktrees recorded by this orchestration after every prior step succeeds.
+14. Run `bash launchers/orchestrate.sh cleanup --mainline <mainline-branch>` after every prior step succeeds. Do not delete branches/worktrees manually.
+15. Mark `99-finalize` as `finalized` only after cleanup reports success.
 
 Failure rules:
 - Any failure sets `99-finalize` to `blocked`.
@@ -314,16 +329,25 @@ Failure rules:
 - Preserve branches/worktrees on failure.
 - If package status and current workspace disagree, verify the recorded package commit in a clean detached worktree before changing state.
 - Never force-push, hard reset, delete remote branches, or delete unrecorded local resources.
+- Never mark `99-finalize` as `finalized` while cleanup is deferred, blocked, or incomplete.
 - Never mix coordinator ledger/final-report commits with unrelated orchestration documents or concurrent mainline edits.
 
 Success rules:
-- Mark `99-finalize` as `finalized`.
+- Run `cleanup --mainline <mainline-branch>`; it verifies recorded commits entered mainline, blocks dirty or unmerged resources, deletes recorded worktrees before local branches, and writes cleanup results into `state.tsv` and `events.jsonl`.
+- Mark `99-finalize` as `finalized` only after cleanup succeeds.
 - Record integration branch, mainline merge commit, verification summary, and cleanup results.
 - Re-running finalize after success must be idempotent and report `already finalized`.
 
+Terminal session rule:
+- After recording either `blocked` or `finalized`, run `bash launchers/orchestrate.sh advance --from 99-finalize` as the tail call.
+- After the `99-finalize` tail call returns, terminate the finalize session immediately. Do not ask for input, restate the final report in chat, suggest a reply, or wait at an interactive prompt. Keep blocker, recovery, and outcome details in `status/99-finalize.md`, `state.tsv`, `events.jsonl`, and `FINAL_REPORT.md`.
+
 ### 9. Output Style
 
-After generating the kit, chat output must be immediately actionable and must show only the two primary user entry paths plus status/recovery commands.
+After generating the kit, chat output must be immediately actionable and must
+show only the two primary user entry paths plus a small default command surface.
+The runtime still exposes the full recovery command set through
+`orchestrate.sh`; do not turn every recovery ability into default chat output.
 
 Always include this information:
 - Plan directory path.
@@ -352,31 +376,43 @@ The Manual section must say:
 - If an agent platform cannot run local shell commands, the user may manually run `advance`.
 
 For the **Script** path, include complete copy-paste commands for a new macOS Terminal. Commands must use absolute paths and avoid assuming the user's current directory.
+Unless the user explicitly chooses another runner, this Claude Code background-session path is the only primary script path to show.
+
+Default command surface:
 
 ```bash
 cd "<repo-root>"
 bash "<absolute-plan-dir>/launchers/orchestrate.sh" start
+bash "<absolute-plan-dir>/launchers/orchestrate.sh" status
+claude agents --cwd "<repo-root>"
 ```
 
-If the user chooses the Codex runner, include the explicit runner variable:
+Only if the user explicitly chooses the Codex runner, replace the default launch section with the explicit runner variable:
 
 ```bash
 cd "<repo-root>"
+ORCHESTRATION_RUNNER=codex bash "<absolute-plan-dir>/launchers/orchestrate.sh" doctor --environment
 ORCHESTRATION_RUNNER=codex bash "<absolute-plan-dir>/launchers/orchestrate.sh" start
 ```
 
-Also include status and recovery commands:
+Recovery commands are contextual. Show only the one or two commands that match
+the current state, and name the concrete package ids that may use them:
+
+- If a package is `blocked`, `stale`, or `invalid`: show `retry <package-id>`
+  after explaining why retry is permitted.
+- If runner/environment setup is suspect: show `doctor --environment`.
+- If logs are required for diagnosis: show `collect-logs <package-id>`.
+- If a shell-less/manual agent completed work but could not tail-call: show
+  `advance`.
+- If finalize is blocked after all functional packages completed: show
+  `verify-finalize` or `finalize`, whichever is the next concrete action.
+- If a package explicitly needs temporary exchange space: show `scratch-path
+  <package-id>`.
+
+Example contextual recovery block:
 
 ```bash
-bash "<absolute-plan-dir>/launchers/orchestrate.sh" status
-bash "<absolute-plan-dir>/launchers/orchestrate.sh" advance
 bash "<absolute-plan-dir>/launchers/orchestrate.sh" retry <package-id>
-bash "<absolute-plan-dir>/launchers/orchestrate.sh" finalize
-bash "<absolute-plan-dir>/launchers/orchestrate.sh" doctor --environment
-bash "<absolute-plan-dir>/launchers/orchestrate.sh" collect-logs <package-id>
-bash "<absolute-plan-dir>/launchers/orchestrate.sh" verify-finalize
-bash "<absolute-plan-dir>/launchers/orchestrate.sh" scratch-path <package-id>
-claude agents --cwd "<repo-root>"
 ```
 
 For Codex runner status inspection, include:
@@ -386,6 +422,8 @@ ORCHESTRATION_RUNNER=codex bash "<absolute-plan-dir>/launchers/orchestrate.sh" d
 tail -f "<absolute-plan-dir>/status/launch-<package-id>.log"
 codex resume <thread-id>
 ```
+
+If `doctor --environment` reports `codex_exec_approval_policy_flag=unavailable`, the default `ORCHESTRATION_CODEX_APPROVAL_POLICY=never` is still valid because the launcher omits the unsupported flag. If launch stderr reports a readonly Codex state DB or app-server initialization failure, fix the launch shell or runner permissions before retrying; do not classify that as package work failure.
 
 If a command contains placeholders such as `<package-id>`, explicitly say which concrete package IDs are valid recovery targets. Do not leave the user to infer them from the docs.
 
