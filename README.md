@@ -42,10 +42,6 @@ The skills are designed to produce artifacts that are easier to inspect than raw
 chat: a clear opening verdict, navigable structure, evidence tables, risk
 labels, and review sections that help a human decide what to trust next.
 
-![Deep Flow Sweep report with navigation, run metadata, and risk summary](assets/readme/deep-flow-sweep-report.png)
-
-![OpenCamera diagnostic report with hero summary, method chips, and review table of contents](assets/readme/open-camera-diagnostic-report.png)
-
 ## Skill Portfolio
 
 ### [`abstraction-architect`](abstraction-architect/)
