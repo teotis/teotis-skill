@@ -1452,7 +1452,7 @@ print_agents_command() {
       printf '\nView Codex runner output with:\n'
       printf '  tail -f "%s/status/launch-<package-id>.log"\n' "$PLAN_ROOT"
       printf 'Recorded codex-thread ids can be resumed with:\n'
-      printf '  codex resume <thread-id>\n'
+      printf '  codex exec resume <thread-id>\n'
       ;;
   esac
 }

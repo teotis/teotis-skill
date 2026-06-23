@@ -1,6 +1,6 @@
 ---
 name: agent-orchestration-planner
-description: Use for explicit medium-to-large multi-agent execution requests, Claude Code Agents View, claude --bg background dispatch, tail-driven advancement, DAG scheduling, worktree/branch management, status ledgers, and final merge workflows.
+description: Use for explicit medium-to-large multi-agent execution requests, Codex or Claude runner selection, tail-driven advancement, DAG scheduling, worktree/branch management, status ledgers, recovery, and final merge workflows.
 ---
 
 # Agent Orchestration Planner
@@ -21,9 +21,19 @@ After the tail call returns, the package/finalize session must terminate immedia
 It must not emit another summary, ask for input, suggest a reply, or wait at an
 interactive prompt; blocker and recovery details belong only in coordinator artifacts.
 
-The generated template supports runner variation through `ORCHESTRATION_RUNNER`:
-- `claude` (default): launches Claude Code background sessions with `claude --bg --name` and points users to `claude agents`.
-- `codex`: launches local background `codex exec --json` processes from package worktrees, records `codex-thread:<thread-id>` when available, and points users to package JSONL logs. This is not a Claude Agents View clone.
+This skill does not replace native Claude Code or Codex parallel-agent controls.
+For dispatch-only work, use the native surface first: Claude Code Agent View or
+Dynamic Workflows for Claude, and explicit Codex subagent workflows in Codex App
+or CLI for Codex. Generate an orchestration kit only when the project needs a
+versioned DAG, durable state ledger, branch/worktree policy, failure recovery,
+and final landing judgment.
+
+The generated template supports runner variation through `ORCHESTRATION_RUNNER`.
+Runner choice is part of user/platform intent, not a side effect of whichever CLI
+happens to be installed:
+- `codex`: use as the primary script lane when the user asks for Codex App, Codex runner, the current Codex workflow, or the active host is Codex App and Claude is not requested. Commands must explicitly set `ORCHESTRATION_RUNNER=codex`, run `doctor --environment` first, then launch local `codex exec --json` processes from package worktrees. Evidence comes from package JSONL logs, `state.tsv`, and `events.jsonl`. This is the project-owned Codex CLI lane, not a clone of the Codex App native subagent UI.
+- `claude`: use as the primary script lane when the user asks for Claude Code, Agents View, or `claude --bg`. The no-env script fallback remains Claude for backward compatibility and launches Claude Code background sessions with `claude --bg --name`.
+- Manual / app-native: when the user wants to stay inside Codex App native subagents instead of a script runner, use `launchers/agent-prompts.md` as the prompt source and let Codex spawn subagents explicitly from the current App thread. If the platform cannot run shell tail calls, the coordinator must expose manual `advance`.
 
 ## When To Use
 
@@ -32,7 +42,7 @@ for medium/large orchestration, such as:
 - `agent-orchestration-planner`
 - `orchestration skill`
 - Multi-agent orchestration / automatic dispatch / 10+ agents
-- Claude Code Agents View / `claude agents` / `claude --bg`
+- Codex App/Codex runner or Claude Code runner orchestration
 - Status ledger / DAG scheduling / worktree management / branch management / final merge
 
 Do not infer this skill merely because a task is complex. If the user did not
@@ -203,10 +213,10 @@ After generating the kit, show only immediately actionable entry paths:
 - Mainline branch, integration branch, max parallel agents.
 - First wave packages and final package `99-finalize`.
 - Manual path: copy prompts from `launchers/agent-prompts.md`.
-- Script path: absolute `cd`, `bash <plan>/launchers/orchestrate.sh start`,
-  `bash <plan>/launchers/orchestrate.sh status`, and `claude agents --cwd
-  <repo-root>` commands.
-- Default user chat shows only `start`, `status`, and `claude agents`.
+- Script path: show the selected runner's primary command surface only.
+  Codex primary output uses explicit `ORCHESTRATION_RUNNER=codex`, `doctor
+  --environment`, `start`, `status`, and JSONL/thread-id inspection. Claude
+  primary output uses `start`, `status`, and `claude agents`.
 - Recovery commands are shown only when the current state requires them:
   `retry <package-id>` for `blocked`/`stale`/`invalid`, `doctor --environment`
   for runner setup, `collect-logs <package-id>` for diagnosis, `advance` for a
@@ -215,9 +225,10 @@ After generating the kit, show only immediately actionable entry paths:
 - External-assist gates, owners, whether they block release, and exact evidence expected.
 - Landing strategy summary.
 
-For Codex runner, include `ORCHESTRATION_RUNNER=codex` in script commands and
-describe evidence as JSONL logs plus recorded thread/process identifiers, not
-Claude Agents View.
+For Codex runner, describe evidence as JSONL logs plus recorded thread/process
+identifiers, not Claude Agents View. Resume recorded Codex threads with
+`codex exec resume <thread-id>` after stripping any coordinator prefix such as
+`codex-thread:`.
 
 ## Guardrails
 

@@ -25,10 +25,11 @@ or the final chat instructions after creating an orchestration kit.
 
 ## User Entry Points
 - Manual: copy prompts from `launchers/agent-prompts.md` into any agent platform.
-- Script: unless the user explicitly selects another runner, run `bash launchers/orchestrate.sh start` to launch Claude Code background sessions and view them with `claude agents`. Do not present Codex as a peer default option.
+- Script: use the selected runner for this plan. Codex App / Codex runner plans use explicit `ORCHESTRATION_RUNNER=codex` commands and JSONL/thread-id inspection. Claude Code plans use `bash launchers/orchestrate.sh start` and `claude agents`.
 - Status: run `bash launchers/orchestrate.sh status`.
 - Retry: run `bash launchers/orchestrate.sh retry <package-id>`.
 - Manual advancement fallback: run `bash launchers/orchestrate.sh advance`.
+- App-native fallback: if the user wants to stay inside Codex App subagents instead of a script runner, copy ready package prompts into a Codex subagent workflow and manually run `advance` when a platform cannot run shell tail calls.
 
 ## Repository And Branch Policy
 - Main checkout: <absolute path>
@@ -97,11 +98,21 @@ Allowed task-level outcomes:
 - `failed-no-merge`: the main plan failed, no fallback is approved, and nothing may be merged.
 - `failed-with-candidate-independent-fixes`: the main plan failed, but predeclared independent fixes are available for separate review.
 
+## UX Delta Policy
+- Packages with user-visible behavior, layout, copy, workflow, visual output, or trust-boundary changes must include a User-Visible Delta Ledger in the package doc.
+- Bounded discretion: package agents may make small adjacent changes when they are necessary to solve the assigned user problem and remain near the target surface.
+- Required recording: any visible drift outside the target surface must be recorded as `expected`, `acceptable-adjacent`, or `decision-required`.
+- `expected`: the visible change is the package goal.
+- `acceptable-adjacent`: the visible change is near the package goal, has rationale, and includes preservation evidence.
+- `decision-required`: the visible change affects protected primary workflows, first-screen composition, navigation model, release promise, or an explicit non-goal. It needs user/product decision, a split package, a downgrade, or an approved fallback before mainline merge.
+- Protected surfaces for this plan: <project-specific surfaces or "none declared">.
+
 ## Stop Conditions
 - Any functional package is `blocked`, `stale`, or `invalid`.
 - Graph has duplicate package IDs, missing dependencies, or cycles.
 - Package evidence is incomplete.
 - Package changed forbidden paths.
+- A package records a `decision-required` UX delta that has not been approved, split, downgraded, or mapped to a preapproved fallback.
 - Merge conflict or verification failure occurs.
 - Status/state mismatch cannot be reconciled.
 - Abort condition in Landing Strategy is met.
@@ -174,6 +185,15 @@ branch/worktree deletion, edits outside allowed paths, secrets or credentials,
 undeclared external accounts/devices/human gates, graph/policy changes, or edits
 to another package's status.
 
+For user-visible packages, use bounded UX discretion. You may make small
+adjacent visible changes when they are necessary to solve the assigned user
+problem and remain near the package's target surface. Record any visible drift
+outside the target surface in the coordinator status as `expected`,
+`acceptable-adjacent`, or `decision-required`. Do not hide a change to protected
+primary workflows, first-screen composition, navigation model, release promise,
+or an explicit non-goal inside a bugfix; mark it `decision-required` with a
+concrete recovery hint.
+
 If an in-scope operation is prevented by runner, sandbox, permission,
 subscription, credential, network, or external capability limits, do not wait
 interactively or retry blindly. Record a precise blocker.
@@ -181,6 +201,8 @@ interactively or retry blindly. Record a precise blocker.
 Before the tail call:
 - Write worktree, branch, base/commit SHA, changed files, verification results,
   risks, and blocker diagnosis when applicable to the coordinator status file.
+- For user-visible packages, write UX delta class, changed surfaces,
+  preservation evidence, and any decision-required drift.
 - Mark machine state through one of these commands:
 
 ```bash
@@ -267,6 +289,16 @@ Template:
 
 - `<command>`: `<result or "not yet run">`
 
+## User-Visible Delta
+
+Fill for user-visible packages; otherwise write `n/a`.
+
+- **UX delta class**: n/a | expected | acceptable-adjacent | decision-required
+- **Target surface**: <surface or "n/a">
+- **Changed surfaces**: <surfaces changed beyond code internals>
+- **Preserved surfaces evidence**: <tests, screenshots, metrics, manual notes, or "n/a">
+- **Decision required**: <decision needed, or "none">
+
 ## Risks
 
 - <known risk or "none identified">
@@ -307,16 +339,17 @@ Generate a finalize package, not a passive audit-only prompt.
    - package worktree is clean, or dirty state is recorded as a blocker
 4. Check projection consistency across INDEX, graph, state, package status, and events before treating any package as globally complete.
 5. Check the Capability Preflight section. If an external-assist gate is release-blocking and evidence is absent, stop with "ready for external QA" or "waiting for external gate"; do not claim overall PASS.
-6. Check Landing Strategy. Decide task-level outcome before any mainline merge: `landed`, `landed-with-approved-fallback`, `ready-for-external-gate`, `failed-no-merge`, or `failed-with-candidate-independent-fixes`.
-7. Decide whether merging is allowed.
-8. Create or update the integration branch.
-9. Merge functional package branches in Merge Strategy order.
-10. Stop and record conflicts without cleaning anything.
-11. Run integration verification.
-12. Merge integration branch back to mainline only after verification passes and release-blocking external gates are satisfied or explicitly deferred by the user.
-13. Write `FINAL_REPORT.md` and `status/99-finalize.md` for both success and failure.
-14. Run `bash launchers/orchestrate.sh cleanup --mainline <mainline-branch>` after every prior step succeeds. Do not delete branches/worktrees manually.
-15. Mark `99-finalize` as `finalized` only after cleanup reports success.
+6. Run UX Delta Review for user-visible packages: classify actual visible changes as `expected`, `acceptable-adjacent`, or `decision-required`. Accept `expected` and justified `acceptable-adjacent` deltas with evidence; block, split, downgrade, or request user decision for unresolved `decision-required` deltas.
+7. Check Landing Strategy. Decide task-level outcome before any mainline merge: `landed`, `landed-with-approved-fallback`, `ready-for-external-gate`, `failed-no-merge`, or `failed-with-candidate-independent-fixes`.
+8. Decide whether merging is allowed.
+9. Create or update the integration branch.
+10. Merge functional package branches in Merge Strategy order.
+11. Stop and record conflicts without cleaning anything.
+12. Run integration verification.
+13. Merge integration branch back to mainline only after verification passes, release-blocking external gates are satisfied or explicitly deferred by the user, and no unresolved `decision-required` UX delta remains.
+14. Write `FINAL_REPORT.md` and `status/99-finalize.md` for both success and failure.
+15. Run `bash launchers/orchestrate.sh cleanup --mainline <mainline-branch>` after every prior step succeeds. Do not delete branches/worktrees manually.
+16. Mark `99-finalize` as `finalized` only after cleanup reports success.
 
 Failure rules:
 - Any failure sets `99-finalize` to `blocked`.
@@ -324,6 +357,7 @@ Failure rules:
 - Also update the coordinator ledger with `mark-state 99-finalize blocked --error ... --failed-command ... --conflict-files ... --log-summary ... --recovery-hint ...`; do not leave merge/test failures only in prose.
 - Check `status/events.jsonl` when explaining repeated failures; do not keep retrying the same fingerprint after the retry breaker opens.
 - If the primary plan is non-landable, write a failure analysis that separates: observed facts, failed assumptions, failure category, attempted or rejected fallback paths, whether the user must decide, and the recommended next orchestration or abort action.
+- If UX Delta Review finds an unresolved `decision-required` change, describe the changed surface, why it exceeds package discretion, the user value at stake, and whether to split, downgrade, accept explicitly, or use a preapproved fallback.
 - Default to no merge when the task outcome is `failed-no-merge`.
 - For `failed-with-candidate-independent-fixes`, list candidate package ids, recorded commits, allowed paths, standalone verification, and why each candidate is independent from the failed main plan. Do not merge a candidate unless it was predeclared in Landing Strategy and passes standalone verification.
 - Preserve branches/worktrees on failure.
@@ -345,7 +379,8 @@ Terminal session rule:
 ### 9. Output Style
 
 After generating the kit, chat output must be immediately actionable and must
-show only the two primary user entry paths plus a small default command surface.
+show only the manual path, the selected runner's primary script path, and a
+small command surface.
 The runtime still exposes the full recovery command set through
 `orchestrate.sh`; do not turn every recovery ability into default chat output.
 
@@ -354,10 +389,12 @@ Always include this information:
 - Mainline branch.
 - Integration branch.
 - Max parallel agents.
+- Selected runner and why it was selected: `codex`, `claude`, or `manual`.
 - First wave packages.
 - Final package: `99-finalize`.
 - A statement that downstream dispatch is triggered by package tail calls to `advance`.
 - Any external-assist gates, their owners, whether they block release or only final confidence, and the exact evidence expected.
+- Any unresolved `decision-required` UX delta, the affected package, and the concrete user/product decision needed.
 - Landing strategy summary: primary landing path, preapproved fallbacks, abort conditions, and independent merge candidates if the main plan fails.
 
 For the **Manual** path, include a package table so the user can decide which prompts to copy first:
@@ -376,9 +413,30 @@ The Manual section must say:
 - If an agent platform cannot run local shell commands, the user may manually run `advance`.
 
 For the **Script** path, include complete copy-paste commands for a new macOS Terminal. Commands must use absolute paths and avoid assuming the user's current directory.
-Unless the user explicitly chooses another runner, this Claude Code background-session path is the only primary script path to show.
+Show one primary script path based on the selected runner. Include the other
+runner only under a short "Alternative runner" note when it is useful and
+compatible with the plan.
 
-Default command surface:
+Codex primary command surface:
+
+```bash
+cd "<repo-root>"
+ORCHESTRATION_RUNNER=codex bash "<absolute-plan-dir>/launchers/orchestrate.sh" doctor --environment
+ORCHESTRATION_RUNNER=codex bash "<absolute-plan-dir>/launchers/orchestrate.sh" start
+ORCHESTRATION_RUNNER=codex bash "<absolute-plan-dir>/launchers/orchestrate.sh" status
+```
+
+Codex inspection surface:
+
+```bash
+tail -f "<absolute-plan-dir>/status/launch-<package-id>.log"
+codex exec resume <thread-id>
+```
+
+Use concrete package ids in place of `<package-id>`, and strip the
+`codex-thread:` prefix before passing a thread id to `codex exec resume`.
+
+Claude primary command surface:
 
 ```bash
 cd "<repo-root>"
@@ -387,12 +445,18 @@ bash "<absolute-plan-dir>/launchers/orchestrate.sh" status
 claude agents --cwd "<repo-root>"
 ```
 
-Only if the user explicitly chooses the Codex runner, replace the default launch section with the explicit runner variable:
+If Codex is selected because the user is working in Codex App, add this note:
+"This script lane uses local `codex exec --json` processes and coordinator
+logs; Codex App native subagents remain available through the Manual path, but
+the generated script does not create App UI subagent threads directly."
+
+Alternative runner examples:
 
 ```bash
-cd "<repo-root>"
 ORCHESTRATION_RUNNER=codex bash "<absolute-plan-dir>/launchers/orchestrate.sh" doctor --environment
 ORCHESTRATION_RUNNER=codex bash "<absolute-plan-dir>/launchers/orchestrate.sh" start
+bash "<absolute-plan-dir>/launchers/orchestrate.sh" start
+claude agents --cwd "<repo-root>"
 ```
 
 Recovery commands are contextual. Show only the one or two commands that match
@@ -420,7 +484,7 @@ For Codex runner status inspection, include:
 ```bash
 ORCHESTRATION_RUNNER=codex bash "<absolute-plan-dir>/launchers/orchestrate.sh" doctor --environment
 tail -f "<absolute-plan-dir>/status/launch-<package-id>.log"
-codex resume <thread-id>
+codex exec resume <thread-id>
 ```
 
 If `doctor --environment` reports `codex_exec_approval_policy_flag=unavailable`, the default `ORCHESTRATION_CODEX_APPROVAL_POLICY=never` is still valid because the launcher omits the unsupported flag. If launch stderr reports a readonly Codex state DB or app-server initialization failure, fix the launch shell or runner permissions before retrying; do not classify that as package work failure.
