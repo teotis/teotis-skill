@@ -25,11 +25,12 @@ or the final chat instructions after creating an orchestration kit.
 
 ## User Entry Points
 - Manual: copy prompts from `launchers/agent-prompts.md` into any agent platform.
-- Script: use the selected runner for this plan. Codex App / Codex runner plans use explicit `ORCHESTRATION_RUNNER=codex` commands and JSONL/thread-id inspection. Claude Code plans use `bash launchers/orchestrate.sh start` and `claude agents`.
+- Script: use the selected runner wrapper for this plan. Codex App / Codex runner plans use `bash launchers/start-codex-app.sh` and JSONL/thread-id inspection. Claude Code plans use `bash launchers/start-claude-code.sh` and `claude agents`.
 - Status: run `bash launchers/orchestrate.sh status`.
 - Retry: run `bash launchers/orchestrate.sh retry <package-id>`.
 - Manual advancement fallback: run `bash launchers/orchestrate.sh advance`.
 - App-native fallback: if the user wants to stay inside Codex App subagents instead of a script runner, copy ready package prompts into a Codex subagent workflow and manually run `advance` when a platform cannot run shell tail calls.
+- Cross-runner launch: both `start-codex-app.sh` and `start-claude-code.sh` are generated. A kit planned in one app may be launched from the other by running the other wrapper.
 
 ## Repository And Branch Policy
 - Main checkout: <absolute path>
@@ -50,7 +51,7 @@ Package agents are authorized to:
 - Update the state ledger only through `bash <plan-root>/launchers/orchestrate.sh mark-state ...`; do not edit `state.tsv` manually.
 - Write temporary, non-sensitive shared working notes or intermediate artifacts only under their assigned scratch path from `bash <plan-root>/launchers/orchestrate.sh scratch-path <package-id>`.
 - Call `bash <plan-root>/launchers/orchestrate.sh advance --from <package-id>` after recording final status.
-- The launcher persists the selected runner in `status/runner`, so this plain tail call must continue with the runner chosen by the initial `start`; do not rely on environment inheritance.
+- The launcher persists the selected runner in `status/runner`, so this plain tail call must continue with the runner chosen by `start-codex-app.sh`, `start-claude-code.sh`, or the initial `start`; do not rely on environment inheritance.
 
 `99-finalize` is authorized by default to perform incremental orchestration operations for this plan:
 - Inspect package docs, status files, state, branches, commits, and diffs.
@@ -233,10 +234,12 @@ After generating all artifacts, run:
 
 ```bash
 bash -n <absolute-plan-dir>/launchers/orchestrate.sh
+bash -n <absolute-plan-dir>/launchers/start-codex-app.sh
+bash -n <absolute-plan-dir>/launchers/start-claude-code.sh
 bash <absolute-plan-dir>/launchers/orchestrate.sh status
 ```
 
-Do not present `start` to the user until both commands pass. The `status`
+Do not present start commands to the user until these commands pass. The `status`
 preflight must reject missing, duplicate, unknown, or malformed package prompt
 headings before any worktree or state mutation.
 
@@ -413,36 +416,36 @@ The Manual section must say:
 - If an agent platform cannot run local shell commands, the user may manually run `advance`.
 
 For the **Script** path, include complete copy-paste commands for a new macOS Terminal. Commands must use absolute paths and avoid assuming the user's current directory.
-Show one primary script path based on the selected runner. Include the other
-runner only under a short "Alternative runner" note when it is useful and
-compatible with the plan.
+Show one primary wrapper based on the selected runner. Include the other wrapper
+under a short "Alternative runner" note so one app can plan and the other can
+launch the same kit.
 
 Codex primary command surface:
 
 ```bash
 cd "<repo-root>"
-ORCHESTRATION_RUNNER=codex bash "<absolute-plan-dir>/launchers/orchestrate.sh" doctor --environment
-ORCHESTRATION_RUNNER=codex bash "<absolute-plan-dir>/launchers/orchestrate.sh" start
-ORCHESTRATION_RUNNER=codex bash "<absolute-plan-dir>/launchers/orchestrate.sh" status
+bash "<absolute-plan-dir>/launchers/start-codex-app.sh"
+bash "<absolute-plan-dir>/launchers/start-codex-app.sh" status
 ```
 
 Codex inspection surface:
 
 ```bash
-tail -f "<absolute-plan-dir>/status/launch-<package-id>.log"
-codex exec resume <thread-id>
+bash "<absolute-plan-dir>/launchers/start-codex-app.sh" tail <package-id>
+bash "<absolute-plan-dir>/launchers/start-codex-app.sh" resume <thread-id>
 ```
 
 Use concrete package ids in place of `<package-id>`, and strip the
-`codex-thread:` prefix before passing a thread id to `codex exec resume`.
+`codex-thread:` prefix before passing a thread id to
+`codex exec resume <thread-id>`.
 
 Claude primary command surface:
 
 ```bash
 cd "<repo-root>"
-bash "<absolute-plan-dir>/launchers/orchestrate.sh" start
-bash "<absolute-plan-dir>/launchers/orchestrate.sh" status
-claude agents --cwd "<repo-root>"
+bash "<absolute-plan-dir>/launchers/start-claude-code.sh"
+bash "<absolute-plan-dir>/launchers/start-claude-code.sh" status
+bash "<absolute-plan-dir>/launchers/start-claude-code.sh" agents
 ```
 
 If Codex is selected because the user is working in Codex App, add this note:
@@ -453,10 +456,8 @@ the generated script does not create App UI subagent threads directly."
 Alternative runner examples:
 
 ```bash
-ORCHESTRATION_RUNNER=codex bash "<absolute-plan-dir>/launchers/orchestrate.sh" doctor --environment
-ORCHESTRATION_RUNNER=codex bash "<absolute-plan-dir>/launchers/orchestrate.sh" start
-bash "<absolute-plan-dir>/launchers/orchestrate.sh" start
-claude agents --cwd "<repo-root>"
+bash "<absolute-plan-dir>/launchers/start-codex-app.sh"
+bash "<absolute-plan-dir>/launchers/start-claude-code.sh"
 ```
 
 Recovery commands are contextual. Show only the one or two commands that match
@@ -482,9 +483,9 @@ bash "<absolute-plan-dir>/launchers/orchestrate.sh" retry <package-id>
 For Codex runner status inspection, include:
 
 ```bash
-ORCHESTRATION_RUNNER=codex bash "<absolute-plan-dir>/launchers/orchestrate.sh" doctor --environment
-tail -f "<absolute-plan-dir>/status/launch-<package-id>.log"
-codex exec resume <thread-id>
+bash "<absolute-plan-dir>/launchers/start-codex-app.sh" doctor
+bash "<absolute-plan-dir>/launchers/start-codex-app.sh" tail <package-id>
+bash "<absolute-plan-dir>/launchers/start-codex-app.sh" resume <thread-id>
 ```
 
 If `doctor --environment` reports `codex_exec_approval_policy_flag=unavailable`, the default `ORCHESTRATION_CODEX_APPROVAL_POLICY=never` is still valid because the launcher omits the unsupported flag. If launch stderr reports a readonly Codex state DB or app-server initialization failure, fix the launch shell or runner permissions before retrying; do not classify that as package work failure.

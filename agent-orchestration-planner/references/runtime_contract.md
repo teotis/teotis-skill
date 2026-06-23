@@ -37,7 +37,9 @@ docs/plans/<plan-name>/
 ├── launchers/
 │   ├── agent-prompts.md
 │   ├── package-graph.tsv
-│   └── orchestrate.sh
+│   ├── orchestrate.sh
+│   ├── start-codex-app.sh
+│   └── start-claude-code.sh
 ├── status/
 │   ├── README.md
 │   ├── state.tsv
@@ -55,9 +57,11 @@ format defined in `artifact_templates.md` section 5. The `## State` value must b
 backtick-wrapped (e.g. `` `pending` ``); the coordinator script's `markdown_status()`
 only parses backtick-wrapped state lines, and bare values resolve to `unknown`.
 
-`dispatch-claude-agents.sh` is no longer a primary generated entrypoint. If backward compatibility is useful, generate it only as a thin wrapper that calls `orchestrate.sh start`. Both scripts must compute `REPO_ROOT` with `git rev-parse --show-toplevel`, not hardcoded relative paths.
+`dispatch-claude-agents.sh` is no longer a primary generated entrypoint. If backward compatibility is useful, generate it only as a thin wrapper that calls `orchestrate.sh start`. Any wrapper must compute `REPO_ROOT` with `git rev-parse --show-toplevel`, not hardcoded relative paths.
 
 `launchers/orchestrate.sh` must be copied from `scripts/orchestrate-template.sh` (resolved relative to this SKILL.md file), then syntax-checked with `bash -n`. Do not recreate this script from memory or prose. The template is the tested runtime contract for launch handshakes, state mutation, repair, and retry behavior.
+
+`launchers/start-codex-app.sh` must be copied from `scripts/start-codex-app-template.sh`; `launchers/start-claude-code.sh` must be copied from `scripts/start-claude-code-template.sh`. Both wrappers must be syntax-checked with `bash -n`. They are platform entrypoints, not independent schedulers.
 
 ### 5. launchers/package-graph.tsv
 
@@ -176,8 +180,9 @@ Implementation rules:
 - If a graph row has `manual=1`, never auto-launch it. When its dependencies are satisfied, mark it `manual_required` and print the package id for manual execution.
 - Capability preflight is mandatory before graph creation. Auto-launched packages may contain only `autonomous` or `agent-verifiable substitute` work. `external-assist` checks must be predeclared in the INDEX and kept out of autonomous package execution unless the active environment truly provides that capability. A blocking `external-assist` gate may be generated only after the user has approved that gate, owner, expected evidence, and blocking scope; otherwise planning must stop before artifact generation and ask for a decision.
 - Treat runner differences as capability variation over the same lifecycle. Manual execution, Claude background sessions, CI runners, and other agent platforms may differ in launch mechanism, permission mode, evidence channel, and verification ability, but they must not introduce separate package states, duplicate finalize logic, or package-local scheduling.
-- Runner selection policy for generated user guidance: follow explicit user/platform intent. If the user requests Codex App, Codex runner, or the active host is Codex App and Claude is not requested, show Codex as the primary script lane with `ORCHESTRATION_RUNNER=codex`. If the user requests Claude Code, Agents View, or `claude --bg`, show the Claude lane. If the host/runner is unknown, keep the Claude no-env fallback as the compatibility default and name Codex as an alternative only when relevant. Do not infer runner choice from whichever CLI happens to be installed.
+- Runner selection policy for generated user guidance: follow explicit user/platform intent. If the user requests Codex App, Codex runner, or the active host is Codex App and Claude is not requested, show `launchers/start-codex-app.sh` as the primary script lane. If the user requests Claude Code, Agents View, or `claude --bg`, show `launchers/start-claude-code.sh` as the primary script lane. If the host/runner is unknown, keep Claude as the compatibility fallback and name Codex as an alternative only when relevant. Do not infer runner choice from whichever CLI happens to be installed.
 - Persist the selected runner as coordinator runtime configuration in `status/runner`. Resolution order is explicit `ORCHESTRATION_RUNNER`, then persisted runner, then default `claude` for backward compatibility. `start`, `advance`, `retry`, and `finalize` must preserve/update this selection before launch. Package tail calls intentionally remain plain `bash ... advance --from ...`; they must not depend on tool subprocesses inheriting `ORCHESTRATION_RUNNER`.
+- Runner wrappers: `start-codex-app.sh` and `start-claude-code.sh` must set `ORCHESTRATION_RUNNER=codex` or `ORCHESTRATION_RUNNER=claude` on every call into `orchestrate.sh`. Their default `start` command must run `doctor --environment`, `start`, and `status` in that order. Other supported orchestrator subcommands are pass-through helpers. Wrappers must not mutate `state.tsv` directly, compute readiness, launch packages themselves, or implement finalize/cleanup logic.
 - Codex runner specifics: use `codex exec --json` with `ORCHESTRATION_CODEX_SANDBOX` (default `workspace-write`) and `ORCHESTRATION_CODEX_APPROVAL_POLICY` (default `never`). Pass `--ask-for-approval` only when `codex exec --help` advertises that flag; if the installed CLI lacks the flag, omit it for the default `never` policy and fail preflight for any non-default approval policy. Optional `ORCHESTRATION_CODEX_MODEL` maps to `--model`; optional `ORCHESTRATION_CODEX_EFFORT` maps to `model_reasoning_effort`. In non-interactive Codex flows, actions that require fresh approval can fail, so package prompts must keep the same explicit `mark-state` and `advance` tail call contract.
 - Codex runner environment preflight is mandatory before `start`: `doctor --environment` must print the Codex CLI version, whether `codex exec` supports approval policy flags, the selected sandbox/approval policy, `CODEX_HOME` or `~/.codex`, and whether that home is writable from the launch shell. If launch stderr reports a readonly Codex state DB, PATH update permission failure, or app-server initialization failure, classify it as a runner environment failure (`invalid`/`stale`) with recovery guidance to rerun from a user shell with writable Codex state or an explicitly approved runner environment; do not treat it as package implementation failure.
 - Codex launch postflight must distinguish "thread id emitted" from "agent alive enough to work." If a launch log contains only `thread.started`/`turn.started` and no active `codex exec` process remains, mark the package `stale` with the stalled-thread fingerprint and require retry or manual diagnosis instead of letting a hollow `launched` state unlock confidence.

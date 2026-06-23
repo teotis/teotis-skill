@@ -10,7 +10,7 @@ description: Use for explicit medium-to-large multi-agent execution requests, Co
 Turn an explicit user request for medium/large multi-agent execution into a
 complete orchestration kit. The kit has two user entry paths:
 - **Manual**: the user copies package prompts from Markdown into any agent platform.
-- **Script**: the user runs `bash launchers/orchestrate.sh start`; background agents are launched by the configured runner.
+- **Script**: the user runs the platform wrapper, either `bash launchers/start-codex-app.sh` or `bash launchers/start-claude-code.sh`; both call the same `orchestrate.sh` state machine.
 
 The script is not a long-running watcher. It is a
 `start/advance/status/retry/finalize` entrypoint. Initial `start` launches the
@@ -31,9 +31,11 @@ and final landing judgment.
 The generated template supports runner variation through `ORCHESTRATION_RUNNER`.
 Runner choice is part of user/platform intent, not a side effect of whichever CLI
 happens to be installed:
-- `codex`: use as the primary script lane when the user asks for Codex App, Codex runner, the current Codex workflow, or the active host is Codex App and Claude is not requested. Commands must explicitly set `ORCHESTRATION_RUNNER=codex`, run `doctor --environment` first, then launch local `codex exec --json` processes from package worktrees. Evidence comes from package JSONL logs, `state.tsv`, and `events.jsonl`. This is the project-owned Codex CLI lane, not a clone of the Codex App native subagent UI.
-- `claude`: use as the primary script lane when the user asks for Claude Code, Agents View, or `claude --bg`. The no-env script fallback remains Claude for backward compatibility and launches Claude Code background sessions with `claude --bg --name`.
+- `codex`: use `launchers/start-codex-app.sh` as the primary script lane when the user asks for Codex App, Codex runner, the current Codex workflow, or the active host is Codex App and Claude is not requested. The wrapper sets `ORCHESTRATION_RUNNER=codex`, runs `doctor --environment` first, then launches local `codex exec --json` processes from package worktrees. Evidence comes from package JSONL logs, `state.tsv`, and `events.jsonl`. This is the project-owned Codex CLI lane, not a clone of the Codex App native subagent UI.
+- `claude`: use `launchers/start-claude-code.sh` as the primary script lane when the user asks for Claude Code, Agents View, or `claude --bg`. The wrapper sets `ORCHESTRATION_RUNNER=claude` and launches Claude Code background sessions with `claude --bg --name`.
 - Manual / app-native: when the user wants to stay inside Codex App native subagents instead of a script runner, use `launchers/agent-prompts.md` as the prompt source and let Codex spawn subagents explicitly from the current App thread. If the platform cannot run shell tail calls, the coordinator must expose manual `advance`.
+
+Both wrappers must be generated for every kit, so a plan authored in Codex App can be launched from Claude Code and a plan authored in Claude Code can be launched from Codex App.
 
 ## When To Use
 
@@ -103,8 +105,10 @@ details are needed:
 - Read `references/artifact_templates.md` when producing `INDEX.md`, package prompts, `99-finalize`, or the final user-facing command summary.
 
 `scripts/orchestrate-template.sh` is the tested runtime body. Copy it into the
-generated kit as `launchers/orchestrate.sh` and run `bash -n`; do not recreate
-the script from memory or prose.
+generated kit as `launchers/orchestrate.sh`; copy
+`scripts/start-codex-app-template.sh` as `launchers/start-codex-app.sh`; copy
+`scripts/start-claude-code-template.sh` as `launchers/start-claude-code.sh`.
+Run `bash -n` on all three scripts; do not recreate them from memory or prose.
 
 ## State Semantics
 
@@ -160,7 +164,9 @@ docs/plans/<plan-name>/
 ├── launchers/
 │   ├── agent-prompts.md
 │   ├── package-graph.tsv
-│   └── orchestrate.sh
+│   ├── orchestrate.sh
+│   ├── start-codex-app.sh
+│   └── start-claude-code.sh
 ├── status/
 │   ├── README.md
 │   ├── state.tsv
@@ -205,6 +211,7 @@ Core behavior:
 - `retry` accepts only `blocked`, `stale`, or `invalid`, preserves prior recovery context, and obeys the three-strike fingerprint breaker.
 - `doctor` checks consistency and runner/session health without launching work.
 - `99-finalize` runs only when all functional packages are `completed`, then verifies evidence, merges conservatively, reports outcome, and calls `cleanup --mainline <branch>` only after success. Cleanup must finish before `99-finalize` may be marked `finalized`.
+- `start-codex-app.sh` and `start-claude-code.sh` are thin wrappers: their default command runs `doctor --environment`, `start`, and `status`; other orchestration subcommands pass through to `orchestrate.sh`. They must not duplicate scheduling, state, finalize, or cleanup logic.
 
 ### 4. Output To User
 
@@ -213,10 +220,10 @@ After generating the kit, show only immediately actionable entry paths:
 - Mainline branch, integration branch, max parallel agents.
 - First wave packages and final package `99-finalize`.
 - Manual path: copy prompts from `launchers/agent-prompts.md`.
-- Script path: show the selected runner's primary command surface only.
-  Codex primary output uses explicit `ORCHESTRATION_RUNNER=codex`, `doctor
-  --environment`, `start`, `status`, and JSONL/thread-id inspection. Claude
-  primary output uses `start`, `status`, and `claude agents`.
+- Script path: show the selected runner's primary wrapper only.
+  Codex primary output uses `start-codex-app.sh`, JSONL/thread-id inspection,
+  and `start-codex-app.sh resume <thread-id>`. Claude primary output uses
+  `start-claude-code.sh` and `start-claude-code.sh agents`.
 - Recovery commands are shown only when the current state requires them:
   `retry <package-id>` for `blocked`/`stale`/`invalid`, `doctor --environment`
   for runner setup, `collect-logs <package-id>` for diagnosis, `advance` for a
@@ -227,8 +234,8 @@ After generating the kit, show only immediately actionable entry paths:
 
 For Codex runner, describe evidence as JSONL logs plus recorded thread/process
 identifiers, not Claude Agents View. Resume recorded Codex threads with
-`codex exec resume <thread-id>` after stripping any coordinator prefix such as
-`codex-thread:`.
+`start-codex-app.sh resume <thread-id>`; the wrapper strips any coordinator
+prefix such as `codex-thread:`.
 
 ## Guardrails
 
