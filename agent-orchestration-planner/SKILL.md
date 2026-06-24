@@ -55,6 +55,12 @@ forbidden paths, dependencies, acceptance criteria, verification commands,
 expected evidence, and final status handoff instead of generating a full
 orchestration kit.
 
+If the user only needs durable package docs, owners, verification criteria,
+checkpoints, and a lightweight status ledger for human-driven progress, do not
+generate the full orchestration kit. Route to `agent-task-planner`'s
+`ledger-lite` / `manual-pack` lane, or keep the Task Package Contract as a
+manual execution package.
+
 ## Core Contract
 
 An orchestration kit is a **tail-driven execution contract**. Package agents do
@@ -240,6 +246,8 @@ prefix such as `codex-thread:`.
 ## Guardrails
 
 - Do NOT use this skill unless the user explicitly asks for orchestration.
+- Do NOT generate a full kit when durable package docs plus lightweight status
+  tracking are enough; use `agent-task-planner` `ledger-lite` or `manual-pack`.
 - Do NOT make `orchestrate.sh` a long-running watcher.
 - Do NOT duplicate scheduling logic in package prompts; prompts only call `advance`.
 - Do NOT let package agents edit `INDEX.md`, another package status file, or `state.tsv` manually.
@@ -261,7 +269,9 @@ prefix such as `codex-thread:`.
 
 When the user only needs one to three manually executed packages, do not generate
 the full orchestration kit. Use the shared Task Package Contract to capture
-scope, acceptance criteria, and verification commands. Use
-`agent-orchestration-planner` when the user asks for a multi-agent orchestration
-control plane with durable state, dependency scheduling, recovery, and finalize
-behavior.
+scope, acceptance criteria, and verification commands. When the user needs
+durable package docs, owner/verification/checkpoint fields, and human-driven
+status tracking, prefer `agent-task-planner`'s `ledger-lite` / `manual-pack`
+lane. Use `agent-orchestration-planner` only when the user asks for a
+multi-agent orchestration control plane with durable scheduler state, dependency
+dispatch, recovery, runner wrappers, finalize behavior, or cleanup.
