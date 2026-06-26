@@ -226,9 +226,11 @@ After generating the kit, show only immediately actionable entry paths:
 - Mainline branch, integration branch, max parallel agents.
 - First wave packages and final package `99-finalize`.
 - Manual path: copy prompts from `launchers/agent-prompts.md`.
-- Script path: show the selected runner's primary wrapper only.
-  Codex primary output uses `start-codex-app.sh`, JSONL/thread-id inspection,
-  and `start-codex-app.sh resume <thread-id>`. Claude primary output uses
+- Script path: show both platform launch commands. Mark the selected runner's
+  wrapper as primary, and show the other wrapper as the alternative runner with
+  a complete copy-paste launch command. Codex primary output uses
+  `start-codex-app.sh`, JSONL/thread-id inspection, and
+  `start-codex-app.sh resume <thread-id>`. Claude primary output uses
   `start-claude-code.sh` and `start-claude-code.sh agents`.
 - Recovery commands are shown only when the current state requires them:
   `retry <package-id>` for `blocked`/`stale`/`invalid`, `doctor --environment`
