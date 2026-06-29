@@ -61,6 +61,18 @@ generate the full orchestration kit. Route to `agent-task-planner`'s
 `ledger-lite` / `manual-pack` lane, or keep the Task Package Contract as a
 manual execution package.
 
+Before generating a full kit, provide an **Execution Contract Proof Route**:
+need proof, projection proof, unlock proof, capability proof, landing proof,
+cleanup proof, and a falsifier or downgrade trigger. If the route does not
+close, do not compensate by generating more artifacts; downgrade to a lighter
+lane, ask one blocking decision, or create a validation package first.
+
+Use a non-gating **Orchestration Value Score** alongside the orchestration value
+test: durable state need, dependency unlock value, recovery value, integration
+value, runner value, and operator burden. The score supports the user decision
+between full kit, native agents, ledger-lite/manual-pack, or needs-user-decision;
+it does not replace hard invariants or justify a heavy control plane by itself.
+
 ## Core Contract
 
 An orchestration kit is a **tail-driven execution contract**. Package agents do
@@ -148,6 +160,8 @@ Before generating artifacts:
 - Inspect enough local context to split work into concrete packages.
 - Check current git status.
 - Ensure every functional package has package id, allowed/forbidden paths, dependencies, acceptance criteria, verification commands, expected evidence, branch/worktree policy, and unlock conditions.
+- Complete the Execution Contract Proof Route before creating runtime artifacts. If it fails, downgrade to a lighter lane or ask one blocking decision instead of creating a hollow kit.
+- Use the Orchestration Value Score to compare full-kit value against native agents, direct execution, Task Package Contract, `ledger-lite`, and `manual-pack`.
 - Add a User-Visible Delta Ledger for packages that change user-facing behavior, layout, copy, workflow, or visual output; do not force that burden onto purely internal packages.
 - Run capability preflight: classify each package or gate as `autonomous`, `agent-verifiable substitute`, or `external-assist`.
 - Default to task packages that agents can complete by themselves. If real-device QA, human visual acceptance, external approval, credential entry, or another `external-assist` item is essential, cannot be ignored, and has no agent-verifiable substitute, stop before generating the kit and ask the user to approve the gate, change scope, or abort the orchestration.
