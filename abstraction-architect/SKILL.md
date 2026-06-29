@@ -19,6 +19,8 @@ The central advanced move is **process spatialization**: when complexity appears
 
 This move is not the default conclusion. Before searching for a canonical object, first run the **no new abstraction / local deletion wins** baseline: ask whether the work only needs delete obsolete branches, merge local duplication, improve interaction copy, or preserve the status quo with evidence. Escalate to a canonical model or process spatialization only when these lower-abstraction candidates cannot explain the same exception family, projection drift, or workflow burden, and the evidence points to a named invariant.
 
+A good abstraction is not valid merely because it is more general. Candidate abstractions need a falsifiable **Candidate Proof Route** and a non-gating **Abstraction Fitness Score**: clear examples, tool yield, cross-context links, practical sufficiency under bounded evidence and migration capacity, hot-path value, and a tiny complete loop. The fitness score is decision support, not an absolute gate; do not manufacture evidence or reject a useful candidate only because one optional dimension is weak.
+
 The default formal deliverable is an **interactive HTML architecture report** for user review, comparison, and feedback. A **Markdown source report** is an upgrade artifact and is produced only when the user explicitly requests an agent handoff or source-file delivery, or when HTML generation is infeasible. By default, this skill performs analysis only. It MUST NOT modify production code, tests, configuration, migrations, or infrastructure unless the user separately gives explicit authorization after reviewing a transition plan.
 
 ## Default Execution Intensity And Question Gate
@@ -105,6 +107,9 @@ This skill follows the project Investigation Kernel, but this section is a stand
 - **Analysis-only boundary:** by default do not modify production code, tests, configuration, migrations, dependency locks, or Git history. Implementation, migration, rewrite, or Git operations require new explicit user authorization after the report.
 - **Evidence map:** build the structural pressure map first, covering key runtime paths, domain representations, workflow state, boundary glue, constraint evidence, and user-facing workflow burden before competing candidates.
 - **Baseline before abstraction:** candidate competition must include the no-new-abstraction / local-deletion-wins baseline. If deleting obsolete branches, merging local duplication, or clarifying copy/interaction removes the pain, report that before escalating to a canonical object.
+- **Candidate proof route:** before recommending a structural rewrite or canonical model, show the family proof, difference proof, preservation proof, future deformation proof, and falsifier. If the route cannot close, the candidate is at most `promising but unproven`.
+- **Abstraction fitness score:** use clear examples, tool yield, cross-context link, practical sufficiency, hot-path value, and tiny complete loop as non-gating comparison criteria. The score supports user decisions; it does not replace the admissibility gate or act as a veto.
+- **IR vs domain model fork:** when pressure comes from synchronization or transformation across reports, ledgers, artifacts, workflows, or callers, explicitly ask whether the system needs a stable intermediate representation, projection registry, or transformation protocol before it needs a final domain model.
 - **Coverage debt:** missing telemetry, history, runtime behavior, user context, external constraints, or migration evidence must be recorded as unknowns / coverage debt instead of being filled by structural intuition.
 - **Claim permission:** without observed evidence, constraint reality filtering, admissibility gate results, and counterexample competition, do not claim that a structural rewrite, canonical model, 3x simplification, or whole category of complexity removal is established.
 - **Budget-aware stop review:** a low-information wave triggers a stop review. Normal mode converges quickly, Deep mode rechecks the core pressure map, and Exhaustive mode stops only when marginal information gain for the remaining key unknowns becomes low.
@@ -115,13 +120,13 @@ This skill follows the project Investigation Kernel, but this section is a stand
 
 1. Establish the target repository, requested mode, and evidence limits.
 2. Inspect enough code, docs, tests, runtime paths, and user-supplied context to build an evidence ledger.
-3. Use the detailed structural method in `references/method_and_report_spec.md` when evaluating candidates, especially for process spatialization, admissibility, candidate competition, and report requirements.
+3. Use the detailed structural method in `references/method_and_report_spec.md` when evaluating candidates, especially for process spatialization, admissibility, candidate competition, candidate proof routes, non-gating fitness scoring, IR-vs-domain-model analysis, and report requirements.
 4. Produce the formal deliverable: write `structural_abstraction_architect_report_{YYYYMMDD}_{HHMM}.html` as the user-facing interactive review surface. Use the `reviewable-html-report` capability for shared report mechanics instead of reimplementing HTML infrastructure; repo-local `skills/reviewable-html-report/references/report_base.md` is an optional enhancement, not a standalone dependency. If that capability is unavailable, use bundled `references/fallback.html`. Only when the user explicitly requests a Markdown source for agent handoff / source-file delivery, or when HTML generation is infeasible, also write the same-basename `structural_abstraction_architect_report_{YYYYMMDD}_{HHMM}.md` sharing the same evidence ledger, proposal IDs, and conclusions.
 5. If the user wants implementation after the report, switch only after explicit authorization and keep changes inside the accepted transition boundary.
 
 ## Report Delivery Contract
 
-- **HTML is the default formal deliverable:** include the executive summary, evidence ledger, pressure map, candidate/proposal IDs, admissibility results, rejected/deferred abstractions, transition handoff, unknowns, verification notes, topology/process visuals, proposal cards, filters, expandable evidence, review/export controls, section index, and user feedback path.
+- **HTML is the default formal deliverable:** include the executive summary, evidence ledger, pressure map, candidate/proposal IDs, admissibility results, candidate proof routes, non-gating abstraction fitness, rejected/deferred abstractions, transition handoff, unknowns, verification notes, topology/process visuals, proposal cards, filters, expandable evidence, review/export controls, section index, and user feedback path.
 - **Markdown is an upgrade artifact:** not produced by default; only when the user explicitly requests an agent handoff / source-file delivery, or when HTML generation is infeasible. When produced, it shares the same timestamp basename and the same evidence ledger, proposal IDs, and conclusions as the HTML.
 - **Consistent naming:** when both are produced, formal reports use the same timestamp basename. If HTML cannot be generated, deliver Markdown as the fallback and state the HTML limitation.
 - **Final response:** list the report path(s), provide a clickable `file://` URL for HTML, summarize the highest-leverage structural opportunity in one sentence, and state that no code was modified. Active browser opening is optional preview behavior.
@@ -137,6 +142,7 @@ This skill follows the project Investigation Kernel, but this section is a stand
 
 - Separate observed evidence, inference, and unknowns.
 - Classify each proposal through the admissibility gate.
+- Recommended candidates include a candidate proof route; abstraction fitness appears as proposal-card detail or appendix-level decision support, not as noisy default output.
 - Include rejected or deferred abstractions when relevant.
 - When a Markdown source report is produced, keep it aligned with the HTML on the same evidence ledger, proposal IDs, and conclusions.
 - Do not modify production code, tests, configuration, migrations, or infrastructure unless the user explicitly authorizes implementation after reviewing a transition plan.
