@@ -18,6 +18,9 @@ Use Teotis Skills when you want an agent to:
 - separate code ugliness from business-critical compatibility;
 - audit important flows before deciding what to fix;
 - produce reports a human can review, not just walls of chat text;
+- turn concrete engineering requests into lightweight executable plans;
+- check whether a risky delivery can honestly be called complete;
+- sharpen technically plausible designs into decision-useful defaults;
 - coordinate multi-agent work with ledgers, package boundaries, and final verification.
 
 The default stance is conservative: analysis before mutation, evidence before
@@ -33,6 +36,10 @@ makes certain failures more expensive:
 | The architecture diagnosis is too shallow | The agent sees repeated code and invents an abstraction before proving the invariant. | `abstraction-architect` forces baseline deletion, candidate competition, counterexamples, and evidence-backed structure. |
 | Legacy modernization turns into theater | The agent proposes a migration route without proving adoption cost, rollback, or stability floor. | `renewal-architect` converts modernization into reversible pilots and decision gates. |
 | The release risk is hiding in real flows | The agent reviews files but misses main-flow failures, stale tests, observability gaps, and historical loops. | `deep-flow-sweep` maps flows, risks, evidence, and follow-up task packages before fixes begin. |
+| The code feels expensive to understand | The agent sees many symptoms but cannot distinguish style preference from real change cost. | `complexity-sweep` audits micro, meso, and macro complexity with evidence, falsifiers, and behavior-preservation gates. |
+| A request needs a plan, not a control plane | The agent either jumps straight into code or overbuilds an orchestration system for a small task. | `agent-task-planner` validates claims, picks the lightest execution lane, and writes agent-ready packages. |
+| "Done" only means something got changed | Tests, commits, or generated files are mistaken for the user's actual goal being achieved. | `done-claim-gate` maps user goals to real implementation paths, evidence, gaps, and honest completion wording. |
+| A technically correct design still feels hard to use | The output exposes mechanisms but does not help the user decide what to do next. | `product-sense-refiner` starts from the user decision and default answer, then trims or hides internal machinery. |
 | The report is hard to review | The conclusion is trapped in a long chat transcript or a flat Markdown dump. | `reviewable-html-report` provides browser-readable HTML mechanics: TOC, diagrams, cards, feedback, and export. |
 | Multi-agent work loses the plot | Background agents finish in different states and no artifact owns the truth. | `agent-orchestration-planner` creates package prompts, DAG state, event ledgers, and final integration contracts. |
 
@@ -84,6 +91,18 @@ follow-up packaging.
 - **Use when:** preparing for a release, large merge, bug bash, architecture
   push, or "what should we fix first?" decision.
 
+### [`complexity-sweep`](complexity-sweep/)
+
+For explicit analysis-only complexity sweeps across micro, meso, and macro code
+structure.
+
+- **Design goal:** identify complexity that materially increases comprehension
+  cost, change cost, onboarding drag, or defect risk.
+- **Expected effect:** evidence-backed findings, false-positive guards,
+  behavior-preservation checks, and simplification task packages.
+- **Use when:** you need to know which complexity is worth simplifying before
+  authorizing refactors.
+
 ### [`reviewable-html-report`](reviewable-html-report/)
 
 For turning an already-formed analysis into a browser-readable artifact.
@@ -93,6 +112,18 @@ For turning an already-formed analysis into a browser-readable artifact.
   feedback, and exportable notes.
 - **Use when:** the conclusion exists, but it needs to become a review surface
   rather than a chat transcript.
+
+### [`agent-task-planner`](agent-task-planner/)
+
+For concrete engineering requests that need a lightweight plan, not a heavy
+orchestration control plane.
+
+- **Design goal:** validate raw claims, pick the lightest safe execution lane,
+  and turn the work into clear packages.
+- **Expected effect:** a small task plan with agent-ready prompts, dependencies,
+  verification, checkpoint rules, and integration expectations.
+- **Use when:** direct work, one-agent work, small parallel work, or a ledger-lite
+  plan is enough.
 
 ### [`agent-orchestration-planner`](agent-orchestration-planner/)
 
@@ -106,6 +137,30 @@ and integration need their own control plane.
 - **Use when:** multiple background agents, worktrees, dependencies, and final
   integration must be coordinated deliberately.
 
+### [`done-claim-gate`](done-claim-gate/)
+
+For high-risk delivery moments where an agent must not confuse engineering
+evidence with the user's actual goal.
+
+- **Design goal:** bind the user goal, intended solution, real implementation
+  path, acceptance evidence, remaining gaps, and allowed completion wording.
+- **Expected effect:** a clear completion level such as complete,
+  engineering-complete, partial, blocked, or not-complete.
+- **Use when:** tests, builds, commits, reports, or generated files might be only
+  proxy evidence.
+
+### [`product-sense-refiner`](product-sense-refiner/)
+
+For technically plausible designs that need sharper product fit and clearer
+defaults.
+
+- **Design goal:** start from the user's decision and default answer, then work
+  backward to the internal model.
+- **Expected effect:** recommendation wording, default-output changes, hidden
+  audit details, and removal of misleading incentives.
+- **Use when:** a workflow, score, report, tool, or interaction is correct but
+  not yet decision-useful.
+
 ## Philosophy
 
 These skills share a few operating beliefs.
@@ -118,9 +173,20 @@ abstraction is "no new abstraction": delete stale branches, merge local
 duplication, improve copy, or keep the current shape when the evidence says it
 is stable.
 
+**Planning should fit the task.** A concrete request should not be forced into a
+full orchestration system unless dependency closure, recovery, or integration
+truth really require it.
+
 **Legacy systems carry real contracts.** Old code is not automatically wrong.
 The question is what must be protected, what can be tested safely, and what
 should wait until a pilot produces the missing fact.
+
+**Completion is a claim, not a vibe.** The user goal, real path, acceptance
+evidence, and gaps decide what can honestly be called done.
+
+**Product fit starts with the user's next decision.** Internal mechanisms matter
+only when they improve the default answer, reduce operation cost, or preserve
+trust.
 
 **Reports should lower cognitive load.** Dense analysis should open with the
 answer, then expose evidence, diagrams, tradeoffs, unknowns, and review controls
@@ -147,7 +213,23 @@ Run deep-flow-sweep for the release-critical flows and package the top follow-up
 ```
 
 ```text
+Run complexity-sweep on the module before we decide what to simplify.
+```
+
+```text
+Use agent-task-planner to turn this bug report into a small executable task pack.
+```
+
+```text
 Use agent-orchestration-planner to split this migration into background agent packages.
+```
+
+```text
+Use done-claim-gate before saying this public package update is complete.
+```
+
+```text
+Use product-sense-refiner on this scoring workflow. The output is technically correct but not decision-useful.
 ```
 
 Each skill's `SKILL.md` is self-contained. Bundled `references/` and `scripts/`
@@ -160,8 +242,12 @@ core.
 |---|---|
 | Architecture or renewal report | A saved HTML report path, a clickable `file://` URL, named evidence, explicit unknowns, and no code edits unless separately authorized. |
 | Deep sweep | A coverage-aware findings list, severity/risk framing, validation gaps, and task packages suitable for follow-up agents. |
+| Complexity sweep | Evidence-backed complexity findings, false-positive guards, behavior-preservation vectors, and simplification packages without refactoring during the sweep. |
 | Reviewable HTML | A self-contained report with stable section IDs, readable diagram fallbacks, and feedback/export mechanics. |
+| Lightweight task plan | A small plan with lane choice, claim disposition, package boundaries, verification, checkpoint, and integration expectations. |
 | Orchestration kit | `INDEX.md`, package prompts, `package-graph.tsv`, `state.tsv`, `events.jsonl`, package status files, and a finalization contract. |
+| Done claim gate | A delivery status and explicit permission for what can honestly be claimed complete. |
+| Product refinement | A user-decision frame, improved default answer, fit changes, removals, and recommendation wording. |
 
 ## Self-Assessment
 
