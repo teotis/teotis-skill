@@ -64,6 +64,7 @@ The calling skill owns meaning. This skill owns report mechanics.
 ## Required Report Features
 
 - Use semantic sections and headings. Avoid decorative title-only first screens.
+- Every HTML report must include a clickable TOC / section index with stable section IDs and `href="#section-id"` links. Long reports should highlight the active section. The TOC must be either a sidebar or a compact top bar: a sticky top TOC must not occupy more than 60% of the opening viewport, must not freeze a large title box over the first screen, and should provide collapsible / collapse behavior, a sidebar mode, or a non-sticky fallback when it needs more than two rows or when narrow screens lack space.
 - Every reviewable card must have a stable `data-card-id` or equivalent ID.
 - Persist review state locally when useful, but wrap localStorage access in `try/catch`.
 - Export feedback as Markdown or JSON that names the report, item IDs, rating/status/comment fields, and a next-action note.
