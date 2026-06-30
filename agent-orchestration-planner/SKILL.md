@@ -92,6 +92,13 @@ Context is loaded progressively by role and state:
   artifacts.
 - The runtime keeps its full recovery surface, but user-facing chat exposes only
   the smallest command set needed for the current state.
+- Durable analysis-only and planning-only outputs, including reports, plans,
+  task packages, HTML review surfaces, `FINAL_REPORT.md`, and coordinator
+  summaries, are documentation assets that should land on the mainline by
+  default after basic checks. `99-finalize` should merge them back to the
+  mainline and summarize them in the primary coordinator thread instead of
+  leaving them only on package branches, watches/sessions, temporary worktrees,
+  or worker threads, unless the INDEX records a specific isolation reason.
 - User-visible behavior, layout, copy, workflow, and visual-output packages use
   a **User-Visible Delta Ledger**: agents have bounded discretion for necessary
   small adjacent changes, but visible drift outside the target surface must be
@@ -166,6 +173,10 @@ Before generating artifacts:
 - Run capability preflight: classify each package or gate as `autonomous`, `agent-verifiable substitute`, or `external-assist`.
 - Default to task packages that agents can complete by themselves. If real-device QA, human visual acceptance, external approval, credential entry, or another `external-assist` item is essential, cannot be ignored, and has no agent-verifiable substitute, stop before generating the kit and ask the user to approve the gate, change scope, or abort the orchestration.
 - Define landing strategy before launch: primary path, preapproved fallbacks, explicit non-goals, abort conditions, and independent merge candidates.
+- For packages that only create durable analysis or planning artifacts, use a
+  default `mainline-documentation-landing` path: merge approved docs/reports
+  outputs to mainline after privacy/sensitive-content, path, format/link, and
+  conflict checks pass.
 
 Use `references/planning_contract.md` for the detailed projection, capability,
 and landing/failure planning rules.
@@ -231,6 +242,11 @@ Core behavior:
 - `retry` accepts only `blocked`, `stale`, or `invalid`, preserves prior recovery context, and obeys the three-strike fingerprint breaker.
 - `doctor` checks consistency and runner/session health without launching work.
 - `99-finalize` runs only when all functional packages are `completed`, then verifies evidence, merges conservatively, reports outcome, and calls `cleanup --mainline <branch>` only after success. Cleanup must finish before `99-finalize` may be marked `finalized`.
+- For analysis-only or planning-only artifacts, `99-finalize` should land
+  durable docs/reports outputs on mainline by default and carry the summary back
+  to the coordinator thread; keep them isolated only for recorded blockers such
+  as sensitive content, unapproved publication, path violations, verification
+  failure, conflicts, or explicit user isolation.
 - `start-codex-app.sh` and `start-claude-code.sh` are thin wrappers: their default command runs `doctor --environment`, `start`, and `status`; other orchestration subcommands pass through to `orchestrate.sh`. They must not duplicate scheduling, state, finalize, or cleanup logic.
 
 ### 4. Output To User
@@ -240,11 +256,11 @@ After generating the kit, show only immediately actionable entry paths:
 - Mainline branch, integration branch, max parallel agents.
 - First wave packages and final package `99-finalize`.
 - Manual path: copy prompts from `launchers/agent-prompts.md`.
+- Script path: show the selected runner's primary wrapper only as the default,
+  while also providing the other platform's complete alternative-runner command.
 - Script path: show both platform launch commands. Mark the selected runner's
   wrapper as primary, and show the other wrapper as the alternative runner with
-  a complete copy-paste launch command. Codex primary output uses
-  `start-codex-app.sh`, JSONL/thread-id inspection, and
-  `start-codex-app.sh resume <thread-id>`. Claude primary output uses
+  a complete copy-paste launch command. Codex primary output uses `start-codex-app.sh`, JSONL/thread-id inspection, and `start-codex-app.sh resume <thread-id>`. Claude primary output uses
   `start-claude-code.sh` and `start-claude-code.sh agents`.
 - Recovery commands are shown only when the current state requires them:
   `retry <package-id>` for `blocked`/`stale`/`invalid`, `doctor --environment`
