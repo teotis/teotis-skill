@@ -262,6 +262,13 @@ After generating the kit, show only immediately actionable entry paths:
   wrapper as primary, and show the other wrapper as the alternative runner with
   a complete copy-paste launch command. Codex primary output uses `start-codex-app.sh`, JSONL/thread-id inspection, and `start-codex-app.sh resume <thread-id>`. Claude primary output uses
   `start-claude-code.sh` and `start-claude-code.sh agents`.
+- Script path: when Codex is primary, include a separate Claude Code alternative
+  block; when Claude Code is primary, include a separate Codex App / Codex runner
+  alternative block. Use explicit labels such as "Primary script path (Codex App
+  / Codex runner)", "Alternative runner (Claude Code)", "Primary script path
+  (Claude Code)", and "Alternative runner (Codex App / Codex runner)". Do not
+  collapse the alternative into prose, omit the `cd "<repo-root>"` line, or
+  replace the other platform command with bare `orchestrate.sh`.
 - Recovery commands are shown only when the current state requires them:
   `retry <package-id>` for `blocked`/`stale`/`invalid`, `doctor --environment`
   for runner setup, `collect-logs <package-id>` for diagnosis, `advance` for a
