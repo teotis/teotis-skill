@@ -28,6 +28,27 @@ Use this skill when:
 
 Do not use it for narrow bug fixes, emergency recovery, purely mechanical implementation, math tutoring, career interview preparation, or already approved specs where product framing is intentionally fixed.
 
+## Capability Load (Pilot)
+
+Separate **task fit** from **load depth** (project contract: Skill Intelligence Adaptation v2).
+
+**Task fit:** if this run would not add a named user decision, Human Terminal Fit, reward-alignment, or default-answer judgment, do not run the full skill.
+
+**Self-probe** before Light / Skip|Delta (if uncertain → **Full**):
+
+1. Can you name the user's next decision?
+2. What is the shortest honest default answer?
+3. Is there at least one Human Terminal Fit or reward-misalignment finding?
+4. What fails if you skip the full lens (false certainty, bad default, skewed incentives)?
+
+| State | When | Load |
+|---|---|---|
+| **Skip \| Delta** | Probe passes; only one default/copy/incentive fix | Hard bounds + minimal delta |
+| **Light** | Product judgment needed but narrow | Decision + default answer + one keep/change/remove + one risk |
+| **Full** | Weak path, multi-candidate, probe fails, or full refinement requested | Full affordance menu and optional references |
+
+**Hard gate (always, before finish):** decision named; fact / judgment / expression not mixed; recommendation does not invent false certainty or reward clearly wrong behavior. On failure, escalate to Full or soften the claim—do not pretend the design is product-ready.
+
 ## Workflow
 
 ### 1. Name The User Decision

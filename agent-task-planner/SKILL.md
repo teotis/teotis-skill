@@ -11,6 +11,13 @@ Turn a concrete engineering request into a lightweight, executable, recoverable 
 
 This skill is also a routing gate. Even when the user mentions multiple agents or parallel work, first decide whether the task truly needs a durable orchestration control plane. Upgrade only when lightweight planning cannot protect dependency closure, recovery, final integration, or status truth.
 
+## Capability Load
+
+**Task fit:** skip when the plan is already directly executable without external-agent handoff.
+**Self-probe (1A; uncertain → Full):** (1) missing execution-contract fields? (2) decision boundaries and verification independently runnable? (3) should this upgrade to orchestration? (4) failure if compilation is skipped?
+**Skip|Delta** = direct execution; **Light** = minimal execution contract; **Full** = full task pack + claim validation.
+**Hard gate:** do not forge independence from a vague plan; verification and rollback boundaries required.
+
 ## Use When
 
 Use this skill when:

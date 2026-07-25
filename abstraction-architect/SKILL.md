@@ -29,6 +29,15 @@ A good abstraction is not valid merely because it is more general. Candidate abs
 
 The default deliverable is a **one-screen structural decision**: triage result, key evidence, smallest next step, and why escalation is or is not warranted. Produce an **interactive HTML architecture report** only when the Report Upgrade Gate is met: multiple candidates need review, an evidence ledger or review cards would change the decision, the user requests a formal report, or long-term archival / agent handoff is needed. A **Markdown source report** is an upgrade artifact and is produced only when the user explicitly requests an agent handoff or source-file delivery, or when HTML generation is infeasible. By default, this skill performs analysis only. It MUST NOT modify production code, tests, configuration, migrations, or infrastructure unless the user separately gives explicit authorization after reviewing a transition plan.
 
+## Capability Load
+
+Separate **task fit** from **load depth** (authority **1A**: self-probe before Light/Skip; uncertain → Full; hard gate before finish).
+
+**Task fit:** skip if there is no structural pressure or local deletion already removes the symptoms.
+**Self-probe:** (1) real pressure family? (2) did local deletion / boundary repair compete? (3) counterexample and claim permission for a new structure? (4) risk of skipping a full Pressure Map?
+**Skip|Delta** = one-line three-way split; **Light** = low-budget evidence + coverage debt; **Full** = Pressure Map, candidate proof, formal report.
+**Hard gate:** analysis-only; no rewrite recommendation without evidence; no implementation without new authorization.
+
 ## Default Execution Intensity And Question Gate
 
 This skill supports both **user-invoked** entry and **agent-active** auto-launch. The default depth is set by the entry source:

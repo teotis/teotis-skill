@@ -27,6 +27,13 @@ Use these engineering primitives before recommending action:
 
 These are not slogans. They must appear as explicit boundaries, owners, signals, and decision gates in the report.
 
+## Capability Load
+
+**Task fit:** only for legacy/modernization route decisions.
+**Self-probe (1A; uncertain → Full):** (1) current state and owner? (2) Protect/Experiment/Defer basis? (3) pilot and rollback? (4) rewrite risk if economics/rollback are skipped?
+**Skip|Delta** = one-line route; **Light** = field map + recommendation; **Full** = renewal field + pilot design.
+**Hard gate:** analysis-only; no high-risk rewrite without pilot/rollback; no implementation without authorization.
+
 ## Default Execution Intensity And Question Gate
 
 This skill supports both **user-invoked** entry and **agent-active** auto-launch. The default depth is set by the entry source:

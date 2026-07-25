@@ -9,6 +9,13 @@ description: Use for explicit analysis-only complexity sweeps across micro, meso
 
 Audit code complexity across micro, meso, and macro levels, identify structures that materially increase comprehension cost, change cost, onboarding drag, or bug risk, and package evidence-backed simplification work. This skill analyzes only. It does not directly refactor production code.
 
+## Capability Load
+
+**Task fit:** only for explicit large-scope complexity sweeps.
+**Self-probe (1A; uncertain → Full):** (1) structure-map pressures? (2) Constraint Survival / Behavior Preservation? (3) evidence and counterexamples? (4) false-positive risk if the sweep is skipped?
+**Skip|Delta** = single deletion hint; **Light** = local frontier; **Full** = structure map + findings + report.
+**Hard gate:** analysis-only; no high severity without evidence; do not perform large refactors inside the sweep.
+
 ## Invocation Contract
 
 Use this skill only when the user explicitly asks for a complexity audit, complexity sweep, simplification sweep, bloated-design scan, or similarly broad analysis. Do not auto-start it from ordinary debugging, planning, pull request review, or architecture work. If you notice a complexity signal outside an explicit sweep, record a concise handoff finding instead.

@@ -15,6 +15,13 @@ If the input still needs a thesis, reader path, relationship map, runtime story,
 
 It is not the default delivery path. Calling skills should treat `reviewable-html-report` as a review capability, not as proof that thinking was deep. If a calling skill has already passed the Report Upgrade Gate but cannot load this skill or `references/report_base.md`, it must degrade to a readable self-contained HTML report instead of dropping the artifact. The fallback should preserve the core conclusion, TOC, stable section IDs, evidence appendix, Mermaid source fallback, and a non-persistent collapsible feedback area.
 
+## Capability Load
+
+**Task fit:** skip when only comprehension HTML is needed (use a comprehension skill or chat) and no formal review/persistence/export is required.
+**Self-probe (1A; uncertain → Full):** (1) stable conclusion structure already exists? (2) review IDs / export needed? (3) boundary vs comprehension-first? (4) loss if review mechanics are skipped?
+**Skip|Delta** = do not take over; **Light** = minimal review shell; **Full** = cards, persistence, export.
+**Hard gate:** do not rewrite domain conclusions; companion must not steal primary comprehension ownership.
+
 ## When To Use
 
 Use this skill when the user asks for, or another skill's Report Upgrade Gate requires:

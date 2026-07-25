@@ -51,6 +51,27 @@ Use this skill when:
 
 Do not use it for exact mechanical edits, typo fixes, low-risk copy changes, ordinary status updates, or internal maintenance that does not change the user-visible or downstream-visible contract.
 
+## Capability Load (Pilot)
+
+Separate **task fit** from **load depth**. Load may thin; **claim permission must not soften** for stronger models.
+
+**Task fit:** mechanical edits, routine status, or no completion-claim risk → do not invoke this skill.
+
+**Self-probe** before Light / Skip (if uncertain → **Full**):
+
+1. What is the original user goal, and could tests/builds/commits substitute for it?
+2. What is the real path, final artifact, and success oracle?
+3. What is the strongest honest completion level (complete / engineering-complete / partial / blocked / not-complete)?
+4. What user harm follows from a false complete?
+
+| State | When | Load |
+|---|---|---|
+| **Skip** | No completion-claim risk | Do not enter the gate |
+| **Light** | Risk present but not a final claim; or low-budget agent check | Pre-delivery lens five dimensions; compress when clean |
+| **Full** | About to claim complete, user challenges completion, weak path, or probe fails | Delivery Contract, Evidence Packet, Goal Realization Gate, Gap Ledger |
+
+**Hard gate (always, before finish):** goal not replaced by proxies; completion level supported by real artifact/oracle; items needing user/device/visual/publish confirmation are not marked complete. On failure, force Full or downshift the claim—never “feels done.”
+
 ## Hard Invariants
 
 - The user goal is the primary evidence source. Tests, builds, commits, generated files, and reports are support evidence, not the goal itself.

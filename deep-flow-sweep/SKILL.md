@@ -15,6 +15,13 @@ The central question is:
 
 > Where can the project fail in real use, what evidence supports that risk, and what should be verified or packaged next?
 
+## Capability Load
+
+**Task fit:** only for high-budget flow/reliability/security-style sweeps.
+**Self-probe (1A; uncertain → Full):** (1) reachable primary paths and risk surfaces? (2) evidence enough for P0/P1? (3) coverage debt? (4) miss risk if waves are skipped?
+**Skip|Delta** = single risk note; **Light** = low-budget debt + handoff; **Full** = Flow Map and multi-wave analysis.
+**Hard gate:** analysis-only; no P0 without reachable evidence; no system changes without authorization.
+
 ## Default Execution Intensity And Question Gate
 
 This skill is **user-invoked only**: it must only be launched after an explicit user request (the user names this skill, asks for a deep flow sweep / wide-coverage quality audit, or uses a synonym trigger). Other agents and skills MUST NOT auto-launch this skill; they may surface a recommendation and wait for the user to authorize a full sweep. There is no "partial sweep" or lightweight active-launch entry.

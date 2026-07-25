@@ -37,6 +37,13 @@ happens to be installed:
 
 Both wrappers must be generated for every kit, so a plan authored in Codex App can be launched from Claude Code and a plan authored in Claude Code can be launched from Codex App.
 
+## Capability Load
+
+**Task fit:** skip full orchestration when platform-native concurrency is enough and no durable DAG/recovery is required.
+**Self-probe (1A; uncertain → Full):** (1) durable state/recovery truly needed? (2) mode and Package Contract boundary? (3) trust/finalize evidence gate? (4) failure mode if ledger/recovery is skipped?
+**Skip|Delta** = direct/native concurrency; **Light** = package-design-only skeleton; **Full** = managed-manual/runtime contract.
+**Hard gate:** do not claim orchestration success from optimistic artifacts; no runtime side effects without authorization.
+
 ## When To Use
 
 Use this skill only when the user explicitly asks for this skill or clearly asks
