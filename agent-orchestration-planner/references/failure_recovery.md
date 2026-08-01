@@ -15,7 +15,7 @@ generating/validating `doctor`, `collect-logs`, `verify-package`, and
   background process.
 - `invalid`: the coordinator cannot trust the launch or ledger shape, such as a
   missing session id, malformed state row, duplicate package id, missing
-  dependency, or forbidden transition.
+  dependency, forbidden transition, or execution-platform mismatch.
 
 ## Retry Rules
 
@@ -28,6 +28,9 @@ generating/validating `doctor`, `collect-logs`, `verify-package`, and
   three times, stop retry and require human diagnosis.
 - Do not retry a package that is `launched`, `in_progress`, `completed`,
   `finalizing`, or `finalized` unless the user explicitly changes state.
+- Treat an execution-platform mismatch as a plan-level stop, not a package
+  retry. Preserve the existing `status/execution-platform` record and require a
+  new plan or explicit user-authorized rebind before continuing.
 
 ## Doctor And Logs
 
@@ -38,7 +41,8 @@ generating/validating `doctor`, `collect-logs`, `verify-package`, and
   `agent_logs_unreadable`.
 - `doctor --environment` reports repository root, plan root, runner, CLI
   version/capability, permission mode, setting sources, and template version
-  drift.
+  drift, plus the bound execution platform and whether continuation is
+  same-platform/manual.
 - `collect-logs <package-id>` writes runner logs to
   `status/logs/<package-id>.log`; logs are evidence for review, not scheduler
   truth by themselves.

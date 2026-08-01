@@ -7,12 +7,12 @@ ORCHESTRATE="$SCRIPT_DIR/orchestrate.sh"
 REPO_ROOT="$(git -C "$PLAN_ROOT" rev-parse --show-toplevel 2>/dev/null || pwd -P)"
 
 run_orchestrate() {
-  ORCHESTRATION_RUNNER=claude bash "$ORCHESTRATE" "$@"
+  ORCHESTRATION_EXECUTION_PLATFORM=claude ORCHESTRATION_RUNNER=claude bash "$ORCHESTRATE" "$@"
 }
 
 usage() {
   cat <<EOF
-Usage: $(basename "$0") [start|doctor|status|agents|advance|retry|finalize|cleanup|mark-state|repair-state|collect-logs|verify-package|verify-finalize|scratch-path] [args...]
+Usage: $(basename "$0") [start|doctor|status|agents|advance|retry|finalize|cleanup|mark-state|repair-state|collect-logs|verify-package|verify-finalize|scratch-path|bind-platform] [args...]
 
 Default:
   $(basename "$0") start
@@ -46,7 +46,7 @@ EOF
       run_orchestrate doctor "$@"
     fi
     ;;
-  status|advance|retry|finalize|cleanup|mark-state|repair-state|collect-logs|verify-package|verify-finalize|scratch-path)
+  status|advance|retry|finalize|cleanup|mark-state|repair-state|collect-logs|verify-package|verify-finalize|scratch-path|bind-platform)
     run_orchestrate "$cmd" "$@"
     ;;
   agents)

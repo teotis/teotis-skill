@@ -17,6 +17,7 @@ or the final chat instructions after creating an orchestration kit.
 ## Projection Ownership
 - `INDEX.md` owns static human intent, policy, authorization, landing strategy, capability gates, and the intended dependency contract.
 - `launchers/package-graph.tsv` owns machine-readable dispatch topology. It must match the dependency intent in this INDEX.
+- `status/execution-platform` owns the immutable host-platform affinity for this plan; a mismatch blocks continuation.
 - `status/state.tsv` owns current scheduler state. It must not be edited manually.
 - `status/events.jsonl` owns append-only event history, retry accounting, and failure fingerprints.
 - `status/<package-id>.md` owns human-readable evidence, risks, verification details, and blocker diagnosis.
@@ -42,13 +43,14 @@ or the final chat instructions after creating an orchestration kit.
 - Decision: <full kit | ledger-lite/manual-pack | native agents | needs-user-decision>
 
 ## User Entry Points
-- Manual: copy prompts from `launchers/agent-prompts.md` into any agent platform.
-- Script: use the selected runner wrapper for this plan. Codex App / Codex runner plans use `bash launchers/start-codex-app.sh` and JSONL/thread-id inspection. Claude Code plans use `bash launchers/start-claude-code.sh` and `claude agents`.
+- Execution platform: <the current host platform that owns this plan; bind it before first launch>
+- Platform binding: run `bash launchers/orchestrate.sh bind-platform <current-platform>` once, or use `ORCHESTRATION_EXECUTION_PLATFORM=<current-platform>` from the host adapter. Later package/finalize continuation must keep this value.
+- Manual: copy prompts from `launchers/agent-prompts.md` into the bound current agent platform only.
+- Script: use only the wrapper matching the bound platform. Codex uses `bash launchers/start-codex-app.sh` and JSONL/thread-id inspection. Claude Code uses `bash launchers/start-claude-code.sh` and `claude agents`. A host without a local wrapper uses same-platform/manual continuation.
 - Status: run `bash launchers/orchestrate.sh status`.
 - Retry: run `bash launchers/orchestrate.sh retry <package-id>`.
 - Manual advancement fallback: run `bash launchers/orchestrate.sh advance`.
-- App-native fallback: if the user wants to stay inside Codex App subagents instead of a script runner, copy ready package prompts into a Codex subagent workflow and manually run `advance` when a platform cannot run shell tail calls.
-- Cross-runner launch: both `start-codex-app.sh` and `start-claude-code.sh` are generated. A kit planned in one app may be launched from the other by running the other wrapper.
+- App-native/manual fallback: if the bound platform cannot run shell tail calls, continue the ready package on that same platform and expose `advance` as a coordinator command; do not switch to another agent platform.
 
 ## Repository And Branch Policy
 - Main checkout: <absolute path>
@@ -69,7 +71,7 @@ Package agents are authorized to:
 - Update the state ledger only through `bash <plan-root>/launchers/orchestrate.sh mark-state ...`; do not edit `state.tsv` manually.
 - Write temporary, non-sensitive shared working notes or intermediate artifacts only under their assigned scratch path from `bash <plan-root>/launchers/orchestrate.sh scratch-path <package-id>`.
 - Call `bash <plan-root>/launchers/orchestrate.sh advance --from <package-id>` after recording final status.
-- The launcher persists the selected runner in `status/runner`, so this plain tail call must continue with the runner chosen by `start-codex-app.sh`, `start-claude-code.sh`, or the initial `start`; do not rely on environment inheritance.
+- The plan is bound to the current execution platform recorded in `status/execution-platform`. This plain tail call must preserve that platform; `status/runner` is only a compatible launcher detail and may not cause a cross-platform handoff.
 
 `99-finalize` is authorized by default to perform incremental orchestration operations for this plan:
 - Inspect package docs, status files, state, branches, commits, and diffs.
@@ -186,6 +188,16 @@ verification, commit local changes, and write only this package's coordinator
 status. Never edit `state.tsv` manually; scheduler state changes only through
 `mark-state`.
 
+## Execution Platform Binding
+
+This plan is owned by the current host platform recorded in
+`<absolute-plan-dir>/status/execution-platform`. Continue this package, retry it,
+and consume any package exposed by `advance` on that same platform. Do not invoke,
+recommend, or hand off to Codex, Claude, OpenCode, or another agent platform as a
+default fallback. If the host has no local launcher, use same-platform/manual
+continuation: inspect the ready package prompt and continue there; the coordinator
+must not substitute a different runner.
+
 Normal-path context:
 1. Read the package doc, assigned coordinator status, this package's graph/state
    rows, and relevant repository files.
@@ -246,16 +258,16 @@ bash <absolute-plan-dir>/launchers/orchestrate.sh advance --from <package-id>
 
 After the tail call returns, terminate the package session immediately. Do not ask for input, emit another summary, suggest a reply, or wait at an interactive prompt. Completion, blocker, and recovery details already belong in the coordinator artifacts.
 
-If the platform cannot run shell commands, record `completed but advance not
-run`; the coordinator may then expose the manual `advance` command to the user.
+If the bound platform cannot run shell commands, record `completed but advance
+not run`; the coordinator may then expose the manual `advance` command to the same
+platform. Never replace that limitation with a different platform.
 ````
 
 After generating all artifacts, run:
 
 ```bash
 bash -n <absolute-plan-dir>/launchers/orchestrate.sh
-bash -n <absolute-plan-dir>/launchers/start-codex-app.sh
-bash -n <absolute-plan-dir>/launchers/start-claude-code.sh
+bash -n <absolute-plan-dir>/launchers/<selected-platform-wrapper.sh>  # only when a wrapper exists
 bash <absolute-plan-dir>/launchers/orchestrate.sh status
 ```
 
@@ -396,15 +408,14 @@ Success rules:
 - Re-running finalize after success must be idempotent and report `already finalized`.
 
 Terminal session rule:
-- After recording either `blocked` or `finalized`, run `bash launchers/orchestrate.sh advance --from 99-finalize` as the tail call.
+- After recording either `blocked` or `finalized`, run `bash launchers/orchestrate.sh advance --from 99-finalize` as the tail call on the bound execution platform. The tail call must not wake or recommend another platform.
 - After the `99-finalize` tail call returns, terminate the finalize session immediately. Do not ask for input, restate the final report in chat, suggest a reply, or wait at an interactive prompt. Keep blocker, recovery, and outcome details in `status/99-finalize.md`, `state.tsv`, `events.jsonl`, and `FINAL_REPORT.md`.
 
 ### 9. Output Style
 
 After generating the kit, chat output must be immediately actionable and must
-show the manual path, both platform script launch commands, and a small command
-surface. Mark the selected runner's wrapper as the primary script path and the
-other wrapper as the alternative runner.
+show the bound execution platform, its manual/script entry path, and a small
+command surface. Never show another platform's wrapper as an alternative.
 The runtime still exposes the full recovery command set through
 `orchestrate.sh`; do not turn every recovery ability into default chat output.
 
@@ -432,28 +443,16 @@ For the **Manual** path, include a package table so the user can decide which pr
 
 The Manual section must say:
 - Copy prompts from `<plan>/launchers/agent-prompts.md`.
-- Start every row where `Can Start Now = yes` in any agent platform.
+- Start every row where `Can Start Now = yes` on the bound execution platform.
 - Later packages should not be manually started unless their dependencies are satisfied or the user intentionally overrides automation.
-- If an agent platform cannot run local shell commands, the user may manually run `advance`.
+- If the bound platform cannot run local shell commands, continue the package there and expose `advance`; do not hand it to another platform.
 
 For the **Script** path, include complete copy-paste commands for a new macOS Terminal. Commands must use absolute paths and avoid assuming the user's current directory.
-Always include both platform launch commands: one selected-runner primary block
-and one alternative-runner block. The alternative block must include the
-copy-paste launch command for the other platform, not merely mention that the
-wrapper exists, so one app can plan and the other can launch the same kit.
-When Codex is primary, include a separate Claude Code alternative block. When Claude Code is primary, include a separate Codex App / Codex runner alternative block.
-Do not collapse the alternative into prose, omit `cd "<repo-root>"`, or replace
-the other platform command with bare `orchestrate.sh`.
+Show only the command surface for the bound execution platform. Do not emit an
+alternative-runner block, a cross-platform launch suggestion, or a wrapper that
+does not match `status/execution-platform`.
 
-Required block labels:
-- **Primary script path (Codex App / Codex runner)**
-- **Alternative runner (Claude Code)**
-- **Primary script path (Claude Code)**
-- **Alternative runner (Codex App / Codex runner)**
-
-Codex primary command surface, used when the selected runner is Codex. The same
-commands are also the **Alternative runner (Codex App / Codex runner)** block
-when Claude Code is primary:
+For a bound Codex platform, use:
 
 ```bash
 cd "<repo-root>"
@@ -472,9 +471,7 @@ Use concrete package ids in place of `<package-id>`, and strip the
 `codex-thread:` prefix before passing a thread id to
 `codex exec resume <thread-id>`.
 
-Claude primary command surface, used when the selected runner is Claude Code.
-The same commands are also the **Alternative runner (Claude Code)** block when
-Codex is primary:
+For a bound Claude Code platform, use:
 
 ```bash
 cd "<repo-root>"
@@ -483,10 +480,22 @@ bash "<absolute-plan-dir>/launchers/start-claude-code.sh" status
 bash "<absolute-plan-dir>/launchers/start-claude-code.sh" agents
 ```
 
-If Codex is selected because the user is working in Codex App, add this note:
+If the bound platform is Codex App, add this note:
 "This script lane uses local `codex exec --json` processes and coordinator
 logs; Codex App native subagents remain available through the Manual path, but
 the generated script does not create App UI subagent threads directly."
+
+For any other bound host, use same-platform/manual continuation:
+
+```bash
+cd "<repo-root>"
+ORCHESTRATION_EXECUTION_PLATFORM="<current-platform>" bash "<absolute-plan-dir>/launchers/orchestrate.sh" bind-platform "<current-platform>"
+ORCHESTRATION_EXECUTION_PLATFORM="<current-platform>" bash "<absolute-plan-dir>/launchers/orchestrate.sh" start
+ORCHESTRATION_EXECUTION_PLATFORM="<current-platform>" bash "<absolute-plan-dir>/launchers/orchestrate.sh" status
+```
+
+The coordinator may expose ready package ids, but the current host owns the next
+package. It must not invoke another agent platform to continue the graph.
 
 Recovery commands are contextual. Show only the one or two commands that match
 the current state, and name the concrete package ids that may use them:

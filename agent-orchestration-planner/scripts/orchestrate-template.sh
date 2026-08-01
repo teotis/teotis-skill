@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# orchestrate-template v1.1.1 — see skills/agent-orchestration-planner/scripts/orchestrate-template.sh
+# orchestrate-template v1.2.0 — see skills/agent-orchestration-planner/scripts/orchestrate-template.sh
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -9,6 +9,7 @@ GRAPH="$PLAN_ROOT/launchers/package-graph.tsv"
 STATE="$PLAN_ROOT/status/state.tsv"
 EVENTS="$PLAN_ROOT/status/events.jsonl"
 RUNNER_STATE="$PLAN_ROOT/status/runner"
+EXECUTION_PLATFORM_STATE="$PLAN_ROOT/status/execution-platform"
 LOGS_DIR="$PLAN_ROOT/status/logs"
 SCRATCH="$PLAN_ROOT/scratch"
 PROMPTS="$PLAN_ROOT/launchers/agent-prompts.md"
@@ -20,7 +21,7 @@ elif [ -s "$RUNNER_STATE" ]; then
   ORCHESTRATION_RUNNER="$(head -n 1 "$RUNNER_STATE")"
   ORCHESTRATION_RUNNER_SOURCE="persisted"
 else
-  ORCHESTRATION_RUNNER="claude"
+  ORCHESTRATION_RUNNER="unbound"
   ORCHESTRATION_RUNNER_SOURCE="default"
 fi
 CLAUDE_MODEL="${CLAUDE_MODEL:-sonnet}"
@@ -38,6 +39,16 @@ STATE_HEADER="package_id	state	launched_at	completed_at	agent	branch	worktree	ba
 GRAPH_HEADER="package_id	package_doc	status_file	dependencies	dependency_type	wave	branch	worktree	manual	finalize"
 SIG_FILE="$PLAN_ROOT/status/.state.sig"
 LOCK_ACQUIRED=0
+
+if [ -n "${ORCHESTRATION_EXECUTION_PLATFORM+x}" ]; then
+  ORCHESTRATION_EXECUTION_PLATFORM_SOURCE="environment"
+elif [ -s "$EXECUTION_PLATFORM_STATE" ]; then
+  ORCHESTRATION_EXECUTION_PLATFORM="$(head -n 1 "$EXECUTION_PLATFORM_STATE")"
+  ORCHESTRATION_EXECUTION_PLATFORM_SOURCE="persisted"
+else
+  ORCHESTRATION_EXECUTION_PLATFORM=""
+  ORCHESTRATION_EXECUTION_PLATFORM_SOURCE="unbound"
+fi
 
 log() {
   printf '[orchestrate] %s\n' "$*" >&2
@@ -285,6 +296,68 @@ valid_state() {
       ;;
     *)
       return 1
+      ;;
+  esac
+}
+
+valid_execution_platform() {
+  case "$1" in
+    ""|pending|unbound|current-host|*[!a-zA-Z0-9._-]*)
+      return 1
+      ;;
+    *)
+      return 0
+      ;;
+  esac
+}
+
+ensure_execution_platform() {
+  local current candidate
+  current="$(head -n 1 "$EXECUTION_PLATFORM_STATE" 2>/dev/null || true)"
+  candidate="${ORCHESTRATION_EXECUTION_PLATFORM:-$current}"
+
+  # A legacy explicit runner is acceptable only as a one-time compatibility
+  # hint. Installed CLIs and a persisted runner are never allowed to choose a
+  # new host platform implicitly.
+  if [ -z "$candidate" ] && [ "$ORCHESTRATION_RUNNER_SOURCE" = "environment" ]; then
+    case "$ORCHESTRATION_RUNNER" in
+      claude|codex)
+        candidate="$ORCHESTRATION_RUNNER"
+        ORCHESTRATION_EXECUTION_PLATFORM_SOURCE="runner-compat"
+        ;;
+    esac
+  fi
+
+  [ -n "$candidate" ] || die "execution platform is unbound; set ORCHESTRATION_EXECUTION_PLATFORM to the current host or run bind-platform <platform>"
+  valid_execution_platform "$candidate" || die "invalid execution platform: $candidate"
+
+  if [ -n "$current" ] && [ "$current" != "$candidate" ]; then
+    die "execution platform mismatch: plan is bound to $current, current request is $candidate; cross-platform continuation is denied"
+  fi
+
+  ORCHESTRATION_EXECUTION_PLATFORM="$candidate"
+  if [ -z "$current" ]; then
+    mkdir -p "$(dirname "$EXECUTION_PLATFORM_STATE")"
+    printf '%s\n' "$candidate" > "$EXECUTION_PLATFORM_STATE"
+    emit_event "execution_platform_bound" "" "$(json_pair "execution_platform" "$candidate")$(json_pair "source" "$ORCHESTRATION_EXECUTION_PLATFORM_SOURCE")"
+  fi
+
+  case "$candidate" in
+    claude|codex)
+      if [ "$ORCHESTRATION_RUNNER_SOURCE" = "environment" ] || [ "$ORCHESTRATION_RUNNER_SOURCE" = "persisted" ]; then
+        [ "$ORCHESTRATION_RUNNER" = "$candidate" ] ||
+          die "runner/platform mismatch: platform $candidate cannot continue with runner $ORCHESTRATION_RUNNER; cross-platform launch is denied"
+      else
+        ORCHESTRATION_RUNNER="$candidate"
+        ORCHESTRATION_RUNNER_SOURCE="platform-default"
+      fi
+      ;;
+    *)
+      if [ "$ORCHESTRATION_RUNNER_SOURCE" = "environment" ] && [ "$ORCHESTRATION_RUNNER" != "manual" ]; then
+        die "runner/platform mismatch: execution platform $candidate cannot launch $ORCHESTRATION_RUNNER; use same-platform/manual continuation"
+      fi
+      ORCHESTRATION_RUNNER="manual"
+      ORCHESTRATION_RUNNER_SOURCE="platform-manual"
       ;;
   esac
 }
@@ -573,6 +646,13 @@ preflight_state_signature() {
   die "state.tsv integrity check failed; use repair-state to reinitialize"
 }
 
+preflight_execution_platform() {
+  local platform
+  [ -s "$EXECUTION_PLATFORM_STATE" ] || return 0
+  platform="$(head -n 1 "$EXECUTION_PLATFORM_STATE")"
+  valid_execution_platform "$platform" || die "invalid execution platform record: $platform"
+}
+
 validate_events_cleanup() {
   local finalize_id bad=0
   finalize_id="$(finalize_package_id)"
@@ -638,6 +718,7 @@ preflight_all() {
   preflight_prompts
   preflight_state
   preflight_state_signature
+  preflight_execution_platform
   validate_events_cleanup || die "events.jsonl and state.tsv mismatch: cleanup not recorded"
 }
 
@@ -1005,7 +1086,7 @@ ensure_worktree() {
 
 validate_runner() {
   case "$ORCHESTRATION_RUNNER" in
-    claude|codex)
+    claude|codex|manual)
       return 0
       ;;
     *)
@@ -1023,7 +1104,7 @@ persist_runner() {
   fi
   if [ "$current" != "$ORCHESTRATION_RUNNER" ]; then
     printf '%s\n' "$ORCHESTRATION_RUNNER" > "$RUNNER_STATE"
-    emit_event "runner_selected" "" "$(json_pair "runner" "$ORCHESTRATION_RUNNER")$(json_pair "source" "$ORCHESTRATION_RUNNER_SOURCE")$(json_pair "previous_runner" "$current")"
+    emit_event "runner_selected" "" "$(json_pair "runner" "$ORCHESTRATION_RUNNER")$(json_pair "source" "$ORCHESTRATION_RUNNER_SOURCE")$(json_pair "previous_runner" "$current")$(json_pair "execution_platform" "$ORCHESTRATION_EXECUTION_PLATFORM")"
   fi
 }
 
@@ -1230,7 +1311,7 @@ launch_with_claude() {
   log "launching $package_id"
   log "  branch: $branch"
   log "  worktree: $worktree"
-  emit_event "launch_requested" "$package_id" "$(json_pair "branch" "$branch")$(json_pair "worktree" "$worktree")$(json_pair "finalize" "$finalize")"
+  emit_event "launch_requested" "$package_id" "$(json_pair "branch" "$branch")$(json_pair "worktree" "$worktree")$(json_pair "finalize" "$finalize")$(json_pair "execution_platform" "$ORCHESTRATION_EXECUTION_PLATFORM")$(json_pair "runner" "claude")"
 
   set +e
   if [ -n "$CLAUDE_PERMISSION_MODE" ]; then
@@ -1276,7 +1357,7 @@ launch_with_claude() {
     new_state="launched"
   fi
   set_state_fields "$package_id" "$new_state" "__NOW__" "__KEEP__" "$session_id" "$branch" "$worktree" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__"
-  emit_event "launch_succeeded" "$package_id" "$(json_pair "session_id" "$session_id")$(json_pair "new_state" "$new_state")$(json_pair "branch" "$branch")$(json_pair "worktree" "$worktree")"
+  emit_event "launch_succeeded" "$package_id" "$(json_pair "session_id" "$session_id")$(json_pair "new_state" "$new_state")$(json_pair "branch" "$branch")$(json_pair "worktree" "$worktree")$(json_pair "execution_platform" "$ORCHESTRATION_EXECUTION_PLATFORM")$(json_pair "runner" "claude")"
 }
 
 launch_with_codex() {
@@ -1314,7 +1395,7 @@ launch_with_codex() {
   log "launching $package_id with codex"
   log "  branch: $branch"
   log "  worktree: $worktree"
-  emit_event "launch_requested" "$package_id" "$(json_pair "branch" "$branch")$(json_pair "worktree" "$worktree")$(json_pair "finalize" "$finalize")$(json_pair "runner" "codex")"
+  emit_event "launch_requested" "$package_id" "$(json_pair "branch" "$branch")$(json_pair "worktree" "$worktree")$(json_pair "finalize" "$finalize")$(json_pair "runner" "codex")$(json_pair "execution_platform" "$ORCHESTRATION_EXECUTION_PLATFORM")"
 
   local -a codex_args
   codex_args=(exec --json --sandbox "$ORCHESTRATION_CODEX_SANDBOX")
@@ -1372,7 +1453,7 @@ launch_with_codex() {
     new_state="launched"
   fi
   set_state_fields "$package_id" "$new_state" "__NOW__" "__KEEP__" "$session_id" "$branch" "$worktree" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__"
-  emit_event "launch_succeeded" "$package_id" "$(json_pair "session_id" "$session_id")$(json_pair "new_state" "$new_state")$(json_pair "branch" "$branch")$(json_pair "worktree" "$worktree")$(json_pair "runner" "codex")"
+  emit_event "launch_succeeded" "$package_id" "$(json_pair "session_id" "$session_id")$(json_pair "new_state" "$new_state")$(json_pair "branch" "$branch")$(json_pair "worktree" "$worktree")$(json_pair "runner" "codex")$(json_pair "execution_platform" "$ORCHESTRATION_EXECUTION_PLATFORM")"
 }
 
 launch_package() {
@@ -1402,6 +1483,12 @@ launch_ready_or_finalize() {
   if all_functional_completed; then
     finalize_id="$(finalize_package_id)"
     finalize_state="$(state_field "$finalize_id" state)"
+    if [ "$ORCHESTRATION_RUNNER" = "manual" ]; then
+      printf 'Execution platform %s is bound to same-platform continuation.\n' "$ORCHESTRATION_EXECUTION_PLATFORM"
+      printf 'Finalize package ready: %s\n' "$finalize_id"
+      printf 'Continue it on the bound platform; do not invoke another agent platform.\n'
+      return
+    fi
     case "$finalize_state" in
       pending|ready)
         prepare_code_dependency_base "$finalize_id" || die "code dependency baseline unavailable for $finalize_id"
@@ -1418,6 +1505,19 @@ launch_ready_or_finalize() {
         ;;
     esac
     print_agents_command
+    return
+  fi
+
+  if [ "$ORCHESTRATION_RUNNER" = "manual" ]; then
+    printf 'Execution platform %s is bound to same-platform/manual continuation.\n' "$ORCHESTRATION_EXECUTION_PLATFORM"
+    local ready
+    ready="$(ready_packages)"
+    if [ -n "$ready" ]; then
+      printf 'Ready packages for the bound platform:\n%s\n' "$ready"
+    else
+      printf 'No ready packages to launch on the bound platform.\n'
+    fi
+    printf 'The coordinator will not substitute another platform.\n'
     return
   fi
 
@@ -1454,12 +1554,27 @@ print_agents_command() {
       printf 'Recorded codex-thread ids can be resumed with:\n'
       printf '  codex exec resume <thread-id>\n'
       ;;
+    manual)
+      printf '\nContinue on the bound execution platform:\n'
+      printf '  platform=%s\n' "$ORCHESTRATION_EXECUTION_PLATFORM"
+      printf '  inspect the ready package prompt and continue there; no cross-platform runner is selected\n'
+      ;;
   esac
 }
 
 cmd_status() {
   preflight_all
-  printf 'Runner: %s (%s)\n\n' "$ORCHESTRATION_RUNNER" "$ORCHESTRATION_RUNNER_SOURCE"
+  local platform_display="${ORCHESTRATION_EXECUTION_PLATFORM:-unbound}"
+  local runner_display="$ORCHESTRATION_RUNNER"
+  if [ "$platform_display" = "unbound" ]; then
+    runner_display="unbound"
+  elif [ "$platform_display" != "codex" ] && [ "$platform_display" != "claude" ]; then
+    runner_display="manual"
+  elif [ "$runner_display" = "unbound" ]; then
+    runner_display="$platform_display"
+  fi
+  printf 'Execution platform: %s (%s)\n' "$platform_display" "$ORCHESTRATION_EXECUTION_PLATFORM_SOURCE"
+  printf 'Runner: %s (%s)\n\n' "$runner_display" "$ORCHESTRATION_RUNNER_SOURCE"
   printf '%-36s %-12s %-54s %-22s %-14s %-30s %-30s %s\n' "PACKAGE" "STATE" "BRANCH" "VERIFICATION" "INTEGRATION" "LAST_ERROR" "FAILED_COMMAND" "RECOVERY_HINT"
   awk -F '\t' 'FNR > 1 {
     printf "%-36s %-12s %-54s %-22s %-14s %-30s %-30s %s\n", $1, $2, $6, $10, $11, $13, $14, $17
@@ -1499,6 +1614,7 @@ cmd_mark_state() {
   done
   preflight_all
   acquire_lock
+  ensure_execution_platform
   old_state="$(state_field "$package_id" state || true)"
   if [ "$new_state" = "finalized" ] && ! cleanup_complete; then
     die "cannot mark $package_id finalized before cleanup completes"
@@ -1554,6 +1670,7 @@ cmd_retry() {
   local state last_error failed_command conflict_files log_summary recovery_hint
   [ -n "$package_id" ] || die "usage: retry <package-id>"
   preflight_all
+  ensure_execution_platform
   graph_field "$package_id" package_doc >/dev/null || die "unknown package: $package_id"
   state="$(state_field "$package_id" state)"
   case "$state" in
@@ -1577,6 +1694,11 @@ cmd_retry() {
       emit_event "retry_requested" "$package_id" "$(json_pair "from_state" "$state")$(json_pair "last_error" "$last_error")$(json_pair "failed_command" "$failed_command")$(json_pair "conflict_files" "$conflict_files")$(json_pair "log_summary" "$log_summary")$(json_pair "recovery_hint" "$recovery_hint")"
       set_state_fields "$package_id" "pending" "" "" "" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__" "pending" "pending" "pending"
       persist_runner
+      if [ "$ORCHESTRATION_RUNNER" = "manual" ]; then
+        printf 'Retry ready on bound execution platform %s: %s\n' "$ORCHESTRATION_EXECUTION_PLATFORM" "$package_id"
+        printf 'No cross-platform runner will be started.\n'
+        return 0
+      fi
       launch_package "$package_id"
       ;;
     *)
@@ -1588,10 +1710,16 @@ cmd_retry() {
 cmd_finalize() {
   preflight_all
   acquire_lock
+  ensure_execution_platform
   persist_runner
   status_consistency_ok || exit 1
   if ! all_functional_completed; then
     die "cannot finalize until all functional packages are completed"
+  fi
+  if [ "$ORCHESTRATION_RUNNER" = "manual" ]; then
+    printf 'Finalize package is ready on bound execution platform %s: %s\n' "$ORCHESTRATION_EXECUTION_PLATFORM" "$(finalize_package_id)"
+    printf 'No cross-platform runner will be started.\n'
+    return 0
   fi
   prepare_code_dependency_base "$(finalize_package_id)" || die "code dependency baseline unavailable for $(finalize_package_id)"
   launch_package "$(finalize_package_id)"
@@ -1746,7 +1874,7 @@ version_lt() {
 
 cmd_doctor() {
   if [ "${1:-}" = "--environment" ]; then
-    local generated_template_version current_template_path current_template_version template_status
+    local generated_template_version current_template_path current_template_version template_status doctor_runner
     generated_template_version="$(template_version_for "$0")"
     current_template_path="$(current_template_path || true)"
     current_template_version="unknown"
@@ -1767,10 +1895,21 @@ cmd_doctor() {
     fi
     printf 'repo_root=%s\n' "$REPO_ROOT"
     printf 'plan_root=%s\n' "$PLAN_ROOT"
-    printf 'runner=%s\n' "$ORCHESTRATION_RUNNER"
+    doctor_runner="$ORCHESTRATION_RUNNER"
+    case "${ORCHESTRATION_EXECUTION_PLATFORM:-}" in
+      "") doctor_runner="unbound" ;;
+      codex|claude)
+        [ "$doctor_runner" = "unbound" ] && doctor_runner="${ORCHESTRATION_EXECUTION_PLATFORM}"
+        ;;
+      *) doctor_runner="manual" ;;
+    esac
+    printf 'runner=%s\n' "$doctor_runner"
     printf 'runner_source=%s\n' "$ORCHESTRATION_RUNNER_SOURCE"
     printf 'runner_state=%s\n' "$RUNNER_STATE"
-    case "$ORCHESTRATION_RUNNER" in
+    printf 'execution_platform=%s\n' "${ORCHESTRATION_EXECUTION_PLATFORM:-unbound}"
+    printf 'execution_platform_source=%s\n' "$ORCHESTRATION_EXECUTION_PLATFORM_SOURCE"
+    printf 'execution_platform_state=%s\n' "$EXECUTION_PLATFORM_STATE"
+    case "$doctor_runner" in
       claude)
         if command -v claude >/dev/null 2>&1; then
           printf 'claude_path=%s\n' "$(command -v claude)"
@@ -1809,8 +1948,15 @@ cmd_doctor() {
           printf 'codex_home_writable=no\n'
         fi
         ;;
+      manual)
+        printf 'manual_continuation=same-platform-only\n'
+        printf 'manual_platform=%s\n' "${ORCHESTRATION_EXECUTION_PLATFORM:-unbound}"
+        ;;
+      unbound)
+        printf 'runner_unbound=bind the current execution platform before launch\n'
+        ;;
       *)
-        printf 'runner_error=unsupported:%s\n' "$ORCHESTRATION_RUNNER"
+        printf 'runner_error=unsupported:%s\n' "$doctor_runner"
         ;;
     esac
     printf 'permission_mode=%s\n' "${CLAUDE_PERMISSION_MODE:-default}"
@@ -1826,7 +1972,13 @@ cmd_doctor() {
   fi
   local reconciled
   preflight_all
+  acquire_lock
+  ensure_execution_platform
   status_consistency_ok
+  if [ "$ORCHESTRATION_RUNNER" = "manual" ]; then
+    printf 'doctor: ok (same-platform/manual continuation)\n'
+    return 0
+  fi
   if [ "$ORCHESTRATION_RUNNER" = "codex" ]; then
     reconciled="$(reconcile_active_codex)"
     if [ "$reconciled" -gt 0 ]; then
@@ -1836,7 +1988,6 @@ cmd_doctor() {
     printf 'doctor: ok\n'
     return 0
   fi
-  acquire_lock
   reconciled="$(reconcile_active_agents)"
   status_consistency_ok
   if [ "$reconciled" -gt 0 ]; then
@@ -1877,6 +2028,20 @@ cmd_scratch_path() {
   mkdir -p "$path"
   emit_event "scratch_path_requested" "$package_id" "$(json_pair "path" "$path")"
   printf '%s\n' "$path"
+}
+
+cmd_bind_platform() {
+  local requested="${1:-}"
+  [ -n "$requested" ] || die "usage: bind-platform <platform>"
+  valid_execution_platform "$requested" || die "invalid execution platform: $requested"
+  ORCHESTRATION_EXECUTION_PLATFORM="$requested"
+  ORCHESTRATION_EXECUTION_PLATFORM_SOURCE="explicit-command"
+  preflight_graph
+  acquire_lock
+  ensure_execution_platform
+  persist_runner
+  printf 'execution platform bound: %s\n' "$ORCHESTRATION_EXECUTION_PLATFORM"
+  printf 'runner mode: %s\n' "$ORCHESTRATION_RUNNER"
 }
 
 verify_package_evidence() {
@@ -1980,12 +2145,14 @@ Commands:
   verify-package <package-id>
   verify-finalize
   scratch-path <package-id>
+  bind-platform <platform>
 USAGE
 }
 
 case "${1:-}" in
   start)
     acquire_lock
+    ensure_execution_platform
     persist_runner
     launch_ready_or_finalize
     ;;
@@ -1995,6 +2162,7 @@ case "${1:-}" in
       log "advance requested from ${2:-unknown}"
     fi
     acquire_lock
+    ensure_execution_platform
     persist_runner
     launch_ready_or_finalize
     ;;
@@ -2018,6 +2186,10 @@ case "${1:-}" in
     ;;
   repair-state)
     cmd_repair_state
+    ;;
+  bind-platform)
+    shift || true
+    cmd_bind_platform "${1:-}"
     ;;
   doctor)
     shift || true

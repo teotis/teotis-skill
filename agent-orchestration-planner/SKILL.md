@@ -1,6 +1,6 @@
 ---
 name: agent-orchestration-planner
-description: Use for explicit medium-to-large multi-agent execution requests, Codex or Claude runner selection, tail-driven advancement, DAG scheduling, worktree/branch management, status ledgers, recovery, and final merge workflows.
+description: Use for explicit medium-to-large multi-agent execution requests, host-platform binding, same-platform continuation, tail-driven advancement, DAG scheduling, worktree/branch management, status ledgers, recovery, and final merge workflows.
 ---
 
 # Agent Orchestration Planner
@@ -8,9 +8,10 @@ description: Use for explicit medium-to-large multi-agent execution requests, Co
 ## Mission
 
 Turn an explicit user request for medium/large multi-agent execution into a
-complete orchestration kit. The kit has two user entry paths:
-- **Manual**: the user copies package prompts from Markdown into any agent platform.
-- **Script**: the user runs the platform wrapper, either `bash launchers/start-codex-app.sh` or `bash launchers/start-claude-code.sh`; both call the same `orchestrate.sh` state machine.
+complete orchestration kit. The kit is bound to the current host platform before
+execution:
+- **Manual**: the user copies package prompts from Markdown into the bound agent platform only.
+- **Script**: the user runs only the wrapper matching that binding; a host without a local wrapper uses same-platform/manual continuation.
 
 The script is not a long-running watcher. It is a
 `start/advance/status/retry/finalize` entrypoint. Initial `start` launches the
@@ -21,6 +22,11 @@ After the tail call returns, the package/finalize session must terminate immedia
 It must not emit another summary, ask for input, suggest a reply, or wait at an
 interactive prompt; blocker and recovery details belong only in coordinator artifacts.
 
+The plan records its affinity in `status/execution-platform`. Package execution,
+retry, finalize, and follow-up dispatch inherit this value. A tail call may expose
+the next ready package, but it must not invoke, recommend, or silently switch to
+another agent platform.
+
 This skill does not replace native Claude Code or Codex parallel-agent controls.
 For dispatch-only work, use the native surface first: Claude Code Agent View or
 Dynamic Workflows for Claude, and explicit Codex subagent workflows in Codex App
@@ -28,14 +34,16 @@ or CLI for Codex. Generate an orchestration kit only when the project needs a
 versioned DAG, durable state ledger, branch/worktree policy, failure recovery,
 and final landing judgment.
 
-The generated template supports runner variation through `ORCHESTRATION_RUNNER`.
-Runner choice is part of user/platform intent, not a side effect of whichever CLI
-happens to be installed:
-- `codex`: use `launchers/start-codex-app.sh` as the primary script lane when the user asks for Codex App, Codex runner, the current Codex workflow, or the active host is Codex App and Claude is not requested. The wrapper sets `ORCHESTRATION_RUNNER=codex`, runs `doctor --environment` first, then launches local `codex exec --json` processes from package worktrees. Evidence comes from package JSONL logs, `state.tsv`, and `events.jsonl`. This is the project-owned Codex CLI lane, not a clone of the Codex App native subagent UI.
-- `claude`: use `launchers/start-claude-code.sh` as the primary script lane when the user asks for Claude Code, Agents View, or `claude --bg`. The wrapper sets `ORCHESTRATION_RUNNER=claude` and launches Claude Code background sessions with `claude --bg --name`.
-- Manual / app-native: when the user wants to stay inside Codex App native subagents instead of a script runner, use `launchers/agent-prompts.md` as the prompt source and let Codex spawn subagents explicitly from the current App thread. If the platform cannot run shell tail calls, the coordinator must expose manual `advance`.
+The generated template supports launcher variation through
+`ORCHESTRATION_EXECUTION_PLATFORM` and `ORCHESTRATION_RUNNER`. Bind the current
+host with `bind-platform <platform>` or the environment variable before the first
+launch. Runner choice is a capability of that bound platform, not a side effect of
+whichever CLI happens to be installed:
+- `codex`: use `launchers/start-codex-app.sh` only when the bound platform is Codex. The wrapper sets both `ORCHESTRATION_EXECUTION_PLATFORM=codex` and `ORCHESTRATION_RUNNER=codex`, runs `doctor --environment` first, then launches local `codex exec --json` processes from package worktrees. Evidence comes from package JSONL logs, `state.tsv`, and `events.jsonl`. This is the project-owned Codex CLI lane, not a clone of the Codex App native subagent UI.
+- `claude`: use `launchers/start-claude-code.sh` only when the bound platform is Claude Code. The wrapper sets both `ORCHESTRATION_EXECUTION_PLATFORM=claude` and `ORCHESTRATION_RUNNER=claude`, then launches Claude Code background sessions with `claude --bg --name`.
+- Manual / other host: use `launchers/agent-prompts.md` and continue on the current bound host. If the platform cannot run shell tail calls, the coordinator exposes manual `advance`; it never substitutes Codex or Claude.
 
-Both wrappers must be generated for every kit, so a plan authored in Codex App can be launched from Claude Code and a plan authored in Claude Code can be launched from Codex App.
+Only the wrapper matching the bound platform should be surfaced in a generated kit. Keeping other source templates in the skill does not authorize cross-platform launch.
 
 ## Capability Load
 
@@ -114,8 +122,9 @@ Context is loaded progressively by role and state:
   `decision-required`, not hidden inside a routine bugfix.
 
 Treat an orchestration as one execution contract with multiple projections:
-- `INDEX.md` owns static human intent, authorization, policy, landing strategy, and capability gates.
+- `INDEX.md` owns static human intent, authorization, execution-platform policy, landing strategy, and capability gates.
 - `launchers/package-graph.tsv` owns machine-readable package topology.
+- `status/execution-platform` owns immutable host-platform affinity for the plan.
 - `status/state.tsv` owns the current scheduler snapshot and is mutated only through `orchestrate.sh mark-state`.
 - `status/events.jsonl` owns append-only audit history, retry accounting, and failure fingerprints.
 - `status/<package-id>.md` owns human-readable package evidence and blocker diagnosis.
@@ -137,10 +146,9 @@ details are needed:
 - Read `references/artifact_templates.md` when producing `INDEX.md`, package prompts, `99-finalize`, or the final user-facing command summary.
 
 `scripts/orchestrate-template.sh` is the tested runtime body. Copy it into the
-generated kit as `launchers/orchestrate.sh`; copy
-`scripts/start-codex-app-template.sh` as `launchers/start-codex-app.sh`; copy
-`scripts/start-claude-code-template.sh` as `launchers/start-claude-code.sh`.
-Run `bash -n` on all three scripts; do not recreate them from memory or prose.
+generated kit as `launchers/orchestrate.sh`; copy only the wrapper matching the
+bound platform from its corresponding `scripts/*-template.sh` source. Run
+`bash -n` on the generated scripts; do not recreate them from memory or prose.
 
 ## State Semantics
 
@@ -151,6 +159,10 @@ Allowed package states are:
 Do not add runner-specific state columns. Model Claude, Codex, manual execution,
 CI runners, and other platforms as variations in launch mechanism, permission
 mode, evidence channel, and verification ability over the same lifecycle.
+Record the plan-level host affinity in `status/execution-platform`; keep
+`status/runner` as a compatible launcher detail. A different platform request is
+invalid by default, not an automatic fallback. For unsupported hosts, `manual`
+continuation exposes readiness to the same host without launching another runner.
 
 Codex/runtime observations map onto the existing states:
 - `pending_init` or `running`: active work; keep `launched`/`in_progress`.
@@ -240,6 +252,7 @@ collect-logs <package-id>
 verify-package <package-id>
 verify-finalize
 scratch-path <package-id>
+bind-platform <platform>
 ```
 
 Core behavior:
@@ -254,7 +267,7 @@ Core behavior:
   to the coordinator thread; keep them isolated only for recorded blockers such
   as sensitive content, unapproved publication, path violations, verification
   failure, conflicts, or explicit user isolation.
-- `start-codex-app.sh` and `start-claude-code.sh` are thin wrappers: their default command runs `doctor --environment`, `start`, and `status`; other orchestration subcommands pass through to `orchestrate.sh`. They must not duplicate scheduling, state, finalize, or cleanup logic.
+- The selected platform wrapper is a thin wrapper: its default command runs `doctor --environment`, `start`, and `status`; other orchestration subcommands pass through to `orchestrate.sh`. It must set both the execution platform and compatible runner, and must not duplicate scheduling, state, finalize, or cleanup logic.
 
 ### 4. Output To User
 
@@ -263,19 +276,13 @@ After generating the kit, show only immediately actionable entry paths:
 - Mainline branch, integration branch, max parallel agents.
 - First wave packages and final package `99-finalize`.
 - Manual path: copy prompts from `launchers/agent-prompts.md`.
-- Script path: show the selected runner's primary wrapper only as the default,
-  while also providing the other platform's complete alternative-runner command.
-- Script path: show both platform launch commands. Mark the selected runner's
-  wrapper as primary, and show the other wrapper as the alternative runner with
-  a complete copy-paste launch command. Codex primary output uses `start-codex-app.sh`, JSONL/thread-id inspection, and `start-codex-app.sh resume <thread-id>`. Claude primary output uses
-  `start-claude-code.sh` and `start-claude-code.sh agents`.
-- Script path: when Codex is primary, include a separate Claude Code alternative
-  block; when Claude Code is primary, include a separate Codex App / Codex runner
-  alternative block. Use explicit labels such as "Primary script path (Codex App
-  / Codex runner)", "Alternative runner (Claude Code)", "Primary script path
-  (Claude Code)", and "Alternative runner (Codex App / Codex runner)". Do not
-  collapse the alternative into prose, omit the `cd "<repo-root>"` line, or
-  replace the other platform command with bare `orchestrate.sh`.
+- Script path: show only the wrapper and command surface matching
+  `status/execution-platform`. Do not include an alternative-runner block or a
+  cross-platform launch suggestion. Codex-bound output uses
+  `start-codex-app.sh`, JSONL/thread-id inspection, and
+  `start-codex-app.sh resume <thread-id>`. Claude-bound output uses
+  `start-claude-code.sh` and `start-claude-code.sh agents`. Other hosts use
+  same-platform/manual continuation through `agent-prompts.md` and `advance`.
 - Recovery commands are shown only when the current state requires them:
   `retry <package-id>` for `blocked`/`stale`/`invalid`, `doctor --environment`
   for runner setup, `collect-logs <package-id>` for diagnosis, `advance` for a

@@ -6,12 +6,12 @@ PLAN_ROOT="$(cd "$SCRIPT_DIR/.." && pwd -P)"
 ORCHESTRATE="$SCRIPT_DIR/orchestrate.sh"
 
 run_orchestrate() {
-  ORCHESTRATION_RUNNER=codex bash "$ORCHESTRATE" "$@"
+  ORCHESTRATION_EXECUTION_PLATFORM=codex ORCHESTRATION_RUNNER=codex bash "$ORCHESTRATE" "$@"
 }
 
 usage() {
   cat <<EOF
-Usage: $(basename "$0") [start|doctor|status|tail|resume|advance|retry|finalize|cleanup|mark-state|repair-state|collect-logs|verify-package|verify-finalize|scratch-path] [args...]
+Usage: $(basename "$0") [start|doctor|status|tail|resume|advance|retry|finalize|cleanup|mark-state|repair-state|collect-logs|verify-package|verify-finalize|scratch-path|bind-platform] [args...]
 
 Default:
   $(basename "$0") start
@@ -47,7 +47,7 @@ EOF
       run_orchestrate doctor "$@"
     fi
     ;;
-  status|advance|retry|finalize|cleanup|mark-state|repair-state|collect-logs|verify-package|verify-finalize|scratch-path)
+  status|advance|retry|finalize|cleanup|mark-state|repair-state|collect-logs|verify-package|verify-finalize|scratch-path|bind-platform)
     run_orchestrate "$cmd" "$@"
     ;;
   tail)
