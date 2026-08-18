@@ -32,9 +32,9 @@ Do not use it for narrow bug fixes, emergency recovery, purely mechanical implem
 
 Separate **task fit** from **load depth** (project contract: Skill Intelligence Adaptation v2).
 
-**Task fit:** if this run would not add a named user decision, Human Terminal Fit, reward-alignment, or default-answer judgment, do not run the full skill.
+**Task fit:** if this run would not add a relevant user decision/intent, Human Terminal Fit, reward-alignment, or default-answer judgment, do not run the full skill. A bounded companion delta remains valid when one concrete product risk is already visible.
 
-**Self-probe** before Light / Skip|Delta (if uncertain → **Full**):
+**Self-probe** before Light / Skip|Delta (escalate to **Full** when uncertainty materially affects authorization, a strong recommendation, or user trust; record ordinary unknowns and continue):
 
 1. Can you name the user's next decision?
 2. What is the shortest honest default answer?
@@ -47,7 +47,7 @@ Separate **task fit** from **load depth** (project contract: Skill Intelligence 
 | **Light** | Product judgment needed but narrow | Decision + default answer + one keep/change/remove + one risk |
 | **Full** | Weak path, multi-candidate, probe fails, or full refinement requested | Full affordance menu and optional references |
 
-**Hard gate (always, before finish):** decision named; fact / judgment / expression not mixed; recommendation does not invent false certainty or reward clearly wrong behavior. On failure, escalate to Full or soften the claim—do not pretend the design is product-ready.
+**Hard gate (always, before finish):** when a user choice is central, the decision or intent is named; fact / judgment / expression are not mixed; recommendation does not invent false certainty or reward clearly wrong behavior. On failure, escalate, soften the claim, or state that no product change is justified. `No change` is a valid result.
 
 ## Workflow
 
@@ -67,7 +67,7 @@ Better:
 This tool helps the user decide which agent is suitable for which class of real engineering task.
 ```
 
-If the decision cannot be named, the design is not ready.
+If a user choice is central and the decision cannot be named, clarify it. Exploratory, creative, educational, or support tasks may have an intent or desired outcome rather than one discrete decision.
 
 ### 2. Write The Default Answer First
 
@@ -170,7 +170,7 @@ A recommendation sentence should include fit and non-fit when relevant.
 
 ## Output Format
 
-Return a concise refinement report:
+Return the smallest decision-useful refinement surface. The following sections are a menu, not a required template; use only what changes the recommendation:
 
 ```markdown
 ## Product Frame

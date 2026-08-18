@@ -14,9 +14,9 @@ This skill is also a routing gate. Even when the user mentions multiple agents o
 ## Capability Load
 
 **Task fit:** skip when the plan is already directly executable without external-agent handoff.
-**Self-probe (1A; uncertain → Full):** (1) missing execution-contract fields? (2) decision boundaries and verification independently runnable? (3) should this upgrade to orchestration? (4) failure if compilation is skipped?
+**Self-probe (1A):** (1) what does the executor still need to start and verify? (2) which missing boundary could cause a costly mistake? (3) is durable coordination actually needed? (4) what concrete failure follows from skipping full compilation? Escalate ordinary gaps only when they materially affect authorization, acceptance, irreversible work, or package boundaries.
 **Skip|Delta** = direct execution; **Light** = minimal execution contract; **Full** = full task pack + claim validation.
-**Hard gate:** do not forge independence from a vague plan; verification and rollback boundaries required.
+**Hard gate:** do not present a vague plan or reported claim as verified. Require rollback/recovery detail when consequence or irreversibility warrants it, not as boilerplate for every package.
 
 ## Use When
 
@@ -42,7 +42,7 @@ A request is plan-ready when these are clear enough:
 - the verification signal;
 - whether the output is for immediate execution, agent handoff, or a manual pack.
 
-If missing information would not change the plan, state the assumption and continue. If it would change the plan and cannot be inferred from the repo, ask one blocking question and give the recommended default.
+If missing information would not change the plan, state the assumption and continue. If several independent answers would change boundaries, acceptance, permission, or risk, ask the smallest necessary batch and give recommended defaults instead of serializing one question per turn.
 
 ## Claim Validation Gate
 
@@ -53,9 +53,9 @@ Treat reported problems as raw claims until checked. Before generating ready imp
 - **Fix-worthiness:** decide whether the impact, timing, and value justify a fix now.
 - **Feasibility:** confirm that the agent can act within available paths, permissions, tools, devices, dependencies, and verification gates.
 - **Solution fit:** if a candidate fix exists, check whether it addresses the root cause without hiding a product, compatibility, security, privacy, or release decision.
-- **Proof route:** before marking a package ready, name the evidence that proves the claim, worth, feasibility, solution fit, verification path, integration visibility, and the falsifier that would make the package invalid.
+- **Proof route:** for consequential or disputed packages, name the evidence that supports the claim, solution, verification, integration visibility, and useful falsifiers. Use only the dimensions that change readiness; do not manufacture evidence to fill a schema.
 
-If the claim is not proven, valuable, feasible, and verifiable enough, create a discovery or validation package, choose an exit path, or report the blocker instead of inventing ready implementation work.
+If a reported claim is not yet proven, do not treat it as a verified premise. A low-risk, reversible package may use verification as its first action and stop if the claim fails; higher-risk work should remain discovery/validation or exit.
 
 ## Lane Rules
 
@@ -84,16 +84,14 @@ docs/plans/<date>-<slug>/
 `-- HANDOFF.md
 ```
 
-Each package should include:
+Each package needs an observable outcome, current truth, practical scope, first action, acceptance signal, and result destination. Add the following only when they protect a real boundary or reduce cold-start rework:
 
 - owner or intended executor;
-- allowed paths and forbidden paths;
-- acceptance criteria;
+- allowed/forbidden paths;
+- solution handoff and preserved invariants;
 - verification command and expected evidence;
-- checkpoint rule;
-- integration target or visibility expectation;
-- proof route;
-- falsifier;
+- checkpoint or recovery rule;
+- proof route or falsifier;
 - dependencies and unlock conditions.
 
 Keep packages dependency-closed. A slightly larger coherent package is safer than small packages that secretly depend on each other's unverified outputs.
@@ -104,7 +102,7 @@ In chat, keep the summary short:
 
 - plan directory path, if files were created;
 - selected lane and reason;
-- raw claim disposition: `validated`, `reported-only`, `downgraded`, `deferred`, or `rejected`;
+- raw claim disposition: `validated`, `reported-only`, `verify-first`, `downgraded`, `deferred`, or `rejected`;
 - package list and dependencies;
 - first command or prompt to run;
 - verification, checkpoint, and integration expectations;
