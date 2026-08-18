@@ -57,7 +57,7 @@ Separate **task fit** from **load depth**. Load may thin; **claim permission mus
 
 **Task fit:** mechanical edits, routine status, or no completion-claim risk → do not invoke this skill.
 
-**Self-probe** before Light / Skip (if uncertain → **Full**):
+**Self-probe** before Light / Skip (escalate to **Full** only when uncertainty materially affects the goal, oracle, permission, or completion level):
 
 1. What is the original user goal, and could tests/builds/commits substitute for it?
 2. What is the real path, final artifact, and success oracle?
@@ -67,10 +67,10 @@ Separate **task fit** from **load depth**. Load may thin; **claim permission mus
 | State | When | Load |
 |---|---|---|
 | **Skip** | No completion-claim risk | Do not enter the gate |
-| **Light** | Risk present but not a final claim; or low-budget agent check | Pre-delivery lens five dimensions; compress when clean |
+| **Light** | Risk present but not a final claim; or low-budget agent check | Relevant pre-delivery dimensions; compress when clean |
 | **Full** | About to claim complete, user challenges completion, weak path, or probe fails | Delivery Contract, Evidence Packet, Goal Realization Gate, Gap Ledger |
 
-**Hard gate (always, before finish):** goal not replaced by proxies; completion level supported by real artifact/oracle; items needing user/device/visual/publish confirmation are not marked complete. On failure, force Full or downshift the claim—never “feels done.”
+**Hard gate (always, before finish):** goal not replaced by proxies; completion level supported by real artifact/oracle; items needing user/device/visual/publish confirmation are not marked complete. On failure, use Full when the gap affects claim permission, otherwise downshift the claim or record the gap—never “feels done.”
 
 ## Hard Invariants
 
@@ -85,11 +85,9 @@ Separate **task fit** from **load depth**. Load may thin; **claim permission mus
 
 1. **Reset the frame:** write one sentence describing what the user can actually do or decide with the delivered result.
 2. **Goal reach:** does the artifact or behavior reach the real goal, or only a surface requirement?
-3. **User operation view:** check entry point, default path, number of actions, number of decisions, context the user must reconstruct, and recovery cost.
-4. **Decision usefulness:** can the user make the intended decision without hidden assumptions?
-5. **Real scenario depth:** does the result cover a realistic use case rather than a narrow proxy?
-6. **Path authenticity:** is the new intended path actually used, or is an old path still doing the work?
-7. **Disposition:** choose `safe-to-summarize`, `repair-before-final`, or `must-upgrade`.
+3. Check user operation, decision usefulness, and realistic scenario depth when those dimensions can change the completion claim.
+4. **Path authenticity:** is the new intended path actually used, or is an old path still doing the work?
+5. **Disposition:** choose `safe-to-summarize`, `repair-before-final`, or `must-upgrade` when a deviation affects the final claim; otherwise give a concise pass.
 
 ## Completion Claim Gate Workflow
 
@@ -116,7 +114,7 @@ Map the intended solution to real paths:
 
 ### 3. Goal Realization Gate
 
-Prove the current result satisfies the goal itself, not only a proxy. For each goal item, state whether it is `done`, `partial`, `not-done`, or `blocked`, with evidence.
+Prove the current result satisfies the goal itself, not only a proxy. For broad or high-risk work, state each goal item as `done`, `partial`, `not-done`, or `blocked`, with evidence; low-risk work may use a smaller oracle-linked record.
 
 ### 4. Gap Ledger
 
@@ -134,14 +132,14 @@ Choose the strongest honest status:
 
 ## Output Shape
 
-For a pre-delivery lens, report:
+For a pre-delivery lens, report the applicable fields:
 
 ```text
 User goal:
 Goal reach:
-User operation view:
-Decision usefulness:
-Real scenario depth:
+User operation view: <when relevant>
+Decision usefulness: <when relevant>
+Real scenario depth: <when relevant>
 Path authenticity:
 Disposition:
 Repair or next step:
