@@ -11,7 +11,7 @@ Refine a technically plausible design into a decision-useful product experience.
 
 The core move:
 
-> Start from the user's decision and default answer, then work backward to the internal model.
+> Start from the user's actual benefit, then the decision and default answer, and work backward to the internal model.
 
 Use this skill when a solution is reasonable but still feels generic, over-mechanized, too internally focused, too verbose by default, hard to operate, or not sharp enough for the user's real choice.
 
@@ -36,10 +36,11 @@ Separate **task fit** from **load depth** (project contract: Skill Intelligence 
 
 **Self-probe** before Light / Skip|Delta (escalate to **Full** when uncertainty materially affects authorization, a strong recommendation, or user trust; record ordinary unknowns and continue):
 
-1. Can you name the user's next decision?
-2. What is the shortest honest default answer?
-3. Is there at least one Human Terminal Fit or reward-misalignment finding?
-4. What fails if you skip the full lens (false certainty, bad default, skewed incentives)?
+1. What is the actual benefit to the user?
+2. Can you name the user's next decision?
+3. What is the shortest honest default answer?
+4. Is there at least one Human Terminal Fit or reward-misalignment finding?
+5. What fails if you skip the full lens (false certainty, bad default, skewed incentives)?
 
 | State | When | Load |
 |---|---|---|
@@ -54,6 +55,8 @@ Separate **task fit** from **load depth** (project contract: Skill Intelligence 
 ### 1. Name The User Decision
 
 State the decision the user is trying to make. Do not start by describing the feature.
+
+Before that, identify the user's actual benefit. For learning, growth, creative, or interest-building tasks, an appropriately deeper explanation, a higher-order way of analyzing the problem, a reveal of its essence, transferable judgment, or a demonstration of taste may help more than a short answer. For shallow tasks, solve quickly instead. Depth is chosen by which treatment best improves the user's current state without excessive cost—not by intrinsic problem difficulty alone. A master perspective is an adaptive heuristic for confusion, a faulty frame, undeveloped interest, or high-transfer open problems; it is not a fixed role-play template.
 
 Weak:
 
