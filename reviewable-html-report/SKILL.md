@@ -13,7 +13,7 @@ Use it as the report companion for skills such as `abstraction-architect`, `rene
 
 If the input still needs a thesis, reader path, relationship map, runtime story, comparison matrix, or evidence layering, first use a comprehension-first HTML approach such as `html-response`, then borrow this skill's review mechanics only when needed.
 
-It is not the default delivery path. Calling skills should treat `reviewable-html-report` as a review capability, not as proof that thinking was deep. If a calling skill has already passed the Report Upgrade Gate but cannot load this skill or `references/report_base.md`, it must degrade to a readable self-contained HTML report instead of dropping the artifact. The fallback should preserve the core conclusion, TOC, stable section IDs, evidence appendix, Mermaid source fallback, and a non-persistent collapsible feedback area.
+It is not the default delivery path. Calling skills should treat `reviewable-html-report` as a review capability, not as proof that thinking was deep. If a calling skill has already passed the Report Upgrade Gate but cannot load this skill or `references/report_base.md`, it must degrade to a readable self-contained HTML report instead of dropping the artifact. The fallback should preserve the core conclusion, left collapsible scroll-spy TOC, stable section IDs, evidence appendix, Mermaid source fallback, and a non-persistent collapsible feedback area.
 
 ## Capability Load
 
@@ -81,7 +81,7 @@ The calling skill owns meaning. This skill owns report mechanics.
 ## Required Report Features
 
 - Use semantic sections and headings. Avoid decorative title-only first screens.
-- Every HTML report must include a clickable TOC / section index with stable section IDs and `href="#section-id"` links. Long reports should highlight the active section. The TOC must be either a sidebar or a compact top bar: a sticky top TOC must not occupy more than 60% of the opening viewport, must not freeze a large title box over the first screen, and should provide collapsible / collapse behavior, a sidebar mode, or a non-sticky fallback when it needs more than two rows or when narrow screens lack space.
+- Every HTML report must include a clickable TOC / section index with stable section IDs and `href="#section-id"` links. The default form is a left sidebar that is collapsible (toggle button; the collapsed state persists per page) and scroll-spy highlighted (the active section is highlighted automatically). Below 960px it stacks above the content as a normal block; a sticky top bar is only an emergency fallback and must not occupy more than 60% of the opening viewport or freeze a large title box over the first screen. Print hides the sidebar.
 - Every reviewable card must have a stable `data-card-id` or equivalent ID.
 - Persist review state locally when useful, but wrap localStorage access in `try/catch`.
 - Export feedback as Markdown or JSON that names the report, item IDs, rating/status/comment fields, and a next-action note.

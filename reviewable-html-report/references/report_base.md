@@ -266,63 +266,129 @@ for the next round without granting unapproved implementation authority.
 Every interactive HTML report must include a clickable section index. Use stable,
 human-readable IDs so links survive copy/paste and exported review notes.
 
-```html
-<nav class="toc" aria-label="Section index">
-  <a href="#executive-summary">Executive Summary</a>
-  <a href="#evidence-ledger">Evidence Ledger</a>
-  <a href="#recommendations">Recommendations</a>
-  <a href="#review-notes">Review Notes</a>
-</nav>
+The default form is a **left sidebar TOC that is collapsible and scroll-spy
+highlighted** (shared contract: `html-response/references/html_system_spec.md`
+§3.1). Concretely:
 
-<main>
-  <section id="executive-summary">
-    <h2>Executive Summary</h2>
-  </section>
-  <section id="evidence-ledger">
-    <h2>Evidence Ledger</h2>
-  </section>
-</main>
+- **Collapsible** — a toggle button shows/hides the link list; on wide screens the
+  grid reflows to a narrow rail, and the collapsed state persists per page in
+  `localStorage` (guarded by try/catch).
+- **Scroll-spy** — the link of the section currently in view is highlighted
+  automatically via `IntersectionObserver` and `aria-current`.
+- **Narrow screens** — below 960px the sidebar stacks above `main` as a normal
+  block; the toggle keeps working. A sticky top bar is only an emergency fallback,
+  never the default form. Print hides the sidebar.
+
+```html
+<div class="layout has-toc">
+  <nav class="toc" aria-label="Section index">
+    <button class="toc-toggle" type="button" aria-expanded="true" aria-controls="toc-list">Sections</button>
+    <ol class="toc-list" id="toc-list">
+      <li><a href="#executive-summary">Executive Summary</a></li>
+      <li><a href="#evidence-ledger">Evidence Ledger</a></li>
+      <li><a href="#recommendations">Recommendations</a></li>
+      <li><a href="#review-notes">Review Notes</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <section id="executive-summary">
+      <h2>Executive Summary</h2>
+    </section>
+    <section id="evidence-ledger">
+      <h2>Evidence Ledger</h2>
+    </section>
+  </main>
+</div>
 ```
 
 ```css
+.layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
 .toc {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  border: 1px solid var(--toc-border, #334155);
+  border-radius: 8px;
   background: var(--toc-bg, #0f172a);
-  padding: 10px 0;
+  padding: 10px;
 }
-.toc a {
+.toc-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+.toc-list a {
+  display: block;
+  border-left: 3px solid transparent;
   border-radius: 4px;
   padding: 6px 10px;
   color: var(--toc-link, #cbd5e1);
   text-decoration: none;
 }
-.toc a:hover,
-.toc a.active {
+.toc-list a:hover { color: var(--toc-active, #ffffff); }
+.toc-list a.active {
   background: var(--toc-active-bg, #1e293b);
   color: var(--toc-active, #ffffff);
+  border-left-color: var(--toc-active-accent, #58a6ff);
+  font-weight: 600;
 }
-section[id] {
-  scroll-margin-top: 72px;
+.toc-toggle {
+  min-height: 28px;
+  padding: 2px 10px;
+  border: 1px solid var(--toc-border, #334155);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--toc-link, #cbd5e1);
+  cursor: pointer;
+  font: inherit;
 }
+section[id] { scroll-margin-top: 72px; }
+.layout.toc-collapsed .toc > :not(.toc-toggle) { display: none; }
+@media (min-width: 960px) {
+  .layout.has-toc { grid-template-columns: 230px minmax(0, 1fr); }
+  .layout.has-toc.toc-collapsed { grid-template-columns: 44px minmax(0, 1fr); }
+  .toc { position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow: auto; }
+  .toc-collapsed .toc { overflow: visible; }
+}
+@media print { .toc { display: none !important; } }
 ```
 
-### TOC Scroll Linkage
+### TOC Collapse and Scroll Linkage
 
 ```javascript
-const observer = new IntersectionObserver(entries => {
-  entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      document.querySelectorAll('.toc a').forEach(a => a.classList.remove('active'));
-      const link = document.querySelector(`.toc a[href="#${entry.target.id}"]`);
-      if (link) link.classList.add('active');
-    }
+(() => {
+  const layout = document.querySelector('.layout.has-toc');
+  const toc = layout?.querySelector('.toc');
+  if (!layout || !toc) return;
+  const toggle = toc.querySelector('.toc-toggle');
+  if (toggle) {
+    const key = 'toc-collapsed:' + (document.body.dataset.documentId || location.pathname);
+    let collapsed = false;
+    try { collapsed = localStorage.getItem(key) === '1'; } catch (_) {}
+    layout.classList.toggle('toc-collapsed', collapsed);
+    const sync = () => toggle.setAttribute('aria-expanded', String(!collapsed));
+    toggle.addEventListener('click', () => {
+      collapsed = !collapsed;
+      layout.classList.toggle('toc-collapsed', collapsed);
+      sync();
+      try { localStorage.setItem(key, collapsed ? '1' : '0'); } catch (_) {}
+    });
+    sync();
+  }
+  const links = [...toc.querySelectorAll('a[href^="#"]')];
+  const sections = links.map(a => document.getElementById(decodeURIComponent(a.hash.slice(1)))).filter(Boolean);
+  if (!sections.length || !('IntersectionObserver' in window)) return;
+  const setActive = id => links.forEach(a => {
+    const on = decodeURIComponent(a.hash.slice(1)) === id;
+    a.classList.toggle('active', on);
+    if (on) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current');
   });
-}, { rootMargin: '-10% 0px -80% 0px' });
-
-document.querySelectorAll('section[id]').forEach(s => observer.observe(s));
+  const observer = new IntersectionObserver(entries => {
+    const visible = entries.filter(e => e.isIntersecting)
+      .sort((a, b) => a.target.getBoundingClientRect().top - b.target.getBoundingClientRect().top);
+    if (visible[0]) setActive(visible[0].target.id);
+  }, { rootMargin: '-10% 0px -75% 0px' });
+  sections.forEach(s => observer.observe(s));
+  setActive(sections[0].id);
+})();
 ```

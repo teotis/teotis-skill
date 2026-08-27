@@ -6,28 +6,93 @@
   <title>{{REPORT_TITLE}}</title>
   <style>
     :root { color-scheme: light dark; font-family: system-ui, sans-serif; line-height: 1.55; }
-    body { margin: 0 auto; max-width: 980px; padding: 24px; }
-    header, nav, section { margin-bottom: 24px; }
-    nav { display: flex; flex-wrap: wrap; gap: 12px; border-block: 1px solid #8886; padding: 12px 0; }
+    body { margin: 0 auto; max-width: 1080px; padding: 24px; }
+    header { margin-bottom: 24px; }
+    section { margin-bottom: 24px; }
     a { color: #1769aa; } table { width: 100%; border-collapse: collapse; }
     th, td { border: 1px solid #8886; padding: 8px; text-align: left; vertical-align: top; }
     pre, textarea { box-sizing: border-box; width: 100%; padding: 12px; overflow: auto; }
     article { border-left: 4px solid #1769aa; padding-left: 16px; margin: 16px 0; }
+    /* Left collapsible TOC with scroll-spy — shared contract:
+       html-response/references/html_system_spec.md §3.1 */
+    .layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
+    main { min-width: 0; }
+    nav.toc { border: 1px solid #8886; border-radius: 8px; padding: 8px; }
+    .toc-toggle { min-height: 28px; padding: 2px 10px; border: 1px solid #8886; border-radius: 6px; background: transparent; color: inherit; cursor: pointer; font: inherit; }
+    .toc-list { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 2px; }
+    .toc-list a { display: block; padding: 4px 8px; border-left: 3px solid transparent; border-radius: 4px; text-decoration: none; }
+    .toc-list a.active { border-left-color: #1769aa; background: rgba(23, 105, 170, .12); font-weight: 600; }
+    section[id] { scroll-margin-top: 16px; }
+    .layout.toc-collapsed .toc > :not(.toc-toggle) { display: none; }
+    @media (min-width: 960px) {
+      .layout.has-toc { grid-template-columns: 220px minmax(0, 1fr); }
+      .layout.has-toc.toc-collapsed { grid-template-columns: 44px minmax(0, 1fr); }
+      nav.toc { position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow: auto; }
+      .toc-collapsed nav.toc { overflow: visible; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; } }
+    @media print { nav.toc { display: none !important; } }
   </style>
 </head>
 <body>
   <header id="top"><h1>{{REPORT_TITLE}}</h1><p>{{REPORT_SUMMARY}}</p></header>
-  <nav aria-label="{{NAV_LABEL}}">
-    <a href="#decision">{{DECISION_LABEL}}</a><a href="#findings">{{FINDINGS_LABEL}}</a>
-    <a href="#evidence">{{EVIDENCE_LABEL}}</a><a href="#diagram">{{DIAGRAM_LABEL}}</a><a href="#feedback">{{FEEDBACK_LABEL}}</a>
-  </nav>
-  <main>
-    <section id="decision"><h2>{{DECISION_LABEL}}</h2>{{DECISION_CONTENT}}</section>
-    <section id="findings"><h2>{{FINDINGS_LABEL}}</h2><article data-card-id="{{CARD_ID}}">{{FINDING_CONTENT}}</article></section>
-    <section id="evidence"><h2>{{EVIDENCE_LABEL}}</h2>{{EVIDENCE_CONTENT}}</section>
-    <section id="diagram"><h2>{{DIAGRAM_LABEL}}</h2><pre>{{MERMAID_SOURCE}}</pre></section>
-    <section id="feedback"><h2>{{FEEDBACK_LABEL}}</h2><p>{{FEEDBACK_NOTICE}}</p><textarea rows="6" aria-label="{{FEEDBACK_LABEL}}"></textarea></section>
-  </main>
+  <div class="layout has-toc">
+    <nav class="toc" aria-label="{{NAV_LABEL}}">
+      <button class="toc-toggle" type="button" aria-expanded="true" aria-controls="toc-list">{{NAV_LABEL}}</button>
+      <ol class="toc-list" id="toc-list">
+        <li><a href="#decision">{{DECISION_LABEL}}</a></li>
+        <li><a href="#findings">{{FINDINGS_LABEL}}</a></li>
+        <li><a href="#evidence">{{EVIDENCE_LABEL}}</a></li>
+        <li><a href="#diagram">{{DIAGRAM_LABEL}}</a></li>
+        <li><a href="#feedback">{{FEEDBACK_LABEL}}</a></li>
+      </ol>
+    </nav>
+    <main>
+      <section id="decision"><h2>{{DECISION_LABEL}}</h2>{{DECISION_CONTENT}}</section>
+      <section id="findings"><h2>{{FINDINGS_LABEL}}</h2><article data-card-id="{{CARD_ID}}">{{FINDING_CONTENT}}</article></section>
+      <section id="evidence"><h2>{{EVIDENCE_LABEL}}</h2>{{EVIDENCE_CONTENT}}</section>
+      <section id="diagram"><h2>{{DIAGRAM_LABEL}}</h2><pre>{{MERMAID_SOURCE}}</pre></section>
+      <section id="feedback"><h2>{{FEEDBACK_LABEL}}</h2><p>{{FEEDBACK_NOTICE}}</p><textarea rows="6" aria-label="{{FEEDBACK_LABEL}}"></textarea></section>
+    </main>
+  </div>
   <footer><a href="#top">{{BACK_TO_TOP_LABEL}}</a></footer>
+  <script>
+  (function () {
+    var layout = document.querySelector('.layout.has-toc');
+    var toc = layout && layout.querySelector('.toc');
+    if (!layout || !toc) return;
+    var toggle = toc.querySelector('.toc-toggle');
+    if (toggle) {
+      var key = 'toc-collapsed:' + location.pathname;
+      var collapsed = false;
+      try { collapsed = localStorage.getItem(key) === '1'; } catch (e) {}
+      layout.classList.toggle('toc-collapsed', collapsed);
+      toggle.setAttribute('aria-expanded', String(!collapsed));
+      toggle.addEventListener('click', function () {
+        collapsed = !collapsed;
+        layout.classList.toggle('toc-collapsed', collapsed);
+        toggle.setAttribute('aria-expanded', String(!collapsed));
+        try { localStorage.setItem(key, collapsed ? '1' : '0'); } catch (e) {}
+      });
+    }
+    var links = Array.prototype.slice.call(toc.querySelectorAll('a[href^="#"]'));
+    var sections = links.map(function (a) { return document.getElementById(decodeURIComponent(a.hash.slice(1))); }).filter(Boolean);
+    if (!sections.length || !('IntersectionObserver' in window)) return;
+    var setActive = function (id) {
+      links.forEach(function (a) {
+        var on = decodeURIComponent(a.hash.slice(1)) === id;
+        a.classList.toggle('active', on);
+        if (on) { a.setAttribute('aria-current', 'true'); } else { a.removeAttribute('aria-current'); }
+      });
+    };
+    var spy = new IntersectionObserver(function (entries) {
+      var visible = entries.filter(function (e) { return e.isIntersecting; })
+        .sort(function (a, b) { return a.target.getBoundingClientRect().top - b.target.getBoundingClientRect().top; });
+      if (visible[0]) setActive(visible[0].target.id);
+    }, { rootMargin: '-10% 0px -75% 0px' });
+    sections.forEach(function (s) { spy.observe(s); });
+    setActive(sections[0].id);
+  })();
+  </script>
 </body>
 </html>

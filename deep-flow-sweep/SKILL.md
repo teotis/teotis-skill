@@ -230,7 +230,7 @@ For formal sweeps, produce paired reports by default. An explicit user request f
 
 The Markdown report is the source of truth. The HTML report may visualize, filter, or collapse sections, but it must not introduce conclusions missing from the Markdown.
 
-Use the `reviewable-html-report` capability when available. Otherwise use bundled `references/fallback.html` to produce self-contained HTML with a TOC, stable section IDs, evidence appendix, Mermaid source fallback, and non-persistent feedback. Provide the path and a clickable `file://` URL; do not actively open a browser unless the user requests a preview.
+Use the `reviewable-html-report` capability when available. Otherwise use bundled `references/fallback.html` to produce self-contained HTML with a left collapsible scroll-spy TOC, stable section IDs, evidence appendix, Mermaid source fallback, and non-persistent feedback. Provide the path and a clickable `file://` URL; do not actively open a browser unless the user requests a preview.
 
 Required sections:
 

@@ -768,7 +768,7 @@ When clicked:
 
 ### Table-of-Contents Scroll Linkage
 
-Use `IntersectionObserver` to highlight the active left-side TOC section during scroll. Anchor clicks must scroll smoothly.
+Use `IntersectionObserver` to highlight the active left-side TOC section during scroll. The left TOC is collapsible (toggle button; the collapsed state persists per page). Shared contract: `html-response/references/html_system_spec.md` §3.1. Anchor clicks must scroll smoothly.
 
 ---
 
