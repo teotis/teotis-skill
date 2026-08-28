@@ -6,19 +6,19 @@ PLAN_ROOT="$(cd "$SCRIPT_DIR/.." && pwd -P)"
 ORCHESTRATE="$SCRIPT_DIR/orchestrate.sh"
 
 run_orchestrate() {
-  ORCHESTRATION_EXECUTION_PLATFORM=codex ORCHESTRATION_RUNNER=codex bash "$ORCHESTRATE" "$@"
+  ORCHESTRATION_EXECUTION_PLATFORM=opencode ORCHESTRATION_RUNNER=opencode bash "$ORCHESTRATE" "$@"
 }
 
 usage() {
   cat <<EOF
-Usage: $(basename "$0") [start|doctor|status|tail|resume|advance|retry|finalize|cleanup|mark-state|repair-state|collect-logs|verify-package|verify-finalize|scratch-path|bind-platform|compatibility|migrate|handoff] [args...]
+Usage: $(basename "$0") [start|doctor|status|sessions|advance|retry|finalize|cleanup|mark-state|repair-state|collect-logs|verify-package|verify-finalize|scratch-path|bind-platform|compatibility|migrate|handoff] [args...]
 
 Default:
   $(basename "$0") start
 
-Codex helpers:
-  $(basename "$0") tail <package-id>
-  $(basename "$0") resume <thread-id-or-codex-thread:id>
+OpenCode helpers:
+  $(basename "$0") sessions
+  $(basename "$0") resume <session-id>
 EOF
 }
 
@@ -32,12 +32,12 @@ case "$cmd" in
     run_orchestrate status
     cat <<EOF
 
-Codex runner evidence:
+OpenCode runner evidence:
   tail -f "$PLAN_ROOT/status/launch-<package-id>.log"
-  $(basename "$0") resume <thread-id>
+  $(basename "$0") sessions
+  $(basename "$0") resume <session-id>
 
-Use concrete package ids from the status table. If a recorded agent id is
-codex-thread:<id>, pass only <id> or pass the full value to this wrapper.
+Continue only on the bound OpenCode platform. No Codex or Claude fallback is selected.
 EOF
     ;;
   doctor)
@@ -50,22 +50,13 @@ EOF
   status|advance|retry|finalize|cleanup|mark-state|repair-state|collect-logs|verify-package|verify-finalize|scratch-path|bind-platform|compatibility|migrate|handoff)
     run_orchestrate "$cmd" "$@"
     ;;
-  tail)
-    package_id="${1:-}"
-    [ -n "$package_id" ] || {
-      usage >&2
-      exit 2
-    }
-    tail -f "$PLAN_ROOT/status/launch-$package_id.log"
+  sessions)
+    opencode session list
     ;;
   resume)
-    thread_id="${1:-}"
-    [ -n "$thread_id" ] || {
-      usage >&2
-      exit 2
-    }
-    thread_id="${thread_id#codex-thread:}"
-    codex exec resume "$thread_id"
+    session_id="${1:-}"
+    [ -n "$session_id" ] || { usage >&2; exit 2; }
+    opencode run --format json --session "$session_id"
     ;;
   help|--help|-h)
     usage

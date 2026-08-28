@@ -1,6 +1,6 @@
 ---
 name: agent-orchestration-planner
-description: Use for explicit medium-to-large multi-agent execution requests, host-platform binding, same-platform continuation, tail-driven advancement, DAG scheduling, worktree/branch management, status ledgers, recovery, and final merge workflows.
+description: Use for explicit medium-to-large multi-agent execution requests, platform-neutral coordination, host binding, same-platform continuation, explicit handoff, tail-driven advancement, DAG scheduling, status ledgers, recovery, migration, and final merge workflows.
 ---
 
 # Agent Orchestration Planner
@@ -8,7 +8,7 @@ description: Use for explicit medium-to-large multi-agent execution requests, ho
 ## Mission
 
 Turn an explicit user request for medium/large multi-agent execution into a
-complete orchestration kit. The kit is bound to the current host platform before
+complete coordination kit. The kit is bound to the current host platform before
 execution:
 - **Manual**: the user copies package prompts from Markdown into the bound agent platform only.
 - **Script**: the user runs only the wrapper matching that binding; a host without a local wrapper uses same-platform/manual continuation.
@@ -27,6 +27,11 @@ retry, finalize, and follow-up dispatch inherit this value. A tail call may expo
 the next ready package, but it must not invoke, recommend, or silently switch to
 another agent platform.
 
+Cross-platform continuation is a separate, explicit transaction: create a
+versioned Handoff Envelope, validate it on the target adapter, and require an
+Accept Receipt before the source attempt is marked transferred. Same-platform
+continuation remains the default.
+
 This skill does not replace native Claude Code or Codex parallel-agent controls.
 For dispatch-only work, use the native surface first: Claude Code Agent View or
 Dynamic Workflows for Claude, and explicit Codex subagent workflows in Codex App
@@ -41,6 +46,7 @@ launch. Runner choice is a capability of that bound platform, not a side effect 
 whichever CLI happens to be installed:
 - `codex`: use `launchers/start-codex-app.sh` only when the bound platform is Codex. The wrapper sets both `ORCHESTRATION_EXECUTION_PLATFORM=codex` and `ORCHESTRATION_RUNNER=codex`, runs `doctor --environment` first, then launches local `codex exec --json` processes from package worktrees. Evidence comes from package JSONL logs, `state.tsv`, and `events.jsonl`. This is the project-owned Codex CLI lane, not a clone of the Codex App native subagent UI.
 - `claude`: use `launchers/start-claude-code.sh` only when the bound platform is Claude Code. The wrapper sets both `ORCHESTRATION_EXECUTION_PLATFORM=claude` and `ORCHESTRATION_RUNNER=claude`, then launches Claude Code background sessions with `claude --bg --name`.
+- `opencode`: use `launchers/start-opencode.sh` only when the bound platform is OpenCode. The wrapper sets both `ORCHESTRATION_EXECUTION_PLATFORM=opencode` and `ORCHESTRATION_RUNNER=opencode`, then launches `opencode run --format json` and records session/process evidence.
 - Manual / other host: use `launchers/agent-prompts.md` and continue on the current bound host. If the platform cannot run shell tail calls, the coordinator exposes manual `advance`; it never substitutes Codex or Claude.
 
 Only the wrapper matching the bound platform should be surfaced in a generated kit. Keeping other source templates in the skill does not authorize cross-platform launch.
@@ -164,6 +170,11 @@ Record the plan-level host affinity in `status/execution-platform`; keep
 invalid by default, not an automatic fallback. For unsupported hosts, `manual`
 continuation exposes readiness to the same host without launching another runner.
 
+Keep package state separate from execution attempts. Record each start, resume,
+and explicit handoff in `status/attempts.jsonl`, including adapter/version,
+session identity, last activity, checkpoint and termination. A terminal package
+state cannot be promoted to success without a named recovery action.
+
 Codex/runtime observations map onto the existing states:
 - `pending_init` or `running`: active work; keep `launched`/`in_progress`.
 - `interrupted`: usually retryable `stale` unless evidence proves a deliberate blocker.
@@ -215,10 +226,12 @@ docs/plans/<plan-name>/
 │   ├── agent-prompts.md
 │   ├── package-graph.tsv
 │   ├── orchestrate.sh
-│   ├── start-codex-app.sh
-│   └── start-claude-code.sh
+│   └── <selected-platform-wrapper.sh>
 ├── status/
 │   ├── README.md
+│   ├── kit-manifest.json
+│   ├── attempts.jsonl
+│   ├── handoffs/
 │   ├── state.tsv
 │   ├── events.jsonl
 │   ├── package-status-template.md
@@ -268,6 +281,7 @@ Core behavior:
   as sensitive content, unapproved publication, path violations, verification
   failure, conflicts, or explicit user isolation.
 - The selected platform wrapper is a thin wrapper: its default command runs `doctor --environment`, `start`, and `status`; other orchestration subcommands pass through to `orchestrate.sh`. It must set both the execution platform and compatible runner, and must not duplicate scheduling, state, finalize, or cleanup logic.
+- Generated kits include a versioned `status/kit-manifest.json`; run `compatibility` and an explicit dry-run `migrate` before continuing an old kit.
 
 ### 4. Output To User
 
@@ -283,6 +297,8 @@ After generating the kit, show only immediately actionable entry paths:
   `start-codex-app.sh resume <thread-id>`. Claude-bound output uses
   `start-claude-code.sh` and `start-claude-code.sh agents`. Other hosts use
   same-platform/manual continuation through `agent-prompts.md` and `advance`.
+- OpenCode-bound output uses `start-opencode.sh`, OpenCode JSON logs, session
+  list/resume, and same-platform continuation.
 - Recovery commands are shown only when the current state requires them:
   `retry <package-id>` for `blocked`/`stale`/`invalid`, `doctor --environment`
   for runner setup, `collect-logs <package-id>` for diagnosis, `advance` for a
@@ -313,6 +329,7 @@ prefix such as `codex-thread:`.
 - Do NOT merge anything after the main plan fails unless it is a predeclared independent merge candidate with standalone verification.
 - Do NOT add `state.tsv` columns for narrative evidence, retry history, QA links, release tickets, or reviewer comments.
 - Do NOT copy separate lifecycle states or finalize logic for each runner or agent platform.
+- Do NOT treat an installed CLI as permission to change platform; use an explicit Handoff Envelope and Accept Receipt.
 - Do NOT resolve projection drift by trusting the most optimistic artifact.
 - Do NOT treat `scratch/` files as scheduler truth, final evidence, or a place for secrets.
 - Do NOT clean up branches/worktrees unless finalize fully succeeds.

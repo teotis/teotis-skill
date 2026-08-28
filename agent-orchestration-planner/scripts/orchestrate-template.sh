@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# orchestrate-template v1.2.0 — see skills/agent-orchestration-planner/scripts/orchestrate-template.sh
+# orchestrate-template v1.3.0 — see skills/agent-orchestration-planner/scripts/orchestrate-template.sh
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -8,10 +8,14 @@ REPO_ROOT="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel)"
 GRAPH="$PLAN_ROOT/launchers/package-graph.tsv"
 STATE="$PLAN_ROOT/status/state.tsv"
 EVENTS="$PLAN_ROOT/status/events.jsonl"
+ATTEMPTS="$PLAN_ROOT/status/attempts.jsonl"
+KIT_MANIFEST="$PLAN_ROOT/status/kit-manifest.json"
+HANDOFFS_DIR="$PLAN_ROOT/status/handoffs"
 RUNNER_STATE="$PLAN_ROOT/status/runner"
 EXECUTION_PLATFORM_STATE="$PLAN_ROOT/status/execution-platform"
 LOGS_DIR="$PLAN_ROOT/status/logs"
 SCRATCH="$PLAN_ROOT/scratch"
+COORDINATION_SCRIPT="${ORCHESTRATION_COORDINATION_SCRIPT:-}"
 PROMPTS="$PLAN_ROOT/launchers/agent-prompts.md"
 LOCK_DIR="$PLAN_ROOT/status/.orchestrate.lock"
 MAX_PARALLEL="${ORCHESTRATION_MAX_PARALLEL:-10}"
@@ -35,6 +39,7 @@ ORCHESTRATION_CODEX_APPROVAL_POLICY="${ORCHESTRATION_CODEX_APPROVAL_POLICY:-neve
 PLAN_NAME="$(basename "$PLAN_ROOT")"
 ORCHESTRATION_INTEGRATION_BRANCH="${ORCHESTRATION_INTEGRATION_BRANCH:-agent/$PLAN_NAME/integration}"
 ORCHESTRATION_INTEGRATION_WORKTREE="${ORCHESTRATION_INTEGRATION_WORKTREE:-$REPO_ROOT/.worktrees/$PLAN_NAME/00-integration}"
+ORCHESTRATION_IDLE_SECONDS="${ORCHESTRATION_IDLE_SECONDS:-900}"
 STATE_HEADER="package_id	state	launched_at	completed_at	agent	branch	worktree	base_commit	commit_hash	verification	integration	cleanup	last_error	failed_command	conflict_files	log_summary	recovery_hint"
 GRAPH_HEADER="package_id	package_doc	status_file	dependencies	dependency_type	wave	branch	worktree	manual	finalize"
 SIG_FILE="$PLAN_ROOT/status/.state.sig"
@@ -168,6 +173,36 @@ emit_event() {
   mkdir -p "$(dirname "$EVENTS")"
   printf '{"ts":"%s","event":"%s","package_id":"%s"%s}\n' \
     "$(timestamp)" "$(json_escape "$event")" "$(json_escape "$package_id")" "$extra" >> "$EVENTS"
+}
+
+new_attempt_id() {
+  local package_id="$1"
+  printf 'attempt-%s-%s-%s\n' "$package_id" "$(date -u +%Y%m%dT%H%M%SZ)" "$$"
+}
+
+record_attempt() {
+  local attempt_id="$1"
+  local package_id="$2"
+  local state="$3"
+  local platform="$4"
+  local adapter="$5"
+  local session_id="${6:-}"
+  local checkpoint_ref="${7:-}"
+  mkdir -p "$(dirname "$ATTEMPTS")"
+  printf '{"ts":"%s","attempt_id":"%s","package_id":"%s","state":"%s","platform":"%s","adapter":"%s","session_id":"%s","last_activity_at":"%s","checkpoint_ref":"%s"}\n' \
+    "$(timestamp)" "$(json_escape "$attempt_id")" "$(json_escape "$package_id")" \
+    "$(json_escape "$state")" "$(json_escape "$platform")" "$(json_escape "$adapter")" \
+    "$(json_escape "$session_id")" "$(timestamp)" "$(json_escape "$checkpoint_ref")" >> "$ATTEMPTS"
+}
+
+record_attempt_terminal() {
+  local package_id="$1"
+  local state="$2"
+  local message="$3"
+  mkdir -p "$(dirname "$ATTEMPTS")"
+  printf '{"ts":"%s","event":"attempt_terminal","package_id":"%s","state":"%s","failure_fingerprint":"%s"}\n' \
+    "$(timestamp)" "$(json_escape "$package_id")" "$(json_escape "$state")" \
+    "$(json_escape "$(failure_fingerprint "$message")")" >> "$ATTEMPTS"
 }
 
 ensure_scratch_root() {
@@ -350,6 +385,17 @@ ensure_execution_platform() {
       else
         ORCHESTRATION_RUNNER="$candidate"
         ORCHESTRATION_RUNNER_SOURCE="platform-default"
+      fi
+      ;;
+    opencode)
+      if [ "$ORCHESTRATION_RUNNER_SOURCE" = "environment" ] || [ "$ORCHESTRATION_RUNNER_SOURCE" = "persisted" ]; then
+        case "$ORCHESTRATION_RUNNER" in
+          opencode|manual) ;;
+          *) die "runner/platform mismatch: platform opencode cannot continue with runner $ORCHESTRATION_RUNNER; cross-platform launch is denied" ;;
+        esac
+      else
+        ORCHESTRATION_RUNNER="manual"
+        ORCHESTRATION_RUNNER_SOURCE="platform-manual"
       fi
       ;;
     *)
@@ -541,6 +587,12 @@ preflight_files() {
   [ -f "$PROMPTS" ] || die "missing agent prompts: $PROMPTS"
 }
 
+preflight_kit_manifest() {
+  [ -f "$KIT_MANIFEST" ] || die "kit manifest missing; run compatibility then migrate --to v1.3.0 --dry-run"
+  grep -q 'coordination.kit.v1' "$KIT_MANIFEST" || die "unsupported kit manifest; run migrate --to v1.3.0 --dry-run"
+  grep -q 'runtime_template_version' "$KIT_MANIFEST" || die "kit manifest has no runtime template version; run migrate --to v1.3.0 --dry-run"
+}
+
 preflight_graph() {
   preflight_files
   [ "$(head -n 1 "$GRAPH")" = "$GRAPH_HEADER" ] || die "invalid graph header"
@@ -715,6 +767,7 @@ preflight_prompts() {
 
 preflight_all() {
   preflight_graph
+  preflight_kit_manifest
   preflight_prompts
   preflight_state
   preflight_state_signature
@@ -877,6 +930,7 @@ set_error_state() {
   set_state_fields "$package_id" "$new_state" "__KEEP__" "__NOW__" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__" "$message" "$failed_command" "$conflict_files" "$log_summary" "$recovery_hint"
   fingerprint="$(failure_fingerprint "$message")"
   emit_terminal_failure_event "$package_id" "$new_state" "$message" "$fingerprint" "$failed_command" "$conflict_files" "$log_summary" "$recovery_hint" "$old_state"
+  record_attempt_terminal "$package_id" "$new_state" "$message"
 }
 
 deps_completed() {
@@ -1086,7 +1140,7 @@ ensure_worktree() {
 
 validate_runner() {
   case "$ORCHESTRATION_RUNNER" in
-    claude|codex|manual)
+    claude|codex|opencode|manual)
       return 0
       ;;
     *)
@@ -1167,6 +1221,15 @@ codex_pid_file() {
   printf '%s/status/codex-%s.pid\n' "$PLAN_ROOT" "$1"
 }
 
+opencode_pid_file() {
+  printf '%s/status/opencode-%s.pid\n' "$PLAN_ROOT" "$1"
+}
+
+file_mtime_seconds() {
+  local file="$1"
+  stat -f '%m' "$file" 2>/dev/null || stat -c '%Y' "$file" 2>/dev/null || printf '0\n'
+}
+
 parse_session_id() {
   sed -E $'s/\x1B\\[[0-9;]*[[:alpha:]]//g' | awk '
     /backgrounded/ {
@@ -1183,6 +1246,28 @@ parse_session_id() {
 
 parse_codex_thread_id() {
   sed -n 's/.*"thread_id"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1
+}
+
+parse_opencode_session_id() {
+  sed -n -E 's/.*"session(ID|_id)"[[:space:]]*:[[:space:]]*"([^"]+)".*/\2/p' | head -n 1
+}
+
+collect_opencode_logs() {
+  local package_id="$1"
+  local reason="${2:-manual}"
+  local source="$PLAN_ROOT/status/launch-$package_id.log"
+  local target="$LOGS_DIR/$package_id.log"
+  mkdir -p "$LOGS_DIR"
+  if [ -f "$source" ]; then
+    cp "$source" "$target"
+    emit_event "agent_logs_collected" "$package_id" "$(json_pair "runner" "opencode")$(json_pair "reason" "$reason")$(json_pair "logs_path" "$target")"
+    printf '%s\n' "$target"
+    return 0
+  fi
+  printf 'OpenCode launch log is missing\n' > "$target"
+  emit_event "agent_logs_unreadable" "$package_id" "$(json_pair "runner" "opencode")$(json_pair "reason" "$reason")$(json_pair "logs_path" "$target")"
+  printf '%s\n' "$target"
+  return 1
 }
 
 collect_agent_logs() {
@@ -1281,6 +1366,46 @@ reconcile_active_codex() {
   printf '%s\n' "$count"
 }
 
+reconcile_active_opencode() {
+  local id state pid_file pid launch_log count=0
+  while IFS= read -r id; do
+    [ -n "$id" ] || continue
+    state="$(state_field "$id" state)"
+    case "$state" in
+      launched|in_progress|finalizing) ;;
+      *) continue ;;
+    esac
+    pid_file="$(opencode_pid_file "$id")"
+    pid="$(cat "$pid_file" 2>/dev/null || true)"
+    launch_log="$PLAN_ROOT/status/launch-$id.log"
+    if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+      local last_activity now idle_seconds
+      last_activity="$(file_mtime_seconds "$launch_log")"
+      now="$(date +%s)"
+      idle_seconds=0
+      if [ "$last_activity" -gt 0 ] && [ "$now" -ge "$last_activity" ]; then
+        idle_seconds=$((now - last_activity))
+      fi
+      if [ "$idle_seconds" -ge "$ORCHESTRATION_IDLE_SECONDS" ]; then
+        set_error_state "$id" "stale" "OpenCode session has no launch-log activity for ${idle_seconds}s" "opencode run --format json" "" "The process is alive but no structured output was observed within the idle threshold" "Collect the checkpoint, then resume, split, create a handoff, or ask the user; do not switch platforms silently."
+        emit_event "agent_health_checked" "$id" "$(json_pair "runner" "opencode")$(json_pair "process_id" "$pid")$(json_pair "session_status" "stalled")$(json_pair "idle_seconds" "$idle_seconds")"
+        count=$((count + 1))
+      else
+        emit_event "agent_health_checked" "$id" "$(json_pair "runner" "opencode")$(json_pair "process_id" "$pid")$(json_pair "session_status" "process_alive")$(json_pair "idle_seconds" "$idle_seconds")"
+      fi
+      continue
+    fi
+    if [ -f "$launch_log" ] && grep -q '"type":"step_finish"\|"type":"session.completed"\|"type":"session_completed"' "$launch_log"; then
+      set_error_state "$id" "stale" "OpenCode process completed without recording final package state" "opencode run --format json" "" "OpenCode launch log contains a terminal event but coordinator state remained $state" "Inspect the OpenCode checkpoint and mark completed with evidence or create a handoff."
+    else
+      set_error_state "$id" "stale" "OpenCode process is not active and no terminal event was recorded" "opencode run --format json" "" "OpenCode launch log has no terminal event and recorded process is not active" "Inspect the launch log and checkpoint, then resume, retry once, or create a handoff."
+    fi
+    emit_event "agent_lost" "$id" "$(json_pair "runner" "opencode")$(json_pair "process_id" "$pid")$(json_pair "reason" "process_not_active")$(json_pair "logs_path" "$launch_log")"
+    count=$((count + 1))
+  done < <(all_package_ids)
+  printf '%s\n' "$count"
+}
+
 launch_with_claude() {
   local package_id="$1"
   local finalize name worktree branch prompt_file launch_log launch_output status session_id new_state version_output logs_path
@@ -1357,6 +1482,7 @@ launch_with_claude() {
     new_state="launched"
   fi
   set_state_fields "$package_id" "$new_state" "__NOW__" "__KEEP__" "$session_id" "$branch" "$worktree" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__"
+  record_attempt "$(new_attempt_id "$package_id")" "$package_id" "active" "$ORCHESTRATION_EXECUTION_PLATFORM" "claude-code" "$session_id" "status/$package_id.md"
   emit_event "launch_succeeded" "$package_id" "$(json_pair "session_id" "$session_id")$(json_pair "new_state" "$new_state")$(json_pair "branch" "$branch")$(json_pair "worktree" "$worktree")$(json_pair "execution_platform" "$ORCHESTRATION_EXECUTION_PLATFORM")$(json_pair "runner" "claude")"
 }
 
@@ -1452,8 +1578,82 @@ launch_with_codex() {
   else
     new_state="launched"
   fi
-  set_state_fields "$package_id" "$new_state" "__NOW__" "__KEEP__" "$session_id" "$branch" "$worktree" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__"
+  set_state_fields "$package_id" "$new_state" "__NOW__" "__KEEP__" "$session_id" "$branch" "$worktree" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__"
+  record_attempt "$(new_attempt_id "$package_id")" "$package_id" "active" "$ORCHESTRATION_EXECUTION_PLATFORM" "codex-cli" "$session_id" "status/$package_id.md"
   emit_event "launch_succeeded" "$package_id" "$(json_pair "session_id" "$session_id")$(json_pair "new_state" "$new_state")$(json_pair "branch" "$branch")$(json_pair "worktree" "$worktree")$(json_pair "runner" "codex")$(json_pair "execution_platform" "$ORCHESTRATION_EXECUTION_PLATFORM")"
+}
+
+launch_with_opencode() {
+  local package_id="$1"
+  local finalize worktree branch prompt_file launch_log pid session_id new_state version_output name prompt
+  finalize="$(graph_field "$package_id" finalize)"
+  worktree="$(graph_worktree "$package_id")"
+  branch="$(graph_field "$package_id" branch)"
+  name="$(basename "$PLAN_ROOT")-$package_id"
+  prompt_file="$(mktemp)"
+  launch_log="$PLAN_ROOT/status/launch-$package_id.log"
+
+  prompt_for_package "$package_id" > "$prompt_file"
+  if [ ! -s "$prompt_file" ]; then
+    rm -f "$prompt_file"
+    set_error_state "$package_id" "invalid" "prompt section missing" "prompt_for_package $package_id" "" "agent-prompts.md has no matching package section" "Regenerate launchers/agent-prompts.md for this package."
+    die "prompt section missing for $package_id"
+  fi
+  if ! command -v opencode >/dev/null 2>&1; then
+    rm -f "$prompt_file"
+    set_error_state "$package_id" "invalid" "opencode command not found" "command -v opencode" "" "OpenCode CLI is unavailable in PATH" "Run doctor --environment in the same shell and repair the OpenCode environment."
+    die "opencode command not found"
+  fi
+  version_output="$(opencode --version 2>&1 || true)"
+  log "opencode: $version_output"
+  ensure_worktree "$package_id"
+  emit_event "launch_requested" "$package_id" "$(json_pair "branch" "$branch")$(json_pair "worktree" "$worktree")$(json_pair "finalize" "$finalize")$(json_pair "runner" "opencode")$(json_pair "execution_platform" "$ORCHESTRATION_EXECUTION_PLATFORM")"
+
+  # OpenCode's `run` command accepts the task prompt as a positional message.
+  # Keep it as one quoted argument so newlines and package-local instructions
+  # survive the adapter boundary; stdin remains reserved for the coordinator.
+  prompt="$(cat "$prompt_file")"
+  (
+    cd "$worktree" &&
+      opencode run --format json --title "$name" --dir "$worktree" "$prompt" > "$launch_log" 2>&1
+  ) &
+  pid=$!
+  printf '%s\n' "$pid" > "$(opencode_pid_file "$package_id")"
+  rm -f "$prompt_file"
+
+  session_id=""
+  for _ in 1 2 3 4 5 6 7 8 9 10; do
+    if [ -s "$launch_log" ]; then
+      session_id="$(parse_opencode_session_id < "$launch_log" || true)"
+      [ -n "$session_id" ] && break
+    fi
+    if ! kill -0 "$pid" 2>/dev/null; then
+      wait "$pid" || true
+      break
+    fi
+    sleep 0.25
+  done
+  if [ -z "$session_id" ]; then
+    if ! kill -0 "$pid" 2>/dev/null; then
+      local err
+      err="$(tsv_safe "$(cat "$launch_log" 2>/dev/null || true)")"
+      [ -n "$err" ] || err="OpenCode process exited before emitting a session id"
+      set_error_state "$package_id" "invalid" "OpenCode launch failed; see $launch_log" "opencode run --format json" "" "$err" "Inspect the OpenCode launch log and retry after fixing the environment."
+      die "OpenCode launch failed for $package_id"
+    fi
+    session_id="opencode-pid:$pid"
+  else
+    session_id="opencode-session:$session_id"
+  fi
+  collect_opencode_logs "$package_id" "postflight" >/dev/null || true
+  if [ "$finalize" = "1" ]; then
+    new_state="finalizing"
+  else
+    new_state="launched"
+  fi
+  set_state_fields "$package_id" "$new_state" "__NOW__" "__KEEP__" "$session_id" "$branch" "$worktree" "__KEEP__" "__KEEP__" "__KEEP__" "__KEEP__"
+  record_attempt "$(new_attempt_id "$package_id")" "$package_id" "active" "$ORCHESTRATION_EXECUTION_PLATFORM" "opencode-cli" "$session_id" "status/$package_id.md"
+  emit_event "launch_succeeded" "$package_id" "$(json_pair "session_id" "$session_id")$(json_pair "new_state" "$new_state")$(json_pair "branch" "$branch")$(json_pair "worktree" "$worktree")$(json_pair "runner" "opencode")$(json_pair "execution_platform" "$ORCHESTRATION_EXECUTION_PLATFORM")"
 }
 
 launch_package() {
@@ -1465,6 +1665,9 @@ launch_package() {
       ;;
     codex)
       launch_with_codex "$1"
+      ;;
+    opencode)
+      launch_with_opencode "$1"
       ;;
   esac
 }
@@ -1554,6 +1757,12 @@ print_agents_command() {
       printf 'Recorded codex-thread ids can be resumed with:\n'
       printf '  codex exec resume <thread-id>\n'
       ;;
+    opencode)
+      printf '\nView OpenCode runner output with:\n'
+      printf '  tail -f "%s/status/launch-<package-id>.log"\n' "$PLAN_ROOT"
+      printf 'Recorded OpenCode sessions can be resumed on the bound host with:\n'
+      printf '  opencode run --format json --session <session-id>\n'
+      ;;
     manual)
       printf '\nContinue on the bound execution platform:\n'
       printf '  platform=%s\n' "$ORCHESTRATION_EXECUTION_PLATFORM"
@@ -1568,7 +1777,7 @@ cmd_status() {
   local runner_display="$ORCHESTRATION_RUNNER"
   if [ "$platform_display" = "unbound" ]; then
     runner_display="unbound"
-  elif [ "$platform_display" != "codex" ] && [ "$platform_display" != "claude" ]; then
+  elif [ "$platform_display" != "codex" ] && [ "$platform_display" != "claude" ] && [ "$platform_display" != "opencode" ]; then
     runner_display="manual"
   elif [ "$runner_display" = "unbound" ]; then
     runner_display="$platform_display"
@@ -1592,6 +1801,7 @@ cmd_mark_state() {
   local new_state="${2:-}"
   local base="__KEEP__" commit="__KEEP__" verification="__KEEP__" integration="__KEEP__" cleanup="__KEEP__" error="__KEEP__"
   local failed_command="__KEEP__" conflict_files="__KEEP__" log_summary="__KEEP__" recovery_hint="__KEEP__"
+  local recovery_action="__KEEP__"
   local fingerprint event_failed_command event_conflict_files event_log_summary event_recovery_hint old_state
   [ -n "$package_id" ] || die "usage: mark-state <package-id> <state>"
   [ -n "$new_state" ] || die "usage: mark-state <package-id> <state>"
@@ -1608,6 +1818,7 @@ cmd_mark_state() {
       --conflict-files) shift; conflict_files="${1:-}" ;;
       --log-summary) shift; log_summary="${1:-}" ;;
       --recovery-hint) shift; recovery_hint="${1:-}" ;;
+      --recovery-action) shift; recovery_action="${1:-}" ;;
       *) die "unknown mark-state option: $1" ;;
     esac
     shift || true
@@ -1616,6 +1827,13 @@ cmd_mark_state() {
   acquire_lock
   ensure_execution_platform
   old_state="$(state_field "$package_id" state || true)"
+  if { [ "$old_state" = "blocked" ] || [ "$old_state" = "stale" ] || [ "$old_state" = "invalid" ]; } &&
+    { [ "$new_state" = "completed" ] || [ "$new_state" = "finalized" ]; }; then
+    case "$recovery_action" in
+      resume|retry-same|repair-runtime|split|investigate|approved-handoff|await-user|abort) ;;
+      *) die "terminal state $old_state cannot become $new_state without --recovery-action" ;;
+    esac
+  fi
   if [ "$new_state" = "finalized" ] && ! cleanup_complete; then
     die "cannot mark $package_id finalized before cleanup completes"
   fi
@@ -1636,6 +1854,9 @@ cmd_mark_state() {
     [ "$log_summary" = "__KEEP__" ] && event_log_summary="" || event_log_summary="$log_summary"
     [ "$recovery_hint" = "__KEEP__" ] && event_recovery_hint="" || event_recovery_hint="$recovery_hint"
     emit_terminal_failure_event "$package_id" "$new_state" "$error" "$fingerprint" "$event_failed_command" "$event_conflict_files" "$event_log_summary" "$event_recovery_hint" "$old_state"
+  fi
+  if [ "$recovery_action" != "__KEEP__" ]; then
+    emit_event "recovery_action_recorded" "$package_id" "$(json_pair "from_state" "$old_state")$(json_pair "to_state" "$new_state")$(json_pair "recovery_action" "$recovery_action")"
   fi
   log "marked $package_id as $new_state"
 }
@@ -1850,6 +2071,10 @@ current_template_path() {
     printf '%s\n' "$HOME/.codex/skills/agent-orchestration-planner/scripts/orchestrate-template.sh"
     return 0
   fi
+  if [ -n "${HOME:-}" ] && [ -f "$HOME/.config/opencode/skills/agent-orchestration-planner/scripts/orchestrate-template.sh" ]; then
+    printf '%s\n' "$HOME/.config/opencode/skills/agent-orchestration-planner/scripts/orchestrate-template.sh"
+    return 0
+  fi
   return 1
 }
 
@@ -1948,6 +2173,28 @@ cmd_doctor() {
           printf 'codex_home_writable=no\n'
         fi
         ;;
+      opencode)
+        if command -v opencode >/dev/null 2>&1; then
+          printf 'opencode_path=%s\n' "$(command -v opencode)"
+          printf 'opencode_version=%s\n' "$(opencode --version 2>&1 || true)"
+          if opencode run --help >/dev/null 2>&1; then
+            printf 'opencode_run_help=available\n'
+          else
+            printf 'opencode_run_help=unavailable\n'
+          fi
+          if opencode export --help >/dev/null 2>&1 && opencode import --help >/dev/null 2>&1; then
+            printf 'opencode_session_export_import=available\n'
+          else
+            printf 'opencode_session_export_import=unavailable\n'
+          fi
+        else
+          printf 'opencode_path=missing\n'
+          printf 'opencode_version=missing\n'
+          printf 'opencode_run_help=unavailable\n'
+          printf 'opencode_session_export_import=unavailable\n'
+        fi
+        printf 'opencode_idle_seconds=%s\n' "$ORCHESTRATION_IDLE_SECONDS"
+        ;;
       manual)
         printf 'manual_continuation=same-platform-only\n'
         printf 'manual_platform=%s\n' "${ORCHESTRATION_EXECUTION_PLATFORM:-unbound}"
@@ -1988,6 +2235,15 @@ cmd_doctor() {
     printf 'doctor: ok\n'
     return 0
   fi
+  if [ "$ORCHESTRATION_RUNNER" = "opencode" ]; then
+    reconciled="$(reconcile_active_opencode)"
+    if [ "$reconciled" -gt 0 ]; then
+      printf 'doctor: reconciled %s stale OpenCode process(es)\n' "$reconciled"
+      return 1
+    fi
+    printf 'doctor: ok\n'
+    return 0
+  fi
   reconciled="$(reconcile_active_agents)"
   status_consistency_ok
   if [ "$reconciled" -gt 0 ]; then
@@ -2005,6 +2261,18 @@ cmd_collect_logs() {
   graph_field "$package_id" package_doc >/dev/null || die "unknown package: $package_id"
   state="$(state_field "$package_id" state)"
   session_id="$(state_field "$package_id" agent || true)"
+  if [ "$ORCHESTRATION_RUNNER" = "opencode" ]; then
+    if logs_path="$(collect_opencode_logs "$package_id" "manual")"; then
+      printf 'logs: %s\n' "$logs_path"
+      return 0
+    fi
+    case "$state" in
+      launched|in_progress|finalizing)
+        set_error_state "$package_id" "stale" "OpenCode launch logs are not readable; see ${logs_path:-$LOGS_DIR/$package_id.log}" "opencode run --format json" "" "OpenCode logs snapshot unavailable" "Inspect the bound OpenCode session, then resume, retry once, or create a handoff."
+        ;;
+    esac
+    die "OpenCode logs unavailable for $package_id"
+  fi
   if logs_path="$(collect_agent_logs "$package_id" "$session_id" "manual")"; then
     printf 'logs: %s\n' "$logs_path"
     return 0
@@ -2028,6 +2296,99 @@ cmd_scratch_path() {
   mkdir -p "$path"
   emit_event "scratch_path_requested" "$package_id" "$(json_pair "path" "$path")"
   printf '%s\n' "$path"
+}
+
+coordination_script_path() {
+  if [ -n "$COORDINATION_SCRIPT" ] && [ -f "$COORDINATION_SCRIPT" ]; then
+    printf '%s\n' "$COORDINATION_SCRIPT"
+    return 0
+  fi
+  if [ -f "$REPO_ROOT/skills/agent-orchestration-planner/scripts/coordination_contract.py" ]; then
+    printf '%s\n' "$REPO_ROOT/skills/agent-orchestration-planner/scripts/coordination_contract.py"
+    return 0
+  fi
+  if [ -n "${HOME:-}" ] && [ -f "$HOME/.codex/skills/agent-orchestration-planner/scripts/coordination_contract.py" ]; then
+    printf '%s\n' "$HOME/.codex/skills/agent-orchestration-planner/scripts/coordination_contract.py"
+    return 0
+  fi
+  if [ -n "${HOME:-}" ] && [ -f "$HOME/.config/opencode/skills/agent-orchestration-planner/scripts/coordination_contract.py" ]; then
+    printf '%s\n' "$HOME/.config/opencode/skills/agent-orchestration-planner/scripts/coordination_contract.py"
+    return 0
+  fi
+  return 1
+}
+
+cmd_compatibility() {
+  local script template
+  script="$(coordination_script_path || true)"
+  [ -n "$script" ] || die "coordination_contract.py is unavailable; set ORCHESTRATION_COORDINATION_SCRIPT"
+  template="$(current_template_path || true)"
+  [ -n "$template" ] || die "current runtime template is unavailable; set ORCHESTRATION_TEMPLATE_PATH"
+  python3 "$script" compatibility "$PLAN_ROOT" --template "$template"
+}
+
+cmd_migrate() {
+  local target="" platform="" dry_run=0 script template
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --to) shift; target="${1:-}" ;;
+      --platform) shift; platform="${1:-}" ;;
+      --dry-run) dry_run=1 ;;
+      *) die "usage: migrate --to <version> [--platform <platform>] [--dry-run]" ;;
+    esac
+    shift || true
+  done
+  [ -n "$target" ] || die "usage: migrate --to <version> [--platform <platform>] [--dry-run]"
+  script="$(coordination_script_path || true)"
+  [ -n "$script" ] || die "coordination_contract.py is unavailable; set ORCHESTRATION_COORDINATION_SCRIPT"
+  template="$(current_template_path || true)"
+  [ -n "$template" ] || die "current runtime template is unavailable; set ORCHESTRATION_TEMPLATE_PATH"
+  local -a args
+  args=(migrate-kit "$PLAN_ROOT" --template "$template" --to "$target")
+  [ -n "$platform" ] && args+=(--platform "$platform")
+  [ "$dry_run" -eq 1 ] && args+=(--dry-run)
+  python3 "$script" "${args[@]}"
+}
+
+cmd_handoff() {
+  local action="${1:-}" script
+  shift || true
+  script="$(coordination_script_path || true)"
+  [ -n "$script" ] || die "coordination_contract.py is unavailable; set ORCHESTRATION_COORDINATION_SCRIPT"
+  case "$action" in
+    create)
+      local package_id="${1:-}" target_platform="" handoff_id="" authorization="" reason="" remaining_work="" first_action="" acceptance_oracle="" expires_or_stale_if="" output=""
+      shift || true
+      [ -n "$package_id" ] || die "usage: handoff create <package-id> --target-platform <platform> --handoff-id <id> --authorization <explicit-user|preapproved-policy|manual> --reason <text> --remaining-work <text> --first-action <text> --acceptance-oracle <text> --expires-or-stale-if <text> --output <envelope.json>"
+      while [ "$#" -gt 0 ]; do
+        case "$1" in
+          --target-platform) shift; target_platform="${1:-}" ;;
+          --handoff-id) shift; handoff_id="${1:-}" ;;
+          --authorization) shift; authorization="${1:-}" ;;
+          --reason) shift; reason="${1:-}" ;;
+          --remaining-work) shift; remaining_work="${1:-}" ;;
+          --first-action) shift; first_action="${1:-}" ;;
+          --acceptance-oracle) shift; acceptance_oracle="${1:-}" ;;
+          --expires-or-stale-if) shift; expires_or_stale_if="${1:-}" ;;
+          --output) shift; output="${1:-}" ;;
+          *) die "unknown handoff create option: $1" ;;
+        esac
+        shift || true
+      done
+      [ -n "$handoff_id" ] && [ -n "$target_platform" ] && [ -n "$authorization" ] && [ -n "$reason" ] && [ -n "$remaining_work" ] && [ -n "$first_action" ] && [ -n "$acceptance_oracle" ] && [ -n "$expires_or_stale_if" ] && [ -n "$output" ] || die "handoff create is missing a required option"
+      python3 "$script" create-handoff --plan-root "$PLAN_ROOT" --package-id "$package_id" --handoff-id "$handoff_id" --source-platform "$ORCHESTRATION_EXECUTION_PLATFORM" --target-platform "$target_platform" --authorization "$authorization" --reason "$reason" --remaining-work "$remaining_work" --first-action "$first_action" --acceptance-oracle "$acceptance_oracle" --expires-or-stale-if "$expires_or_stale_if" --output "$output"
+      emit_event "handoff_created" "$package_id" "$(json_pair "handoff_id" "$handoff_id")$(json_pair "source_platform" "$ORCHESTRATION_EXECUTION_PLATFORM")$(json_pair "target_platform" "$target_platform")$(json_pair "output" "$output")"
+      ;;
+    validate)
+      python3 "$script" validate-handoff "${1:-}"
+      ;;
+    accept)
+      python3 "$script" accept-handoff "$@"
+      ;;
+    *)
+      die "usage: handoff validate <envelope.json> | handoff accept <envelope.json> --platform <platform> --attempt-id <id> --decision <accepted|rejected|needs-input> --first-action <text> --output <receipt.json>"
+      ;;
+  esac
 }
 
 cmd_bind_platform() {
@@ -2146,6 +2507,9 @@ Commands:
   verify-finalize
   scratch-path <package-id>
   bind-platform <platform>
+  compatibility
+  migrate --to <version> [--platform <platform>] [--dry-run]
+  handoff create|validate|accept ...
 USAGE
 }
 
@@ -2209,6 +2573,18 @@ case "${1:-}" in
   scratch-path)
     shift || true
     cmd_scratch_path "${1:-}"
+    ;;
+  compatibility)
+    cmd_compatibility
+    ;;
+  migrate)
+    shift || true
+    cmd_migrate "$@"
+    ;;
+  handoff)
+    shift || true
+    ensure_execution_platform
+    cmd_handoff "$@"
     ;;
   *)
     usage

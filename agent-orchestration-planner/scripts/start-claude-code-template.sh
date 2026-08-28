@@ -12,7 +12,7 @@ run_orchestrate() {
 
 usage() {
   cat <<EOF
-Usage: $(basename "$0") [start|doctor|status|agents|advance|retry|finalize|cleanup|mark-state|repair-state|collect-logs|verify-package|verify-finalize|scratch-path|bind-platform] [args...]
+Usage: $(basename "$0") [start|doctor|status|agents|advance|retry|finalize|cleanup|mark-state|repair-state|collect-logs|verify-package|verify-finalize|scratch-path|bind-platform|compatibility|migrate|handoff] [args...]
 
 Default:
   $(basename "$0") start
@@ -46,7 +46,7 @@ EOF
       run_orchestrate doctor "$@"
     fi
     ;;
-  status|advance|retry|finalize|cleanup|mark-state|repair-state|collect-logs|verify-package|verify-finalize|scratch-path|bind-platform)
+  status|advance|retry|finalize|cleanup|mark-state|repair-state|collect-logs|verify-package|verify-finalize|scratch-path|bind-platform|compatibility|migrate|handoff)
     run_orchestrate "$cmd" "$@"
     ;;
   agents)

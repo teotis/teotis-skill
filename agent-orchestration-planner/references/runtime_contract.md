@@ -42,6 +42,9 @@ docs/plans/<plan-name>/
 ├── status/
 │   ├── README.md
 │   ├── execution-platform
+│   ├── kit-manifest.json
+│   ├── attempts.jsonl
+│   ├── handoffs/
 │   ├── state.tsv
 │   ├── events.jsonl
 │   ├── package-status-template.md
@@ -138,7 +141,10 @@ bash launchers/orchestrate.sh collect-logs <package-id>
 bash launchers/orchestrate.sh verify-package <package-id>
 bash launchers/orchestrate.sh verify-finalize
 bash launchers/orchestrate.sh scratch-path <package-id>
-bash launchers/orchestrate.sh bind-platform <platform>
+  bash launchers/orchestrate.sh bind-platform <platform>
+  bash launchers/orchestrate.sh compatibility
+  bash launchers/orchestrate.sh migrate --to <version> --dry-run
+  bash launchers/orchestrate.sh handoff create|validate|accept ...
 ```
 
 Required behavior:
@@ -146,6 +152,7 @@ Required behavior:
 - `advance`: acquire lock, re-read graph/status/state, validate dependencies, stop on blocked/stale/invalid, launch newly ready functional packages on the bound platform, or expose the next package for same-platform continuation when no local runner exists. It must never rebind or cross-launch.
 - `status`: print a concise table of package state, branch, worktree, verification, integration, last error, failed command, and recovery hint.
 - `retry <package-id>`: only reset `blocked`, `stale`, or `invalid` packages after reporting prior recovery context. It must not retry already launched or completed packages unless the user explicitly changes state. If the same package hits the same terminal failure fingerprint three times, block further retry and require human diagnosis.
+- `mark-state`: a terminal package state cannot be promoted directly to `completed` or `finalized` without a named `--recovery-action`; ordinary manual completion from `pending`/`ready` still requires verification evidence.
 - `finalize`: run or re-run the `99-finalize` package idempotently.
 - `cleanup --mainline <branch>`: after successful finalize verification, remove only graph/state-recorded local worktrees and branches whose recorded commits and branch tips are merged into the named mainline. It must validate all resources before deleting any resource, block dirty worktrees or unmerged commits, delete worktrees before branches, use non-force `git branch -d`, record cleanup events/results, and be idempotent.
 - `mark-state`: the only supported way for package agents to mutate `state.tsv`; it also keeps Markdown status in sync.
@@ -155,6 +162,9 @@ Required behavior:
 - `collect-logs <package-id>`: persist a `claude logs <session-id>` snapshot to `status/logs/<package-id>.log` and record `agent_logs_collected` or `agent_logs_unreadable` in `events.jsonl`. If an active package's logs are unreadable, mark it `stale`.
 - `verify-package` / `verify-finalize`: verify package evidence before integration, including completed state, branch, commit hash, commit existence, clean package worktree when present, and `dependency_type=code/status+code` ancestry. For every code dependency, `git merge-base --is-ancestor <dependency_commit> <package_commit>` must pass.
 - `scratch-path <package-id>`: create `scratch/.gitignore`, create the package-local scratch directory, print its absolute path, and record the request in `events.jsonl`.
+- `compatibility`: report kit schema, generated/current runtime versions, manifest and platform-binding status without launching work.
+- `migrate`: perform a dry-run or explicit migration of the copied runtime template and kit manifest; it must not infer a platform or delete evidence.
+- `handoff`: create/validate/accept a versioned Handoff Envelope. Acceptance creates a receipt but does not unlock downstream packages.
 
 Projection consistency behavior:
 - If `INDEX.md` and `package-graph.tsv` disagree about dependency intent, report the mismatch for human review. Do not silently choose the more permissive graph.
@@ -182,9 +192,9 @@ Implementation rules:
 - Capability preflight is mandatory before graph creation. Auto-launched packages may contain only `autonomous` or `agent-verifiable substitute` work. `external-assist` checks must be predeclared in the INDEX and kept out of autonomous package execution unless the active environment truly provides that capability. A blocking `external-assist` gate may be generated only after the user has approved that gate, owner, expected evidence, and blocking scope; otherwise planning must stop before artifact generation and ask for a decision.
 - Treat runner differences as capability variation over the same lifecycle. Manual execution, Claude background sessions, CI runners, and other agent platforms may differ in launch mechanism, permission mode, evidence channel, and verification ability, but they must not introduce separate package states, duplicate finalize logic, or package-local scheduling.
 - Bind the current host before launch with `bind-platform <platform>` or `ORCHESTRATION_EXECUTION_PLATFORM=<platform>`. Resolution must prefer the explicit current-host binding, then the immutable persisted affinity; installed CLIs and stale runner files are not valid platform selectors.
-- Package prompts and follow-up dispatch inherit the bound execution platform. `advance` is a scheduler operation, not a platform handoff. When the bound host has no local launcher (for example OpenCode using the package prompts directly), use `manual` continuation: compute readiness and expose package ids, but never launch Codex/Claude as a substitute.
+- Package prompts and follow-up dispatch inherit the bound execution platform. `advance` is a scheduler operation, not a platform handoff. When the bound host has no local launcher, use `manual` continuation; OpenCode may use its own adapter when the generated kit includes `start-opencode.sh`, but it must never launch Codex/Claude as a substitute.
 - Persist the selected runner as coordinator runtime configuration in `status/runner`, but only when it is compatible with `status/execution-platform`. Resolution order is explicit `ORCHESTRATION_RUNNER` paired with the current platform, then the persisted compatible runner, then the platform's own launcher; unsupported hosts resolve to `manual`. `start`, `advance`, `retry`, and `finalize` must preserve this selection before launch.
-- Runner wrappers must set both `ORCHESTRATION_EXECUTION_PLATFORM=codex|claude` and the matching `ORCHESTRATION_RUNNER` on every call into `orchestrate.sh`. Their default `start` command must run `doctor --environment`, `start`, and `status` in that order. Other supported orchestrator subcommands are pass-through helpers. Wrappers must not mutate `state.tsv` directly, compute readiness, launch packages themselves, or implement finalize/cleanup logic.
+- Runner wrappers must set both `ORCHESTRATION_EXECUTION_PLATFORM` and the matching `ORCHESTRATION_RUNNER` (`codex`, `claude`, or `opencode`) on every call into `orchestrate.sh`. Their default `start` command must run `doctor --environment`, `start`, and `status` in that order. Other supported orchestrator subcommands are pass-through helpers. Wrappers must not mutate `state.tsv` directly, compute readiness, launch packages themselves, or implement finalize/cleanup logic.
 - Codex runner specifics: use `codex exec --json` with `ORCHESTRATION_CODEX_SANDBOX` (default `workspace-write`) and `ORCHESTRATION_CODEX_APPROVAL_POLICY` (default `never`). Pass `--ask-for-approval` only when `codex exec --help` advertises that flag; if the installed CLI lacks the flag, omit it for the default `never` policy and fail preflight for any non-default approval policy. Optional `ORCHESTRATION_CODEX_MODEL` maps to `--model`; optional `ORCHESTRATION_CODEX_EFFORT` maps to `model_reasoning_effort`. In non-interactive Codex flows, actions that require fresh approval can fail, so package prompts must keep the same explicit `mark-state` and `advance` tail call contract.
 - Codex runner environment preflight is mandatory before `start`: `doctor --environment` must print the Codex CLI version, whether `codex exec` supports approval policy flags, the selected sandbox/approval policy, `CODEX_HOME` or `~/.codex`, and whether that home is writable from the launch shell. If launch stderr reports a readonly Codex state DB, PATH update permission failure, or app-server initialization failure, classify it as a runner environment failure (`invalid`/`stale`) with recovery guidance to rerun from a user shell with writable Codex state or an explicitly approved runner environment; do not treat it as package implementation failure.
 - Codex launch postflight must distinguish "thread id emitted" from "agent alive enough to work." If a launch log contains only `thread.started`/`turn.started` and no active `codex exec` process remains, mark the package `stale` with the stalled-thread fingerprint and require retry or manual diagnosis instead of letting a hollow `launched` state unlock confidence.
@@ -201,7 +211,10 @@ Implementation rules:
 - After launch, run a short `claude logs <session-id>` postflight and save the snapshot. If the session id is missing, mark the package `invalid`. If logs are not readable or the session exits immediately, mark it `stale`.
 - Never unlock downstream packages from `launched`, `in_progress`, or `finalizing`; downstream unlock requires `completed` or `finalized`.
 - `mark-state 99-finalize finalized` must be rejected until every graph/state row has `cleanup=removed`. A `--cleanup deferred` note is not a successful terminal state.
-- `status/execution-platform` is a one-line immutable affinity record such as `opencode`, `codex`, `claude`, or `manual`. It is written by `bind-platform` or the first explicitly platform-bound scheduler call. A later request for a different platform is invalid; create a new plan or obtain an explicit user rebind decision instead of switching silently. `status/runner` remains a separate, derived launcher-mode record (`codex`, `claude`, or `manual`) and must never override the execution-platform affinity.
+- `status/execution-platform` is a one-line immutable affinity record such as `opencode`, `codex`, `claude`, or `manual`. It is written by `bind-platform` or the first explicitly platform-bound scheduler call. A later request for a different platform is invalid; create a new plan or obtain an explicit user rebind decision instead of switching silently. `status/runner` remains a separate, derived launcher-mode record (`codex`, `claude`, `opencode`, or `manual`) and must never override the execution-platform affinity.
+- `status/attempts.jsonl` records each start/resume/handoff attempt with attempt id, platform, adapter/version, session identity, last activity, checkpoint and terminal state. Package state remains the dependency-unlock truth.
+- `status/kit-manifest.json` records `coordination.kit.v1`, runtime template version, adapter contract version and plan revision. A generated runtime older than the current template is incompatible until migrated or regenerated.
+- OpenCode is a first-class adapter when `ORCHESTRATION_EXECUTION_PLATFORM=opencode`: it uses `opencode run --format json`, records a session/process identity, checks export/import capability during doctor, and never substitutes Codex or Claude.
 - `state.tsv` integrity is protected by HMAC-SHA-256 signing. Every `mark-state` invocation appends a `# signature:<hex>` line computed from `status/.state.sig` secret key + state.tsv content. Any direct edit to `state.tsv` outside of `mark-state` invalidates the signature.
 - `preflight_state_signature` validates the signature on every `advance`, `retry`, `finalize`, `mark-state`, `doctor`, and `status` call; failed validation blocks all orchestrate commands with "state.tsv integrity check failed; use repair-state to reinitialize".
 - `repair-state` strips the old signature, rewrites state.tsv from graph + markdown status, and re-signs with a fresh secret.

@@ -32,6 +32,30 @@ generating/validating `doctor`, `collect-logs`, `verify-package`, and
   retry. Preserve the existing `status/execution-platform` record and require a
   new plan or explicit user-authorized rebind before continuing.
 
+## Recovery Decision
+
+Every terminal execution attempt should receive one named recovery action:
+
+`resume | retry-same | repair-runtime | split | investigate | approved-handoff | await-user | abort`
+
+`retry-same` is only for a classified transient runner failure and must carry
+an attempt budget. Promotion from `blocked`, `stale`, or `invalid` to a success
+state requires `mark-state --recovery-action <action>` so the event ledger
+records why the recovery was accepted. Repeated identical failures require a
+new action or a user decision; they must not silently become another retry.
+
+`status/attempts.jsonl` is the attempt history. Package `state.tsv` remains the
+dependency truth, while attempt records preserve session identity, activity,
+checkpoint and termination evidence.
+
+## Handoff
+
+Cross-platform continuation is explicit. Create a versioned Handoff Envelope,
+validate it on the target platform, and write an Accept Receipt. The source
+attempt is not `transferred` until the receipt is accepted. Handoff artifacts
+do not unlock downstream packages and do not authorize credentials, devices,
+force-pushes or other external side effects.
+
 ## Doctor And Logs
 
 - `doctor` runs preflight and consistency checks without launching new work.

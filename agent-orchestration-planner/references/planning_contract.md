@@ -15,6 +15,9 @@ Treat an orchestration as one execution contract with multiple projections. Do n
 | `status/execution-platform` | Immutable runtime affinity for the agent platform that owns this plan, plus the one-time bind event in `events.jsonl`. | Package state, runner capability details, cross-platform fallback policy. |
 | `status/state.tsv` | Current scheduler snapshot: package state, launch/session identifiers, branch/worktree/commit pointers, verification summary, integration/cleanup summary, and blocking fields needed for readiness decisions. | Long event history, rich QA evidence, release notes, external artifacts, discussion threads. |
 | `status/events.jsonl` | Append-only event history, terminal failure fingerprints, retry accounting, launch/scratch/state-change audit trail. | Current readiness by itself, human acceptance evidence. |
+| `status/attempts.jsonl` | One record per start/resume/handoff attempt: platform, adapter/version, session identity, activity, checkpoint and termination. | Package dependency unlock or task-level success. |
+| `status/handoffs/` | Versioned Handoff Envelopes and target Accept Receipts. | Silent fallback or downstream unlock. |
+| `status/kit-manifest.json` | Kit/runtime/adapter contract versions and plan revision used for compatibility and migration. | Dynamic package state or historical event truth. |
 | `status/<package-id>.md` | Human-readable package evidence, risks, changed files, verification details, blocker diagnosis, and recovery notes. | Machine dispatch truth or dependency unlocks without matching `state.tsv`. |
 | `launchers/agent-prompts.md` | Local package execution contracts and tail-call instructions. | Global scheduling decisions or hidden fallback policy. |
 | `packages/99-finalize.md` and `FINAL_REPORT.md` | Local-to-global gluing judgment: verify package evidence, merge eligibility, task-level outcome, and final audit narrative. | Unverified agent claims or scheduler mutation outside the orchestrator. |
@@ -23,6 +26,8 @@ Treat an orchestration as one execution contract with multiple projections. Do n
 Design rules:
 - When adding information, first decide which projection owns it. Add a new `state.tsv` column only if the scheduler needs it to compute readiness, blocking, verification, integration, or cleanup.
 - Bind the execution platform once at plan intake. Model launcher differences as capability variation over the same package lifecycle and finalize rules, while keeping platform affinity in `status/execution-platform`; do not copy a separate lifecycle for manual, Claude background, CI runner, or another agent platform.
+- Model each start, resume and explicit handoff as an execution attempt. A package may have multiple attempts, but only package state and evidence can unlock downstream work.
+- Treat cross-platform continuation as a transaction: source emits a Handoff Envelope, target adapter writes an Accept Receipt, and only an accepted receipt can close the source attempt as `transferred`.
 - A package handed to an external agent inherits the host platform. `advance` may expose the next ready package, but it must not invoke, suggest, or silently rebind to another platform. A platform without a local runner uses same-platform/manual continuation.
 - When projections disagree, report the orchestration as invalid or blocked until repaired. Do not silently infer success from the most optimistic artifact.
 - A useful extension should pass a deformation test: adding one new state, runner, manual gate, failure class, or evidence channel should require bounded edits to the owning projection and its validators, not scattered changes across unrelated artifacts.

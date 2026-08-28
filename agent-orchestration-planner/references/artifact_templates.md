@@ -20,6 +20,9 @@ or the final chat instructions after creating an orchestration kit.
 - `status/execution-platform` owns the immutable host-platform affinity for this plan; a mismatch blocks continuation.
 - `status/state.tsv` owns current scheduler state. It must not be edited manually.
 - `status/events.jsonl` owns append-only event history, retry accounting, and failure fingerprints.
+- `status/attempts.jsonl` owns per-start/resume/handoff attempt history, activity and checkpoint references.
+- `status/handoffs/` owns explicit Handoff Envelopes and target Accept Receipts.
+- `status/kit-manifest.json` owns kit/runtime/adapter contract versions and plan revision.
 - `status/<package-id>.md` owns human-readable evidence, risks, verification details, and blocker diagnosis.
 - `scratch/` is temporary and non-authoritative; it cannot unlock dependencies or satisfy acceptance criteria by itself.
 - If these projections disagree, treat the orchestration as invalid or blocked until repaired; do not infer success from one artifact alone.
@@ -49,6 +52,9 @@ or the final chat instructions after creating an orchestration kit.
 - Script: use only the wrapper matching the bound platform. Codex uses `bash launchers/start-codex-app.sh` and JSONL/thread-id inspection. Claude Code uses `bash launchers/start-claude-code.sh` and `claude agents`. A host without a local wrapper uses same-platform/manual continuation.
 - Status: run `bash launchers/orchestrate.sh status`.
 - Retry: run `bash launchers/orchestrate.sh retry <package-id>`.
+- Compatibility: run `bash launchers/orchestrate.sh compatibility` before continuing a copied or old kit.
+- Migration: run `bash launchers/orchestrate.sh migrate --to <version> --dry-run`; apply only after reviewing the plan.
+- Handoff: create/validate/accept an explicit envelope; it never acts as a silent runner fallback.
 - Manual advancement fallback: run `bash launchers/orchestrate.sh advance`.
 - App-native/manual fallback: if the bound platform cannot run shell tail calls, continue the ready package on that same platform and expose `advance` as a coordinator command; do not switch to another agent platform.
 
@@ -484,6 +490,18 @@ If the bound platform is Codex App, add this note:
 "This script lane uses local `codex exec --json` processes and coordinator
 logs; Codex App native subagents remain available through the Manual path, but
 the generated script does not create App UI subagent threads directly."
+
+For a bound OpenCode platform, use:
+
+```bash
+cd "<repo-root>"
+bash "<absolute-plan-dir>/launchers/start-opencode.sh"
+bash "<absolute-plan-dir>/launchers/start-opencode.sh" status
+bash "<absolute-plan-dir>/launchers/start-opencode.sh" sessions
+```
+
+OpenCode sessions may be resumed or exported through the bound OpenCode host;
+the coordinator must not replace them with Codex or Claude.
 
 For any other bound host, use same-platform/manual continuation:
 
