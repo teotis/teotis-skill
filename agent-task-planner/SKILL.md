@@ -1,6 +1,6 @@
 ---
 name: agent-task-planner
-description: Use when a concrete engineering request needs a lightweight repo-backed task plan, agent-ready prompts, verification steps, checkpoint expectations, or routing between direct work, one-agent work, small parallel work, native agent controls, ledger-lite planning, and heavier orchestration.
+description: Use only when the user explicitly asks to turn a concrete engineering request into a repo-backed task plan, agent-ready prompts, and verification steps, or to route it among direct work, one agent, small parallel work, native agent controls, or ledger-lite planning.
 ---
 
 # Agent Task Planner
@@ -19,6 +19,8 @@ This skill is also a routing gate. Even when the user mentions multiple agents o
 **Hard gate:** do not present a vague plan or reported claim as verified. Require rollback/recovery detail when consequence or irreversibility warrants it, not as boilerplate for every package.
 
 ## Use When
+
+Entry is **user-invoked only**: the user asks for an agent-executable plan or task handoff. Another agent or skill may recommend this skill and hand over its findings, but MUST NOT compile a task pack on the user's behalf without that request.
 
 Use this skill when:
 

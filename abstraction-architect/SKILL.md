@@ -40,13 +40,13 @@ Separate **task fit** from **load depth** (authority **1A**: self-probe before L
 
 ## Default Execution Intensity And Question Gate
 
-This skill supports both **user-invoked** entry and **agent-active** auto-launch. The default depth is set by the entry source:
+Entry authority differs by whether the user asked for this skill:
 
 - **User-invoked** (the user names this skill, asks for an architecture review or abstraction analysis, or uses a synonym trigger): default to **Deep** depth. Run the structural investigation, admissibility gate, and candidate competition. Deep means evidence depth, not automatic HTML.
-- **Agent-active** (another agent or skill detects structural pressure and auto-launches this skill without an explicit user request): default to **Standard** depth. Cover the core pressure map, the highest-leverage candidate, and baseline competition; do not run Exhaustive-tier history archaeology, cross-repository variants, or long parallel investigations. Surface a hint that "upgrading to Deep requires user confirmation".
+- **Agent-advisory** (an agent notices structural pressure without an explicit user request): contribute only the **User value priors** and **Adaptive heuristics** from the Intelligence Adaptation Contract. They may reorder and sharpen the host agent's own reasoning; they do not license starting this skill's self-probe ladder, triage form, staged workflow, plan, or report. Moving to Standard or Deep requires the user to ask.
 - **Exhaustive**: only when the user explicitly requests "exhaustive / full coverage / maximum effort" or equivalent; never the default.
 
-Regardless of entry source, invocation authorizes the chosen mode within its safety and mutation boundaries. Cover the evidence faces that can change the decision; do not run low-yield workflow steps solely because the mode permits them. Narrow or upgrade depth when task evidence, consequence, or user goals warrant it.
+Explicit invocation authorizes the chosen depth within its safety and mutation boundaries. Cover the evidence faces that can change the decision; do not run low-yield workflow steps solely because the mode permits them. Only downgrade, narrow, or focus the run when the user asks or when task evidence, consequence, or user goals warrant it.
 
 Infer the target, scope, and evidence plan from the current workspace and supplied context; do not ask the user when a reasonable inference is possible. Continue useful analysis despite gaps and record them as `assumptions, unknowns, or coverage debt`.
 
@@ -97,7 +97,7 @@ When invoked:
 
 | Mode | Default trigger | Deliverable | Modification permission |
 |---|---|---|---|
-| Structural Scan (Standard) | Agent-active default; or user explicitly requests a lighter scan; or evidence cannot support full analysis | One-screen triage, candidate map, missing-evidence list, and handoff; HTML only when the Report Upgrade Gate is met | No code changes |
+| Structural Scan (Standard) | User explicitly requests a lighter scan; or evidence cannot support full analysis. An advisory self-match never enters this mode | One-screen triage, candidate map, missing-evidence list, and handoff; HTML only when the Report Upgrade Gate is met | No code changes |
 | Full Architecture Analysis (Deep) | User-invoked default | Deep triage decision, evidence-backed candidate competition, and handoff; HTML only when the Report Upgrade Gate is met | No code changes |
 | Exhaustive Architecture Analysis | User explicitly requests exhaustive / full-coverage / maximum-effort keywords | Multi-evidence cross-checks, history/cross-repository variants, parallel investigation; usually eligible for HTML when review is useful | No code changes |
 | Transition Handoff | User accepts one or more structural directions | Migration hypotheses for pragmatic evaluation | No code changes |

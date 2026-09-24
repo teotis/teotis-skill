@@ -36,13 +36,13 @@ These are not slogans. They must appear as explicit boundaries, owners, signals,
 
 ## Default Execution Intensity And Question Gate
 
-This skill supports both **user-invoked** entry and **agent-active** auto-launch. The default depth is set by the entry source:
+This skill is **user-invoked only**: launch it after the user names it, asks for a renewal / legacy / migration / technical-debt route decision, or uses a synonym trigger. Host agents and other skills MUST NOT auto-launch it; they may surface a recommendation and wait for the user to authorize the analysis. Depth is set by what the user asks for:
 
-- **User-invoked** (the user names this skill, asks for renewal/legacy/migration/technical-debt diagnosis, or uses a synonym trigger): default to **Deep** Diagnostic Mode. Run the full fact ledger, twelve lenses, adoption economics, and the formal HTML report.
-- **Agent-active** (another agent or skill detects renewal pressure and auto-launches this skill): default to **Standard** Diagnostic Mode. Cover the core fact ledger, dominant constraint, protect/experiment/defer split, and a pilot-to-decision draft; do not run the full twelve-lens sweep, cross-repository archaeology, or long-running analysis. Surface a hint that "upgrading to Deep requires user confirmation".
+- **User-invoked** (default): **Deep** Diagnostic Mode. Run the full fact ledger, twelve lenses, adoption economics, and the formal HTML report.
+- **Lighter scan** (the user asks for a quick read, or the evidence cannot support full analysis): **Standard** Diagnostic Mode. Cover the core fact ledger, dominant constraint, protect/experiment/defer split, and a pilot-to-decision draft; do not run the full twelve-lens sweep, cross-repository archaeology, or long-running analysis.
 - **Exhaustive**: only when the user explicitly requests "exhaustive / full coverage / maximum effort"; never the default.
 
-Regardless of entry source, invocation authorizes the skill's full native execution mode for the chosen depth within its existing safety and mutation boundaries. Within that depth's envelope, **execute at full strength**: cover all core evidence faces, mandatory analysis steps, and the formal HTML report. Only downgrade, narrow, or focus the run when the user explicitly requests it.
+Invocation authorizes the skill's full native execution mode for the chosen depth within its existing safety and mutation boundaries. Within that depth's envelope, **execute at full strength**: cover all core evidence faces, mandatory analysis steps, and the formal HTML report. Only downgrade, narrow, or focus the run when the user explicitly requests it or the evidence cannot support the depth.
 
 Infer the project location, scope, constraints, and evidence plan from the current workspace and supplied context; do not ask the user when a reasonable inference is possible. Continue useful analysis despite gaps and record them as `assumptions, unknowns, or coverage debt`.
 

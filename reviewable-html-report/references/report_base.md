@@ -267,8 +267,8 @@ Every interactive HTML report must include a clickable section index. Use stable
 human-readable IDs so links survive copy/paste and exported review notes.
 
 The default form is a **left sidebar TOC that is collapsible and scroll-spy
-highlighted** (shared contract: `html-response/references/html_system_spec.md`
-§3.1). Concretely:
+highlighted**. The requirements are restated inline below, so this file stays
+usable standalone. Concretely:
 
 - **Collapsible** — a toggle button shows/hides the link list; on wide screens the
   grid reflows to a narrow rail, and the collapsed state persists per page in
