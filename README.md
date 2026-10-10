@@ -161,6 +161,31 @@ defaults.
 - **Use when:** a workflow, score, report, tool, or interaction is correct but
   not yet decision-useful.
 
+## Additional Engineering Skills
+
+The portfolio contains 16 independently installable packages. The following
+engineering workflows supplement the architecture, planning, and review skills:
+
+| Skill | Use and expected result |
+|---|---|
+| [`handoff`](handoff/) | Preserve verified project state, authorization, unresolved work, and the first action for another session without launching it. |
+| [`cost-aware-delivery`](cost-aware-delivery/) | Compare direct work, tool reuse, and independent batch handoff; solve shared difficult decisions before repetitive execution. |
+| [`engineering-memory`](engineering-memory/) | Recall and record a small ignored project-local memory; bundled Python CLI, current evidence still required. |
+| [`improve-project-rules`](improve-project-rules/) | Audit conflicting, stale, or overconstraining agent/project rules while preserving safety and claim gates. |
+| [`improve-project-space`](improve-project-space/) | Diagnose actual usage friction, state authority, recovery, and long-term operation; select the smallest justified change. |
+| [`integrate-imagegen`](integrate-imagegen/) | Wire generated assets, developer tooling, or runtime providers with safe credentials, bounded calls, resumable tasks, and real consumer checks. |
+| [`public-release-sweep`](public-release-sweep/) | Audit visitor-visible identity, secrets, history, files, metadata, licensing, configuration, and mirror safety with an Exposure Map and scoped verdict. |
+
+Public packages default to English. Each package keeps its core method and
+required resources inside its directory; companion tools are optional. Private
+reports, runtime memory, machine configuration, personal cases, and third-party
+skills are excluded. Paid generation, external agents, publication, and
+irreversible changes require authorization covering the action. Existing valid
+authorization is reused; a task document never grants new permission.
+
+The earlier `product-sense-refiner` and `reviewable-html-report` packages remain
+available at their established public versions.
+
 ## Philosophy
 
 These skills share a few operating beliefs.

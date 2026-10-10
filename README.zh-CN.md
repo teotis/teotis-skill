@@ -206,3 +206,21 @@ Use product-sense-refiner on this scoring workflow. The output is technically co
 ## 许可
 
 Apache License 2.0。详见 [LICENSE](LICENSE)。
+
+## 新增代码工程技能
+
+公开仓库共有 16 个可独立安装的技能包。本次新增：
+
+| 技能 | 用途与产物 |
+|---|---|
+| [handoff](handoff/) | 保存可信项目状态、授权、未完成事项与第一动作，支持跨会话接续，不自动启动接收方。 |
+| [cost-aware-delivery](cost-aware-delivery/) | 比较直接完成、工具复用与批量交接总成本，先解决共享难点，再交付独立任务文档。 |
+| [engineering-memory](engineering-memory/) | 通过随包 Python CLI 召回或记录少量项目内 ignored 记忆；历史线索仍需当前证据复核。 |
+| [improve-project-rules](improve-project-rules/) | 审计项目与 Agent 规则的过约束、冲突、过时要求和加载负担，保留安全与结论权限。 |
+| [improve-project-space](improve-project-space/) | 诊断真实使用摩擦、状态权威、恢复与长期运行需求，选择最小可验证改进。 |
+| [integrate-imagegen](integrate-imagegen/) | 接入项目图片资产、开发工具或运行时 provider，保留凭证安全、调用预算、异步恢复和真实消费验证。 |
+| [public-release-sweep](public-release-sweep/) | 审计访客可见身份、密钥、历史、文件、元数据、许可、配置与镜像同步，给出 Exposure Map 和有范围的发布判断。 |
+
+公开技能包正文与默认输出为英文，所需核心方法和资源留在包内，companion 工具只作可选增强。私有报告、运行时记忆、本机配置、个人案例与第三方技能不转发布。付费生成、外部 agent、发布和不可逆改动需有覆盖具体动作的授权；已有有效授权沿用，任务文档不提供新增权限。
+
+此前公开的 `product-sense-refiner` 与 `reviewable-html-report` 保持既有公开版本。
