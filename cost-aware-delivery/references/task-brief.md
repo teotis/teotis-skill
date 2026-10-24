@@ -35,6 +35,15 @@ curl --proxy '<EXECUTOR_PROXY_URL>' --noproxy '' --connect-timeout 10 --max-time
 
 Use the verified protocol: SOCKS requires compatible socks5h configuration, not an HTTP address relabeled by port. Keep proxy environment changes process-local and preserve appropriate NO_PROXY for local/internal access. Distinguish proxy failure, permission, rate limiting, and content failure; follow retry budgets and continue independent work. Do not silently switch network routes or claim the recipient's connectivity from another machine's result.
 
+## External resource lifecycle
+
+Before issuing a batch brief, answer three questions: which persistent resources will this create or reuse; who owns final integration; and when may resources be released. A stateless small task may state that this section does not apply rather than inventing a control plane.
+
+- Inventory and limits: name the worktrees, branches, runs/claims, batch directories, and evidence locations to create or reuse; audit similar leftovers first instead of defaulting to another fresh set per round. State task-specific workspace-count, evidence-size, and disk early-stop limits. Reuse existing sparse-checkout, deduplication, or archive mechanisms instead of copying the whole repository and duplicate evidence into every worker.
+- Final path: workers may produce candidates, while one integration owner updates the formal library, ledger, and other shared assets. State whether final closure is a patch entering the target baseline, a zero-change receipt, or explicit abandonment of unreceived work. Zero change is valid closure and must not force cosmetic edits.
+- Release and cleanup: active claims, locks, or shared reservations are released only after execution stops, evidence is preserved, and final integration or abandonment is recorded. Missing processes, old timestamps, or an absent worktree do not justify takeover; completed runs also must not block future task pools indefinitely. Cleanup is an explicitly authorized action, not an automatic ending.
+- Preserve before removal: before deleting worktrees, branches, or run directories, preserve unmerged commits, tracked diffs, untracked evidence, and a verifiable manifest with a recovery path. Omit preservation only when those assets are already in the target baseline or explicitly abandoned; a missing process is not evidence.
+
 ## Calibration and counterexamples
 
 For mechanical code updates, settle compatibility and transformations, validate risk points, then let a capable recipient perform repeated edits and native checks. For batch content problems, fix shared methods/tools and representative hard cases before delegating production; writing a prompt alone does not prove better output. Distinguish accessible, substantive, and accepted content rather than erasing quality differences with coverage counts.

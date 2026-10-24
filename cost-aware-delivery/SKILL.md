@@ -35,6 +35,8 @@ Use a durable location in the target project. Prefer one document; split only in
 
 Preserve completed decisions while allowing judgment inside the boundary. Specify proportionate failure handling, local skips, original preservation, and unknowns. Recipients validate their work and leave project-required results without an automatic receipt protocol or mandatory origin-model review.
 
+For batch execution, also carry the [external resource lifecycle](task-brief.md#external-resource-lifecycle): what persistent workspaces, branches, claims, run directories, and evidence will be created or reused; who owns final integration; when resources may be released; and what must be preserved before cleanup.
+
 Report what was delivered and verified, brief path, pending external scope, and real limits. Finish when the brief is usable. Do not create monitors, ledgers, reminders, return gates, or agents unless authorized. Brief delivery is not batch execution.
 
 Specialized task planning or persistent orchestration is optional: if unavailable, this skill still delivers an independent brief. Switch workflows only when dependency closure, recovery, or durable coordination adds value. Task size alone does not justify escalation.
